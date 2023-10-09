@@ -13,7 +13,7 @@
  */
 typedef struct stack_terminal {
     token_t symbol;
-    token_attribute_t attr;
+    token_type_t type;
     bool term;
     stack_terminal_t* left;
     stack_terminal_t* right;
@@ -23,7 +23,7 @@ typedef struct stack_terminal {
  *   @brief Struct to represent a stack 
  */ 
 typedef struct Stack {
-    stack_terminal_t* *top; // Pointer to the top terminal token in the stack
+    stack_terminal_t *top; // Pointer to the top terminal token in the stack
 } stack_t;
 
 /**
