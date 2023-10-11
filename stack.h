@@ -5,6 +5,7 @@
  *  @authors Norman Babiak (xbabia01)
  */
 
+#include <stdbool.h>
 #include "token.h"
 
 /**
@@ -15,7 +16,6 @@ typedef struct stack_terminal {
     token_t symbol;
     token_type_t type;
     bool term;
-    stack_terminal_t* left;
     stack_terminal_t* right;
 } stack_terminal_t;
 
@@ -28,69 +28,70 @@ typedef struct Stack {
 
 /**
  *   @brief Initialize new stack
+ *   @param stack - Stack that is being created
  *   @return New stack
  */ 
-stack_t stack_init();
+void stack_init(stack_t *stack);
 
 /**
  *  @brief Pushes token to the stack and sets its attributes
  *  @param stack - Stack to be pushed on 
  *  @param token - Token to be pushed
  */ 
-void stack_push(Stack* stack, stack_terminal* token);
+void stack_push(stack_t* stack, stack_terminal_t* token);
 
 /**
  *  @brief Pushes token after the top terminal
  *  @param stack - Stack to be pushed on
  *  @param token - Token to be pushed after terminal
  */ 
-void stack_push_after(Stack* stack, stack_terminal_t* token);
+void stack_push_after(stack_t* stack, stack_terminal_t* token);
 
 /**
  *  @brief Resizes the stack if needed
  *  @param stack - Stack that needs to be resized
  */ 
-void stack_resize(Stack* stack);
+void stack_resize(stack_t* stack);
 
 /**
  *  @brief Empties the stack
  *  @param stack - Stack that needs to be emptied
  */ 
-void stack_empty(Stack* stack);
+void stack_empty(stack_t* stack);
 
 /**
  *  @brief Completely frees the stack and resets values like before init
  *  @param stack - Stack that will be freed
  */
-void stack_free(Stack* stack);
+void stack_free(stack_t* stack);
 
 /**
  *  @brief Returns top symbol (token) in the stack
  *  @param stack - Stack to be returned from
  *  @return Pointer to the token on the top of the stack
  */
-stack_terminal_t* stack_top(Stack* stack);
+stack_terminal_t* stack_top(stack_t* stack);
 
 /**
  *  @brief Returns top terminal
  *  @param stack - Stack to be returned from
  *  @return Pointer to the top terminal in the stack
  */ 
-stack_terminal_t* stack_top_terminal(Stack* stack);
+stack_terminal_t* stack_top_terminal(stack_t* stack);
 
 /**
  *  @brief Pops top symbol from stack
  *  @param stack - Stack to be popped from
  *  @return True if pop was successfull, else false
  */
-bool stack_pop(Stack* stack);
+bool stack_pop(stack_t* stack);
 
 /**
  *  @brief Pops stack multiple times
  *  @param stack - Stack to be popped from
  *  @param number - Number indicating how many pops are going to happen
  */
-void stack_pop_more(Stack* stack, int number);
+void stack_pop_more(stack_t* stack, int number);
 
 /**
  *  @brief Initializes new stack terminal with it's information
