@@ -13,7 +13,7 @@
  *         pointer to children if they exist.
  */
 typedef struct stack_terminal {
-    token_t symbol;
+    token_t token;
     token_type_t type;
     bool term;
     stack_terminal_t* right;
@@ -38,7 +38,7 @@ void stack_init(stack_t *stack);
  *  @param stack - Stack to be pushed on 
  *  @param token - Token to be pushed
  */ 
-void stack_push(stack_t* stack, stack_terminal_t* token);
+void stack_push(stack_t* stack, stack_terminal_t* item);
 
 /**
  *  @brief Pushes token after the top terminal
@@ -46,18 +46,6 @@ void stack_push(stack_t* stack, stack_terminal_t* token);
  *  @param token - Token to be pushed after terminal
  */ 
 void stack_push_after(stack_t* stack, stack_terminal_t* token);
-
-/**
- *  @brief Resizes the stack if needed
- *  @param stack - Stack that needs to be resized
- */ 
-void stack_resize(stack_t* stack);
-
-/**
- *  @brief Empties the stack
- *  @param stack - Stack that needs to be emptied
- */ 
-void stack_empty(stack_t* stack);
 
 /**
  *  @brief Completely frees the stack and resets values like before init
