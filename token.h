@@ -20,6 +20,54 @@ typedef struct token {
 */
 typedef enum token_type {
     // zde budou vsechny typy kterych muze token dosahovat
+    TOK_PLUS, //+
+    TOK_COLON, //:
+    TOK_MUL, //*
+    TOK_MINUS, //-
+    TOK_COMMA, //,
+    TOK_ARROW, //->
+    TOK_LESS, //<
+    TOK_LESSEQ, //<=
+    TOK_GREATER, //>
+    TOK_GREATEREQ, //>=
+    TOK_EQUAL, //==
+    TOK_NOTEQUAL, //!=
+    TOK_ASSIGMENT, //=
+    TOK_LCURLYBRACKET, //{
+    TOK_RCURLYBRACKET, //}
+    TOK_LBRACKET, //(
+    TOK_RBRACKET, //)
+    TOK_QUEST, //?
+    TOK_DQUEST, //??
+    TOK_NOT, //!
+    TOK_EOF, //end of file
+    TOK_UNDERSCORE, //_
+    TOK_WORD, //word
+    TOK_INT, //integers
+    TOK_DNUM, //decimal number
+    TOK_EINT, //integers with exponent
+    TOK_EDNUM, //decimal number with exponent
+    TOK_EMSTRING, //empty string
+    TOK_STRING, //string
+    TOK_MULSTRING, //multiline string
+    TOK_EMMULSTRING, //empty multiline string
+    TOK_DIV, // /
+    K_IF,
+    K_ELSE,
+    K_VAR,
+    K_LET,
+    K_NIL,
+    K_FUNC,
+    K_DOUBLE,
+    K_DOUBLEQ,
+    K_DOUBLEE,
+    K_INT,
+    K_INTQ,
+    K_INTE,
+    K_STRING,
+    K_STRINGQ,
+    K_STRINGE,
+    K_RETURN
 } token_type_t;
 
 /**
