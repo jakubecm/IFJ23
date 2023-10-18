@@ -60,6 +60,8 @@ static rules_enum test(int number, stack_terminal_t *tok1, stack_terminal_t *tok
                         return PR_MEQ;
                     case TOK_LEQ:
                         return PR_LEQ;
+                    case TOK_DQUEST:
+                        return PR_DQUE;
                     default:
                         return PR_UNDEF;
                 }
@@ -68,16 +70,19 @@ static rules_enum test(int number, stack_terminal_t *tok1, stack_terminal_t *tok
             if(tok1->type == TOK_LBRACKET && tok2->type == TOK_NTERM && tok3->type == TOK_RBRACKET) {
                 return PR_BRACKET;
             }
+            return PR_UNDEF;
 
         case 2:
             if(tok1->type == a && tok2->type == TOK_NTERM) {
                 return PR_NOT;
             }
+            return PR_UNDEF;
 
         case 1:
             if(tok1->type == TOK_INT || tok1->type == TOK_DOUBLE || tok1->type == TOK_STRING) {
                 return PR_OP;
             }
+            return PR_UNDEF;
             
         default:
             return PR_UNDEF;
@@ -98,6 +103,7 @@ bool sem_analysis(stack_terminal_t* tok1, stack_terminal_t* tok2, stack_terminal
         case PR_NEQ:
         case PR_MEQ:
         case PR_LEQ:
+        case PR_DQUE:
     }
 }
 

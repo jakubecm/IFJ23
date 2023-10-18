@@ -24,7 +24,8 @@ typedef enum exp_rules {
     PR_LEQ,     // E -> E <= E
     PR_MEQ,     // E -> E >= E
     PR_LESS,    // E -> E < E
-    PR_MORE     // E -> E > E
+    PR_MORE,    // E -> E > E
+    PR_DQUE     // E -> E ?? E
 
 } rules_enum;
 
