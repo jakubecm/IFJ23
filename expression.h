@@ -6,7 +6,6 @@
  */
 
 #include "token.h"
-#include "stack.h"
 
 /**
  * @brief Parsing rules
@@ -30,11 +29,28 @@ typedef enum exp_rules {
 } rules_enum;
 
 /**
+ *  @brief Data types used for semantic analysis and exp parsing
+ */
+typedef enum data_types {
+    INT,
+    DOUBLE,
+    STRING,
+    UNDEFINED
+} data_enum;
+
+/**
  *  @brief Function for getting the precedence from the table
  *  @param top - Top token from the stack
  *  @param input - Input token from scanner
  */ 
 int precedence(token_t top, token_t input);
 
-//FOR TESTING ONLY
+
 rules_enum test(int number, stack_terminal_t *tok1, stack_terminal_t *tok2, stack_terminal_t *tok3);
+
+/**
+ *  @brief Function for parsing expressions
+ *  @param 
+ *  @param
+ */
+void exp_parsing(int a, int b, int c);
