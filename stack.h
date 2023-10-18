@@ -7,13 +7,14 @@
 
 #include <stdbool.h>
 #include "token.h"
+#include "expression.h"
 
 /**
  *  @brief Struct to represent nodes in a tree. Each has a token, type of it,
  *         pointer to children if they exist.
  */
 typedef struct stack_terminal {
-    token_t token;
+    data_enum data;
     token_type_t type;
     bool term;
     stack_terminal_t* right;
@@ -36,9 +37,10 @@ void stack_init(stack_t *stack);
 /**
  *  @brief Pushes token to the stack and sets its attributes
  *  @param stack - Stack to be pushed on 
- *  @param token - Token to be pushed
+ *  @param token_type - Token to be pushed (type of it, as: +, -...)
+ *  @param data_type - Type of data for the token (as: INT, STRING, UNDEFINED...)
  */ 
-void stack_push(stack_t* stack, stack_terminal_t* item);
+void stack_push(stack_t* stack, data_enum data_type, token_type_t token_type);
 
 /**
  *  @brief Pushes token after the top terminal

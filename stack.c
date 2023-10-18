@@ -20,18 +20,17 @@ void stack_free(stack_t* stack) {
 }
 
 
-void stack_push(stack_t* stack, stack_terminal_t* item) {
+void stack_push(stack_t* stack, data_enum data_type, token_type_t token_type) {
     stack_terminal_t* new_token = (stack_terminal_t*) malloc(sizeof(stack_terminal_t));
     if(new_token == NULL) {
         err = ERR_INTERNAL;
         return;
     }
 
-    new_token->token = item->token;
-    new_token->type = item->type;
-    new_token->term = item->term;
-    new_token->right = stack->top;
+    new_token->data = data_type;
+    new_token->type = token_type;
 
+    new_token->right = stack->top;
     stack->top = new_token;
 }
 
@@ -70,7 +69,8 @@ void stack_pop_more(stack_t* stack, int number) {
     }
 }
 
-stack_terminal_t* terminal_init(token_t symbol, bool term) {
+//NEED FIXING
+/*stack_terminal_t* terminal_init(token_t symbol, bool term) {
     stack_terminal_t *new_term = malloc(sizeof(stack_terminal_t));
     if(new_term == NULL) {
         err = ERR_INTERNAL;
@@ -93,4 +93,4 @@ stack_terminal_t* terminal_free(stack_terminal_t* terminal) {
         terminal->right = NULL;
         //TODO: need to free the token from terminal
     }
-}
+}*/
