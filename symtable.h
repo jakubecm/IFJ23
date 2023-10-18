@@ -33,7 +33,7 @@ typedef struct htab_func {
 } htab_func_t;
 
 typedef struct htab_var {
-    htab_value      value;
+    htab_value_t      value;
     variable_type_t type;
 } htab_var_t;
 
