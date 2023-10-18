@@ -5,7 +5,7 @@
  * @authors Jakub Ráček (xracek12)
  */
 
-// TOTO JE JEN PRVNI NASTREL, STRCIL JSEM TU JEN VECI CO SE BUDOU POUZIVAT I MIMO SCANNER
+#include <stdbool.h>    // lmao musim importovat knihovnu abych mohl mit bool hodnoty miluju c muj oblibeny jazyk
 
 /**
  * @brief struct representing a Token
