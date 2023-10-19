@@ -73,7 +73,21 @@ typedef enum token_type {
 
     //ONLY FOR EXP PARSER
     TOK_DOLLAR,
-    TOK_ENDMARKER
+    TOK_ENDMARKER,
+    TOK_NTERM,
+
+    //VARIABLES
+    T_IDENTIFIER,
+    T_INT,
+    T_INTQ, // INT?
+    T_INTE, // INT!
+    T_DOUBLE,
+    T_DOUBLEQ, // DOUBLE?
+    T_DOUBLEE, // DOUBLE!
+    T_STRING,
+    T_STRINGQ, //STRING?
+    T_STRINGE, //STRING!
+    T_UNDEF
 
 } token_type_t;
 
