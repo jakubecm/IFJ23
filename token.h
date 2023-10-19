@@ -87,6 +87,7 @@ typedef enum token_type {
     T_STRING,
     T_STRINGQ, //STRING?
     T_STRINGE, //STRING!
+    T_BOOL,
     T_UNDEF
 
 } token_type_t;
