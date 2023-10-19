@@ -52,6 +52,8 @@ typedef enum token_type {
     TOK_MULSTRING, //multiline string
     TOK_EMMULSTRING, //empty multiline string
     TOK_DIV, // /
+
+    // KEYWORDS
     K_IF,
     K_ELSE,
     K_VAR,
@@ -67,7 +69,12 @@ typedef enum token_type {
     K_STRING,
     K_STRINGQ,
     K_STRINGE,
-    K_RETURN
+    K_RETURN,
+
+    //ONLY FOR EXP PARSER
+    TOK_DOLLAR,
+    TOK_ENDMARKER
+
 } token_type_t;
 
 /**
