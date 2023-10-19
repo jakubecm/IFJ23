@@ -63,7 +63,7 @@ static rules_enum test(int number, stack_terminal_t *tok1, stack_terminal_t *tok
                         return PR_MEQ;
                     case TOK_LESSEQ:
                         return PR_LEQ;
-                    case TOK_DQUEST:
+                    case TOK_DQUESTMK:
                         return PR_DQUE;
                     default:
                         return PR_UNDEF;
@@ -82,7 +82,7 @@ static rules_enum test(int number, stack_terminal_t *tok1, stack_terminal_t *tok
             return PR_UNDEF;
 
         case 1:
-            if(tok1->type == TOK_INT || tok1->type == TOK_DNUM || tok1->type == TOK_STRING) {
+            if(tok1->type == TOK_INT || tok1->type == TOK_DOUBLE || tok1->type == TOK_STRING) {
                 return PR_OP;
             }
             return PR_UNDEF;
@@ -98,7 +98,7 @@ void exp_parsing(int a, int b, int c)  { //need to fix a b c for real stuff afte
     stack_terminal_t *top;
     bool continue_while = true;
 
-    stack_push(&stack, T_UNDEF, TOK_DOLLAR);
+    stack_push(&stack, TOK_UNDEF, TOK_DOLLAR);
 
     while(continue_while) {
         top = stack_top_terminal(&stack);
