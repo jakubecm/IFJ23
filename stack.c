@@ -20,7 +20,7 @@ void stack_free(stack_t* stack) {
 }
 
 
-void stack_push(stack_t* stack, data_enum data_type, token_type_t token_type) {
+void stack_push(stack_t* stack, variable_type_t data_type, token_type_t token_type) {
     stack_terminal_t* new_token = (stack_terminal_t*) malloc(sizeof(stack_terminal_t));
     if(new_token == NULL) {
         err = ERR_INTERNAL;
@@ -46,7 +46,7 @@ stack_terminal_t* stack_top_terminal(stack_t* stack) {
     }
 
     for(new_item; new_item != NULL; new_item->right) {
-        if(new_item < STACK_END) {
+        if(new_item < TOK_ENDMARKER) {
             return new_item;
         }
     }

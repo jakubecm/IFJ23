@@ -8,13 +8,14 @@
 #include <stdbool.h>
 #include "token.h"
 #include "expression.h"
+#include "symtable.h"
 
 /**
  *  @brief Struct to represent nodes in a tree. Each has a token, type of it,
  *         pointer to children if they exist.
  */
 typedef struct stack_terminal {
-    data_enum data;
+    variable_type_t data;
     token_type_t type;
     bool term;
     stack_terminal_t* right;
