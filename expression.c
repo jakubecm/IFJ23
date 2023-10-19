@@ -9,8 +9,11 @@
 #include "error.h"
 #include "expression.h"
 #include "stack.h"
+#include "exp_semantic.h"
 
 #define TABLE_SIZE 16
+
+error_t error;
 
 static char precedence_tab[TABLE_SIZE][TABLE_SIZE] =
 {
@@ -31,8 +34,8 @@ static char precedence_tab[TABLE_SIZE][TABLE_SIZE] =
     {   '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', 'X', '<', 'X' }   // $
 };
 
-int precedence(token_t top, token_t input) {
-    return precedence_tab[top.type][input.type];
+int precedence(stack_terminal_t* top, token_t input) {
+    return precedence_tab[top->type][input.type];
 }
 
 static rules_enum test(int number, stack_terminal_t *tok1, stack_terminal_t *tok2, stack_terminal_t *tok3) {
@@ -48,17 +51,17 @@ static rules_enum test(int number, stack_terminal_t *tok1, stack_terminal_t *tok
                         return PR_MUL;
                     case TOK_DIV:
                         return PR_DIV;
-                    case TOK_MORE:
+                    case TOK_GREATER:
                         return PR_MORE;
                     case TOK_LESS:
                         return PR_LESS;
-                    case TOK_EQ:
+                    case TOK_EQUAL:
                         return PR_EQ;
-                    case TOK_NEQ:
+                    case TOK_NOTEQUAL:
                         return PR_NEQ;
-                    case TOK_MEQ:
+                    case TOK_GREATEREQ:
                         return PR_MEQ;
-                    case TOK_LEQ:
+                    case TOK_LESSEQ:
                         return PR_LEQ;
                     case TOK_DQUEST:
                         return PR_DQUE;
@@ -73,13 +76,13 @@ static rules_enum test(int number, stack_terminal_t *tok1, stack_terminal_t *tok
             return PR_UNDEF;
 
         case 2:
-            if(tok1->type == a && tok2->type == TOK_NTERM) {
+            if(tok1->type == TOK_NOT && tok2->type == TOK_NTERM) {
                 return PR_NOT;
             }
             return PR_UNDEF;
 
         case 1:
-            if(tok1->type == TOK_INT || tok1->type == TOK_DOUBLE || tok1->type == TOK_STRING) {
+            if(tok1->type == TOK_INT || tok1->type == TOK_DNUM || tok1->type == TOK_STRING) {
                 return PR_OP;
             }
             return PR_UNDEF;
@@ -89,36 +92,18 @@ static rules_enum test(int number, stack_terminal_t *tok1, stack_terminal_t *tok
     }
 }
 
-bool sem_analysis(stack_terminal_t* tok1, stack_terminal_t* tok2, stack_terminal_t* tok3, rules_enum rule) {
-    switch(rule) {
-        case PR_NOT:
-        case PR_BRACKET:
-        case PR_PLUS:
-        case PR_MINUS:
-        case PR_MUL:
-        case PR_DIV:
-        case PR_LESS:
-        case PR_MORE:
-        case PR_EQ:
-        case PR_NEQ:
-        case PR_MEQ:
-        case PR_LEQ:
-        case PR_DQUE:
-    }
-}
-
 void exp_parsing(int a, int b, int c)  { //need to fix a b c for real stuff after parser header available
     stack_t stack;
     stack_init(&stack);
     stack_terminal_t *top;
     bool continue_while = true;
 
-    stack_push(&stack, UNDEFINED, TOK_DOLLAR);
+    stack_push(&stack, T_UNDEF, TOK_DOLLAR);
 
     while(continue_while) {
         top = stack_top_terminal(&stack);
 
-        int prec = precedence(top->type, ???? ); // Need to add second param after parser header available
+        int prec = precedence(top, ???); // Need to add second param after parser header available
 
         switch(prec) {
             case '<':
