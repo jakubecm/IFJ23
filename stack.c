@@ -3,24 +3,49 @@
  * 
  * 
  *  @authors Norman Babiak (xbabia01)
+ *  @authors Jakub Ráček (xracek12)
  */
 
 #include <stdio.h>
 #include "error.h"
 #include "stack.h"
 
-error_t err;
-
-void stack_init(stack_t *stack) {
+// obecne funkce
+void stack_init(Stack *stack) {
     stack->top = NULL;
 }
 
-void stack_free(stack_t* stack) {
-    while(stack_pop(stack));
+void push(Stack *s, void *data) {
+    Node *newNode = malloc(sizeof(Node));
+    newNode->data = data;
+    newNode->right = s->top;
+    s->top = newNode;
 }
 
+bool pop(Stack *s) {
+    if (s->top == NULL) {
+        return false;
+    }
 
-void stack_push(stack_t* stack, sem_data_type_t data_type, token_type_t token_type) {
+    Node *topNode = s->top;
+    s->top = topNode->right;
+    void *data = topNode->data;
+    free(topNode);
+    return true;
+}
+
+void *top(Stack *s) {
+    return s->top;
+}
+// konec obecnych funkci
+
+error_t err;
+
+void stack_free_token(Stack* stack) {
+    while(stack_pop_token(stack));
+}
+
+void stack_push_token(Stack* stack, sem_data_type_t data_type, token_type_t token_type) {
     stack_terminal_t* new_token = (stack_terminal_t*) malloc(sizeof(stack_terminal_t));
     if(new_token == NULL) {
         err = ERR_INTERNAL;
@@ -30,42 +55,40 @@ void stack_push(stack_t* stack, sem_data_type_t data_type, token_type_t token_ty
     new_token->data = data_type;
     new_token->type = token_type;
 
-    new_token->right = stack->top;
-    stack->top = new_token;
+    push(stack, new_token);
 }
 
-stack_terminal_t* stack_top(stack_t* stack) {
-    return stack->top;
+stack_terminal_t* stack_top_token(Stack* stack) {
+    return (top(stack) != NULL) ? stack->top->data : NULL;
 }
 
-stack_terminal_t* stack_top_terminal(stack_t* stack) {
-    stack_terminal_t* new_item = stack->top;
+stack_terminal_t* stack_top_terminal(Stack* stack) {
+    Node* new_item = stack->top;
 
     if(new_item == NULL) {
         return NULL;
     }
 
     for(new_item; new_item != NULL; new_item->right) {
-        if(new_item < TOK_ENDMARKER) {
-            return new_item;
+        if(new_item->data < TOK_ENDMARKER) {
+            return new_item->data;
         }
     }
 }
 
-bool stack_pop(stack_t* stack) {
-    if(stack->top != NULL) {
-        stack_terminal_t* token = stack->top;
-        stack->top = token->right;
-        free(token);
+bool stack_pop_token(Stack* stack) {
+    if(stack->top == NULL)
+        return false;
 
-        return true;
-    }
-    return false;
+    stack_terminal_t* token = stack->top->data;
+    free(token);
+    pop(stack);
+    return true;
 }
 
-void stack_pop_more(stack_t* stack, int number) {
+void stack_pop_more(Stack* stack, int number) {
     for(int i = 0; i < number; i++) {
-        stack_pop(stack);
+        stack_pop_token(stack);
     }
 }
 
