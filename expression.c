@@ -16,6 +16,7 @@
 
 error_t error;
 
+//NEED TO RECHECK THE TABLE!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 static char precedence_tab[TABLE_SIZE][TABLE_SIZE] =
 {
     //   +-  */   ==   !=    <    >   <=   >=   ??    !    (    )    i    $
@@ -36,7 +37,81 @@ static char precedence_tab[TABLE_SIZE][TABLE_SIZE] =
 };
 
 int precedence(stack_terminal_t* top, token_t input) {
-    return precedence_tab[top->type][input.type];
+    int result1, result2;
+    switch(top->type) {
+        case TOK_PLUS:
+        case TOK_MINUS:
+            result1 = 0;
+            break;
+        case TOK_MUL:
+        case TOK_DIV:
+            result1 = 1;
+            break;
+        case TOK_EQUAL:
+        case TOK_NOTEQUAL:
+        case TOK_LESS:
+        case TOK_GREATER:
+        case TOK_GREATEREQ:
+        case TOK_LESSEQ:
+            result1 = 2;
+            break;
+        case TOK_DQUESTMK:
+            result1 = 3;
+            break;
+        case TOK_NOT:
+            result1 = 4;
+            break;
+        case TOK_LBRACKET:
+            result1 = 5;
+            break;
+        case TOK_RBRACKET:
+            result1 = 6;
+            break;
+        case TOK_IDENTIFIER:
+            result1 = 7;
+            break;
+        case TOK_DOLLAR:
+            result1 = 8;
+            break;
+    }
+
+    switch(input.type) {
+        case TOK_PLUS:
+        case TOK_MINUS:
+            result2 = 0;
+            break;
+        case TOK_MUL:
+        case TOK_DIV:
+            result2 = 1;
+            break;
+        case TOK_EQUAL:
+        case TOK_NOTEQUAL:
+        case TOK_LESS:
+        case TOK_GREATER:
+        case TOK_GREATEREQ:
+        case TOK_LESSEQ:
+            result2 = 2;
+            break;
+        case TOK_DQUESTMK:
+            result2 = 3;
+            break;
+        case TOK_NOT:
+            result2 = 4;
+            break;
+        case TOK_LBRACKET:
+            result2 = 5;
+            break;
+        case TOK_RBRACKET:
+            result2 = 6;
+            break;
+        case TOK_IDENTIFIER:
+            result2 = 7;
+            break;
+        case TOK_DOLLAR:
+            result2 = 8;
+            break;
+    }
+    return precedence_tab[result1][result2];
 }
 
 static rules_enum test(int number, stack_terminal_t *tok1, stack_terminal_t *tok2, stack_terminal_t *tok3) {
@@ -93,54 +168,71 @@ static rules_enum test(int number, stack_terminal_t *tok1, stack_terminal_t *tok
     }
 }
 
-sem_data_type_t tok_type(token_t token) { 
-    switch(token.type) {
-        case TOK_NOT:
-        case TOK_PLUS:
-        case TOK_MINUS:
-        case TOK_MUL:
-        case TOK_DIV:
-        case TOK_GREATER:
-        case TOK_LESS:
-        case TOK_EQUAL:
-        case TOK_NOTEQUAL:
-        case TOK_GREATEREQ:
-        case TOK_LESSEQ:
-        case TOK_DQUESTMK:
-            return SEM_OPERATOR;
-        case TOK_INT:
-        case TOK_EINT:
-        case K_INTE:
-        case K_INTQ:
-            return SEM_INT;
-        case TOK_DOUBLE:
-        case TOK_EDOUBLE:
-        case K_DOUBLEE:
-        case K_DOUBLEQ:
-            return SEM_FLOAT;
+void shift(Stack* stack, parser_t* parserData, sem_data_type_t* input_type) {
+    stack_push_after(&stack, SEM_UNDEF, TOK_ENDMARKER);
+
+    if(input_type == SEM_UNDEF) {
+        error = ERR_SEM_NDEF;
+        return;
     }
+
+    stack_push_token(&stack, input_type, parserData->token.type);
+    //GENERATOR IF TOKEN IS ID
+
+    //parserData->token = get_next_token();
 }
 
 void exp_parsing(parser_t* parserData)  { //need to fix a b c for real stuff after parser header available
-    stack_t stack;
+    Stack stack;
     stack_init(&stack);
-    stack_terminal_t *top;
+    stack_terminal_t *tmp;
     bool continue_while = true;
     sem_data_type_t stack_type, input_type;
 
-    stack_push(&stack, TOK_UNDEF, TOK_DOLLAR);
+    stack_push_token(&stack, SEM_UNDEF, TOK_DOLLAR);
 
     while(continue_while) {
-        top = stack_top_terminal(&stack)->type;
+        tmp = stack_top_terminal(&stack)->type;
 
-        int prec = precedence(top, parserData->token); // Need to add second param after parser header available
-        stack_type = tok_type(stack_top_terminal(&stack));
+        if(parserData->token.type == TOK_ASSIGNMENT) {
+            error = ERR_INTERNAL;
+            return;
+        }
+
+        if((parserData->token.type == TOK_IDENTIFIER) && (stack_top_terminal(&stack)->type == TOK_NTERM || tmp == TOK_IDENTIFIER)) {
+            parserData->token.type = TOK_DOLLAR;
+        }
+
+        int prec = precedence(tmp, parserData->token); // Need to add second param after parser header available
+        stack_type = tok_term_type(stack_top_terminal(&stack));
         input_type = tok_type(parserData->token);
 
         switch(prec) {
             case '<':
+                shift(&stack, parserData, input_type);
+                break;
+
             case '>':
+                //TODO REDUCING FUNCTION
+                break;
+
             case '=':
+                if(input_type == SEM_UNDEF) {
+                    error = ERR_SEM_NDEF;
+                    return;
+                }
+
+                stack_push_token(&stack, input_type, parserData->token.type);
+                //parserData->token = get_next_token();
+                break;
+                
+            default:
+                error = ERR_SYN;
+                return;
         }
+    }
+
+    if(stack_top_token(&stack)->type == TOK_NTERM) {
+        //...
     }
 }

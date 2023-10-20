@@ -45,4 +45,4 @@ rules_enum test(int number, stack_terminal_t *tok1, stack_terminal_t *tok2, stac
  *  @param 
  *  @param
  */
-void exp_parsing(int a, int b, int c);
+void exp_parsing(parser_t* parserData);
