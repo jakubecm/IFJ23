@@ -10,19 +10,92 @@
 
 #include "exp_semantic.h"
 #include "error.h"
-#include "token.h"
+#include "stack.h"
+#include "expression.h"
 
 error_t error;
 
-bool sem_analysis(stack_terminal_t* tok1, stack_terminal_t* tok2, stack_terminal_t* tok3, rules_enum rule, variable_type_t *end_type) {
+sem_data_type_t tok_type(token_t token) { 
+    switch(token.type) {
+        case TOK_NOT:
+        case TOK_PLUS:
+        case TOK_MINUS:
+        case TOK_MUL:
+        case TOK_DIV:
+        case TOK_GREATER:
+        case TOK_LESS:
+        case TOK_EQUAL:
+        case TOK_NOTEQUAL:
+        case TOK_GREATEREQ:
+        case TOK_LESSEQ:
+        case TOK_DQUESTMK:
+            return SEM_OPERATOR;
+        case TOK_INT:
+        case TOK_EINT:
+        case K_INT:
+        case K_INTE:
+        case K_INTQ:
+            return SEM_INT;
+        case TOK_DOUBLE:
+        case TOK_EDOUBLE:
+        case K_DOUBLE:
+        case K_DOUBLEE:
+        case K_DOUBLEQ:
+            return SEM_FLOAT;
+        case TOK_STRING:
+        case TOK_MLSTRING:
+        case K_STRING:
+        case K_STRINGE:
+        case K_STRINGQ:
+            return SEM_STRING;
+    }
+}
+
+sem_data_type_t tok_term_type(stack_terminal_t* token) { 
+    switch(token->data) {
+        case TOK_NOT:
+        case TOK_PLUS:
+        case TOK_MINUS:
+        case TOK_MUL:
+        case TOK_DIV:
+        case TOK_GREATER:
+        case TOK_LESS:
+        case TOK_EQUAL:
+        case TOK_NOTEQUAL:
+        case TOK_GREATEREQ:
+        case TOK_LESSEQ:
+        case TOK_DQUESTMK:
+            return SEM_OPERATOR;
+        case TOK_INT:
+        case TOK_EINT:
+        case K_INT:
+        case K_INTE:
+        case K_INTQ:
+            return SEM_INT;
+        case TOK_DOUBLE:
+        case TOK_EDOUBLE:
+        case K_DOUBLE:
+        case K_DOUBLEE:
+        case K_DOUBLEQ:
+            return SEM_FLOAT;
+        case TOK_STRING:
+        case TOK_MLSTRING:
+        case K_STRING:
+        case K_STRINGE:
+        case K_STRINGQ:
+            return SEM_STRING;
+    }
+}
+
+bool sem_analysis(stack_terminal_t* tok1, stack_terminal_t* tok2, stack_terminal_t* tok3, rules_enum rule, sem_data_type_t *end_type) {
     switch(rule) {
         case PR_NOT:
-            if(tok2->data != TOK_STRING || tok2->data != TOK_EMSTRING || tok2->data != K_STRINGQ ) {
+            if(tok2->data != SEM_STRING) {
                 error = ERR_SEM_INCOMPATIBLE;
                 return false;
             }
 
-            *end_type = tok2->data;
+            *end_type = tok_term_type(tok2);
             break;
 
         case PR_BRACKET:
@@ -30,7 +103,7 @@ bool sem_analysis(stack_terminal_t* tok1, stack_terminal_t* tok2, stack_terminal
                 error = ERR_SEM_NDEF;
                 return false;
             } else {
-                *end_type = tok2->data;
+                *end_type = tok_term_type(tok2);
                 break;
             }
             
@@ -38,18 +111,12 @@ bool sem_analysis(stack_terminal_t* tok1, stack_terminal_t* tok2, stack_terminal
         case PR_MINUS:
         case PR_MUL:
             *end_type = TOK_DOUBLE;
-            if((tok1->data == TOK_STRING || tok1->data == TOK_EMSTRING || tok1->data == K_STRINGQ)
-                &&
-               (tok3->data == TOK_STRING || tok3->data == TOK_EMSTRING || tok3->data == K_STRINGQ)
-                &&
-               (rule = PR_PLUS)) {
+            if((tok1->data == SEM_STRING) && (tok3->data == SEM_STRING) && (rule = PR_PLUS)) {
                 *end_type = TOK_STRING;
                 break;
                }
             
-            if((tok1->data == TOK_STRING || tok1->data == TOK_EMSTRING || tok1->data == K_STRINGQ)
-                ||
-               (tok3->data == TOK_STRING || tok3->data == TOK_EMSTRING || tok3->data == K_STRINGQ)) {
+            if((tok1->data == SEM_STRING) || (tok3->data == SEM_STRING)) {
                 error = ERR_SEM_TYPE;
                 return false;
                }
@@ -64,9 +131,7 @@ bool sem_analysis(stack_terminal_t* tok1, stack_terminal_t* tok2, stack_terminal
 
         case PR_DIV:
             *end_type = TOK_DOUBLE;
-            if((tok1->data == TOK_STRING || tok1->data == TOK_EMSTRING || tok1->data == K_STRINGQ)
-                ||
-               (tok3->data == TOK_STRING || tok3->data == TOK_EMSTRING || tok3->data == K_STRINGQ)) {
+            if((tok1->data == SEM_STRING) || (tok3->data == SEM_STRING)) {
                 error = ERR_SEM_TYPE;
                 return false;
                }
@@ -99,7 +164,7 @@ bool sem_analysis(stack_terminal_t* tok1, stack_terminal_t* tok2, stack_terminal
                 error = ERR_SEM_NDEF;
                 return false;
             } else {
-                *end_type = tok1->data;
+                *end_type = tok_term_type(tok2);
                 break;
             }
     }
