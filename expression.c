@@ -10,6 +10,7 @@
 #include "expression.h"
 #include "stack.h"
 #include "exp_semantic.h"
+#include "parser.h"
 
 #define TABLE_SIZE 16
 
@@ -92,18 +93,49 @@ static rules_enum test(int number, stack_terminal_t *tok1, stack_terminal_t *tok
     }
 }
 
-void exp_parsing(int a, int b, int c)  { //need to fix a b c for real stuff after parser header available
+sem_data_type_t tok_type(token_t token) { 
+    switch(token.type) {
+        case TOK_NOT:
+        case TOK_PLUS:
+        case TOK_MINUS:
+        case TOK_MUL:
+        case TOK_DIV:
+        case TOK_GREATER:
+        case TOK_LESS:
+        case TOK_EQUAL:
+        case TOK_NOTEQUAL:
+        case TOK_GREATEREQ:
+        case TOK_LESSEQ:
+        case TOK_DQUESTMK:
+            return SEM_OPERATOR;
+        case TOK_INT:
+        case TOK_EINT:
+        case K_INTE:
+        case K_INTQ:
+            return SEM_INT;
+        case TOK_DOUBLE:
+        case TOK_EDOUBLE:
+        case K_DOUBLEE:
+        case K_DOUBLEQ:
+            return SEM_FLOAT;
+    }
+}
+
+void exp_parsing(parser_t* parserData)  { //need to fix a b c for real stuff after parser header available
     stack_t stack;
     stack_init(&stack);
     stack_terminal_t *top;
     bool continue_while = true;
+    sem_data_type_t stack_type, input_type;
 
     stack_push(&stack, TOK_UNDEF, TOK_DOLLAR);
 
     while(continue_while) {
-        top = stack_top_terminal(&stack);
+        top = stack_top_terminal(&stack)->type;
 
-        int prec = precedence(top, ???); // Need to add second param after parser header available
+        int prec = precedence(top, parserData->token); // Need to add second param after parser header available
+        stack_type = tok_type(stack_top_terminal(&stack));
+        input_type = tok_type(parserData->token);
 
         switch(prec) {
             case '<':
