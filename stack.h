@@ -50,7 +50,7 @@ void stack_push_token(Stack* stack, sem_data_type_t data_type, token_type_t toke
  *  @param stack - Stack to be pushed on
  *  @param token - Token to be pushed after terminal
  */ 
-void stack_push_after(Stack* stack, stack_terminal_t* token);
+void stack_push_after(Stack* stack, sem_data_type_t data_type, token_type_t token_type);
 
 /**
  *  @brief Completely frees the stack and resets values like before init
