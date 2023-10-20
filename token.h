@@ -45,13 +45,13 @@ typedef enum token_type
     TOK_EOF,           // end of file
     TOK_UNDERSCORE,    // _
     TOK_WORD,          // word
-    TOK_INT,           // integer
-    TOK_DOUBLE,        // double/float (decimal)
-    TOK_EINT,          // integers with exponent
-    TOK_EDOUBLE,       // double/float with exponent
-    TOK_EMSTRING,      // empty string
-    TOK_STRING,        // string
-    TOK_MLSTRING,      // multiline string
+    TOK_INT,           // integer literal (eg. 2,3,4..)
+    TOK_DOUBLE,        // double/float (decimal) literal (eg. 2.3, 4.5)
+    TOK_EINT,          // integer literal with exponent (eg. 2e3, 4e5?)
+    TOK_EDOUBLE,       // double/float with exponent (eg. 2.3e3, 4.5e5?)
+    TOK_EMSTRING,      // empty string literal
+    TOK_STRING,        // string literal (eg. "hello world")
+    TOK_MLSTRING,      // multiline string 
     TOK_EMMLSTRING,    // empty multiline string
     TOK_DIV,           // ÷
     TOK_IDENTIFIER,    // identifier
