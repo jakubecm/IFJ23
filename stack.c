@@ -20,7 +20,7 @@ void stack_free(stack_t* stack) {
 }
 
 
-void stack_push(stack_t* stack, variable_type_t data_type, token_type_t token_type) {
+void stack_push(stack_t* stack, sem_data_type_t data_type, token_type_t token_type) {
     stack_terminal_t* new_token = (stack_terminal_t*) malloc(sizeof(stack_terminal_t));
     if(new_token == NULL) {
         err = ERR_INTERNAL;

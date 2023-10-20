@@ -6,7 +6,15 @@
  */
 
 #include <stdio.h>
-#include "expression.h"
+
+typedef enum sem_data_type {
+    SEM_OPERATOR,
+    SEM_INT,
+    SEM_FLOAT,
+    SEM_STRING,
+    SEM_BOOL,
+    SEM_UNDEF
+} sem_data_type_t;
 
 /**
  *  @brief Function to check the semantic of the expression given to expression parser

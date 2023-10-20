@@ -7,7 +7,7 @@
 
 #include <stdbool.h>
 #include "token.h"
-#include "symtable.h"
+#include "exp_semantic.h"
 
 /**
  *  @brief Struct to represent nodes in a tree. Each has a token, type of it,
@@ -40,7 +40,7 @@ void stack_init(stack_t *stack);
  *  @param token_type - Token to be pushed (type of it, as: +, -...)
  *  @param data_type - Type of data for the token (as: INT, STRING, UNDEFINED...)
  */ 
-void stack_push(stack_t* stack, variable_type_t data_type, token_type_t token_type);
+void stack_push(stack_t* stack, sem_data_type_t data_type, token_type_t token_type);
 
 /**
  *  @brief Pushes token after the top terminal
