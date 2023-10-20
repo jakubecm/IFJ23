@@ -15,7 +15,7 @@
  *         pointer to children if they exist.
  */
 typedef struct stack_terminal {
-    variable_type_t data;
+    sem_data_type_t data;
     token_type_t type;
     bool term;
     stack_terminal_t* right;
@@ -43,7 +43,7 @@ void stack_init(Stack *stack);
  *  @param token_type - Token to be pushed (type of it, as: +, -...)
  *  @param data_type - Type of data for the token (as: INT, STRING, UNDEFINED...)
  */ 
-void stack_push(Stack* stack, sem_data_type_t data_type, token_type_t token_type);
+void stack_push_token(Stack* stack, sem_data_type_t data_type, token_type_t token_type);
 
 /**
  *  @brief Pushes token after the top terminal
