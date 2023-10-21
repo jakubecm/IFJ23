@@ -88,25 +88,7 @@ sem_data_type_t tok_term_type(stack_terminal_t* token) {
 }
 
 bool sem_analysis(stack_terminal_t* tok1, stack_terminal_t* tok2, stack_terminal_t* tok3, rules_enum rule, sem_data_type_t *end_type) {
-    switch(rule) {
-        case PR_NOT:
-            if(tok2->data != SEM_STRING) {
-                error = ERR_SEM_INCOMPATIBLE;
-                return false;
-            }
-
-            *end_type = tok_term_type(tok2);
-            break;
-
-        case PR_BRACKET:
-            if(tok2->data == TOK_UNDEF) {
-                error = ERR_SEM_NDEF;
-                return false;
-            } else {
-                *end_type = tok_term_type(tok2);
-                break;
-            }
-            
+    switch(rule) {   
         case PR_PLUS:
         case PR_MINUS:
         case PR_MUL:
