@@ -182,12 +182,13 @@ void shift(Stack* stack, parser_t* parserData, sem_data_type_t* input_type) {
     //parserData->token = get_next_token();
 }
 
-void exp_parsing(parser_t* parserData)  { //need to fix a b c for real stuff after parser header available
+void exp_parsing(parser_t* parserData)  {
     Stack stack;
     stack_init(&stack);
     stack_terminal_t *tmp;
     bool continue_while = true;
-    sem_data_type_t stack_type, input_type;
+    sem_data_type_t stack_type, input_type, end_type = SEM_UNDEF;
+    int num = 0;
 
     stack_push_token(&stack, SEM_UNDEF, TOK_DOLLAR);
 
@@ -203,7 +204,7 @@ void exp_parsing(parser_t* parserData)  { //need to fix a b c for real stuff aft
             parserData->token.type = TOK_DOLLAR;
         }
 
-        int prec = precedence(tmp, parserData->token); // Need to add second param after parser header available
+        int prec = precedence(tmp, parserData->token);
         stack_type = tok_term_type(stack_top_terminal(&stack));
         input_type = tok_type(parserData->token);
 
@@ -213,7 +214,39 @@ void exp_parsing(parser_t* parserData)  { //need to fix a b c for real stuff aft
                 break;
 
             case '>':
-                //TODO REDUCING FUNCTION
+                stack_terminal_t *tok1, *tok2, *tok3;
+                rules_enum rule = test(num, tok1, tok2, tok3);
+
+                if(rule == PR_UNDEF) {
+                    error = ERR_SYN;
+                    return;
+
+                } else if(rule == PR_BRACKET) {
+                    stack_push_token(&stack, tok2->data, TOK_NTERM);
+
+                } else if(rule == PR_OP) { // ADD SEM CHECK TO OPERATOR
+                    stack_push_token(&stack, tok1->data, TOK_NTERM);
+
+                } else if(rule == PR_NOT) {
+                     if(tok2->data != SEM_STRING) {
+                        error = ERR_SEM_INCOMPATIBLE;
+                        return;
+                     }
+                    stack_push_token(&stack, SEM_INT, TOK_NTERM);
+                    //GENERATOR
+
+                } else {
+                    if(!sem_analysis(&tok1, &tok2, &tok3, &rule, &end_type)) {
+                        return;
+                    }
+                    stack_push_token(&stack, end_type, TOK_NTERM);
+                    //GENERATOR
+                }
+
+                if(parserData->token.type == TOK_DOLLAR && stack_top_terminal(&stack)->type == TOK_DOLLAR) {
+                    continue_while = false;
+                }
+                
                 break;
 
             case '=':
@@ -232,6 +265,7 @@ void exp_parsing(parser_t* parserData)  { //need to fix a b c for real stuff aft
         }
     }
 
+    //Last token on the top of stack
     if(stack_top_token(&stack)->type == TOK_NTERM) {
         //...
     }
