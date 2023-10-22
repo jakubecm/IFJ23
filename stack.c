@@ -75,7 +75,7 @@ stack_terminal_t* stack_top_terminal(Stack* stack) {
         currentNode = currentNode->right;
     }
 
-    return NULL;  // Return NULL if no terminal found in the stack
+    return NULL;
 }
 
 
