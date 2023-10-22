@@ -22,7 +22,7 @@ void push(Stack *s, void *data) {
     s->top = newNode;
 }
 
-bool pop(Stack *s) {
+bool stack_pop(Stack *s) {
     if (s->top == NULL) {
         return false;
     }
@@ -34,7 +34,7 @@ bool pop(Stack *s) {
     return true;
 }
 
-void *top(Stack *s) {
+void *stack_top(Stack *s) {
     return s->top;
 }
 // konec obecnych funkci
@@ -59,22 +59,25 @@ void stack_push_token(Stack* stack, sem_data_type_t data_type, token_type_t toke
 }
 
 stack_terminal_t* stack_top_token(Stack* stack) {
-    return (top(stack) != NULL) ? stack->top->data : NULL;
+    return (stack_top(stack) != NULL) ? stack->top->data : NULL;
 }
 
 stack_terminal_t* stack_top_terminal(Stack* stack) {
-    Node* new_item = stack->top;
+    Node* currentNode = stack->top;
 
-    if(new_item == NULL) {
-        return NULL;
-    }
+    while (currentNode != NULL) {
+        stack_terminal_t* token = (stack_terminal_t*)currentNode->data;
 
-    for(new_item; new_item != NULL; new_item->right) {
-        if(new_item->data < TOK_ENDMARKER) {
-            return new_item->data;
+        if (token != NULL && token->type < TOK_ENDMARKER) {
+            return token;
         }
+
+        currentNode = currentNode->right;
     }
+
+    return NULL;  // Return NULL if no terminal found in the stack
 }
+
 
 bool stack_pop_token(Stack* stack) {
     if(stack->top == NULL)
