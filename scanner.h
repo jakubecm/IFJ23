@@ -12,6 +12,8 @@
 typedef enum scanner_state {
     // Type out all the FSM states
     START,
+    COMMENT,
+    MCOMMENT,
 } scanner_state_t;
 
 // Scanner structure itself
