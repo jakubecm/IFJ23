@@ -168,10 +168,59 @@ token_t get_next_token(){
                 }
             }
 
+            else if(inchar == '/'){
+                inchar = getchar();
+
+                if(inchar == '/'){
+                    state = COMMENT;
+                    printf("prechod do comment\n");
+                }
+
+                else if(inchar == '*'){
+                    inchar = getchar();
+                    state = MCOMMENT;
+                }
+
+                else{
+                    myungetc(inchar);
+                    token.type = TOK_DIV;
+                    return token;
+                }
+            }
+
+
+
             break;
         
+        case(COMMENT):
+            {
+                while((inchar != '\n') && (inchar != EOF)){
+                    inchar = getchar();
+                }
+                printf("konec komentare\n");
+                state = START;
+                break;
+            }
+
+        case(MCOMMENT):
+            //TODO zanorene komentare a neukoncene komentare
+            while(inchar != '*'){
+                inchar = getchar();
+            }
+
+            inchar = getchar();
+
+            if(inchar != '/'){
+                state = MCOMMENT;
+            }
+
+            else{
+                state = START;
+            }
+            break;
+
         default:    
             break;
         }
-    }  
+    }
 }
