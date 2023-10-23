@@ -7,7 +7,9 @@
 
 #include "token.h"
 #include "scanner.h"
+#include "error.h"
 #include <stdio.h>
+#include <ctype.h>
 
 
 int myungetc(int inchar){
@@ -17,16 +19,18 @@ int myungetc(int inchar){
 
 token_t get_next_token(){  
     token_t token;    
-    int inchar = getchar();
-
-    if(inchar == EOF){
-        token.type = TOK_EOF;
-        return token;
-    }
     
     int state = START;
+    
+    while(true){
+        int inchar = getchar();
+        
+        if(inchar == EOF){
+            token.type = TOK_EOF;
+            return token;
+        }
 
-    switch(state){
+        switch(state){
 
         case(START):
 
@@ -38,8 +42,136 @@ token_t get_next_token(){
             else if(inchar == ':'){
                 token.type = TOK_COLON;
                 return token;
-
-            //TODO
             }
-    }
+            
+            else if(inchar == '('){
+                token.type = TOK_LBRACKET;
+                return token;
+            }
+
+            else if(inchar == ')'){
+                token.type = TOK_RBRACKET;
+                return token;
+            }
+
+            else if(inchar == '*'){
+                token.type = TOK_MUL;
+                return token;
+            }
+
+            else if(inchar == ','){
+                token.type = TOK_COMMA;
+                return token;
+            }
+
+            else if(inchar == '{'){
+                token.type = TOK_LCURLYBRACKET;
+                return token;
+            }
+
+            else if(inchar == '}'){
+                token.type = TOK_RCURLYBRACKET;
+                return token;
+            }
+
+            else if(isspace(inchar)){
+                state = START;
+            }
+
+            else if(inchar == '-'){
+                inchar = getchar();
+
+                if(inchar == '>'){
+                    token.type = TOK_ARROW;
+                    return token;
+                }
+
+                else{
+                    myungetc(inchar);
+                    token.type = TOK_MINUS;
+                    return token;
+                }
+            }
+
+            else if(inchar == '<'){
+                inchar = getchar();
+
+                if(inchar == '='){
+                    token.type = TOK_LESSEQ;
+                    return token;
+                }
+
+                else{
+                    myungetc(inchar);
+                    token.type = TOK_LESS;
+                    return token;
+                }
+            }
+
+            else if(inchar == '>'){
+                inchar = getchar();
+
+                if(inchar == '='){
+                    token.type = TOK_GREATEREQ;
+                    return token;
+                }
+
+                else{
+                    myungetc(inchar);
+                    token.type = TOK_GREATER;
+                    return token;
+                }
+            }
+
+            else if(inchar == '='){
+                inchar = getchar();
+
+                if(inchar == '='){
+                    token.type = TOK_EQUAL;
+                    return token;
+                }
+
+                else{
+                    myungetc(inchar);
+                    token.type = TOK_ASSIGNMENT;
+                    return token;
+                }
+            }
+
+            else if(inchar == '!'){
+                inchar = getchar();
+
+                if(inchar == '='){
+                    token.type = TOK_NOTEQUAL;
+                    return token;
+                }
+
+                else{
+                    myungetc(inchar);
+                    token.type = TOK_NOT;
+                    return token;
+                }
+            }
+
+            else if(inchar == '?'){
+                inchar = getchar();
+
+                if(inchar == '?'){
+                    token.type = TOK_DQUESTMK;
+                    return token;
+                }
+
+                else{
+                    myungetc(inchar);
+                    token.type = TOK_QUESTMK;
+                    return token;
+                }
+            }
+
+            break;
+        
+        default:    
+            break;
+        }
+    }  
 }
