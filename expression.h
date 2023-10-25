@@ -38,7 +38,7 @@ typedef enum exp_rules {
 int precedence(stack_terminal_t* top, token_t input);
 
 
-rules_enum test(int number, stack_terminal_t *tok1, stack_terminal_t *tok2, stack_terminal_t *tok3);
+rules_enum get_rule(int number, stack_terminal_t *tok1, stack_terminal_t *tok2, stack_terminal_t *tok3);
 
 /**
  *  @brief Function for parsing expressions
