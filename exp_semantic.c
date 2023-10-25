@@ -87,13 +87,13 @@ sem_data_type_t tok_term_type(stack_terminal_t* token) {
     }
 }
 
-bool sem_analysis(stack_terminal_t* tok1, stack_terminal_t* tok2, stack_terminal_t* tok3, rules_enum rule, sem_data_type_t *end_type) {
-    switch(rule) {   
-        case PR_PLUS:
-        case PR_MINUS:
-        case PR_MUL:
+bool sem_analysis(stack_terminal_t* tok1, stack_terminal_t* tok2, stack_terminal_t* tok3, sem_data_type_t *end_type) {
+    switch(tok2->type) {   
+        case TOK_PLUS:
+        case TOK_MINUS:
+        case TOK_MUL:
             *end_type = TOK_DOUBLE;
-            if((tok1->data == SEM_STRING) && (tok3->data == SEM_STRING) && (rule = PR_PLUS)) {
+            if((tok1->data == SEM_STRING) && (tok3->data == SEM_STRING) && (tok2->type = TOK_PLUS)) {
                 *end_type = TOK_STRING;
                 break;
                }
@@ -111,7 +111,7 @@ bool sem_analysis(stack_terminal_t* tok1, stack_terminal_t* tok2, stack_terminal
                }
             // NEED TO ADD GENERATING TO DIFFERENT TYPES!!!!
 
-        case PR_DIV:
+        case TOK_DIV:
             *end_type = TOK_DOUBLE;
             if((tok1->data == SEM_STRING) || (tok3->data == SEM_STRING)) {
                 error = ERR_SEM_TYPE;
@@ -121,12 +121,12 @@ bool sem_analysis(stack_terminal_t* tok1, stack_terminal_t* tok2, stack_terminal
             //GENERATOR FOR INTO TO DOUBLE
             break;
 
-        case PR_LESS:
-        case PR_MORE:
-        case PR_EQ:
-        case PR_NEQ:
-        case PR_MEQ:
-        case PR_LEQ:
+        case TOK_LESS:
+        case TOK_GREATER:
+        case TOK_EQUAL:
+        case TOK_NOTEQUAL:
+        case TOK_GREATEREQ:
+        case TOK_LESSEQ:
             *end_type = TOK_BOOL;
 
             //GENERATOR FOR INT TO DOUBLE
@@ -137,17 +137,6 @@ bool sem_analysis(stack_terminal_t* tok1, stack_terminal_t* tok2, stack_terminal
             }
             break;
 
-        case PR_DQUE:
-        case PR_OP:
-            if(tok1->data == TOK_BOOL) {
-                error = ERR_SEM_TYPE;
-                return false;
-            } else if(tok1->data == TOK_UNDEF) {
-                error = ERR_SEM_NDEF;
-                return false;
-            } else {
-                *end_type = tok_term_type(tok2);
-                break;
-            }
+        case TOK_DQUESTMK:
     }
 }
