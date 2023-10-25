@@ -60,6 +60,9 @@ int get_precedence_value(token_type_t type) {
         case TOK_RBRACKET:
             return 6;
         case TOK_IDENTIFIER:
+        case TOK_INT:
+        case TOK_DOUBLE:
+        case TOK_STRING:
             return 7;
         case TOK_DOLLAR:
             return 8;
@@ -116,7 +119,7 @@ void reduce(Stack* stack, int num, stack_terminal_t* tok1, stack_terminal_t* tok
         case 1:
             if(tok1->type == TOK_INT || tok1->type == TOK_DOUBLE || tok1->type == TOK_STRING) { //operand rule, ADD SEM CHECK TO OPERATOR
                 stack_push_token(&stack, tok1->data, TOK_NTERM);
-                
+
             } else {
                 error = ERR_SYN;
                 return;
@@ -180,7 +183,7 @@ void exp_parsing(parser_t* parserData)  {
             return;
         }
 
-        if((parserData->token.type == TOK_IDENTIFIER) && (stack_top_terminal(&stack)->type == TOK_NTERM || tmp == TOK_IDENTIFIER)) {
+        if((parserData->token.type == TOK_IDENTIFIER) && (stack_top_token(&stack)->type == TOK_NTERM || tmp == TOK_IDENTIFIER)) {
             parserData->token.type = TOK_DOLLAR;
         }
 
