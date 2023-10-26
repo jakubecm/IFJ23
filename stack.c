@@ -15,7 +15,7 @@ void stack_init(Stack *stack) {
     stack->top = NULL;
 }
 
-void push(Stack *s, void *data) {
+void stack_push(Stack *s, void *data) {
     Node *newNode = malloc(sizeof(Node));
     newNode->data = data;
     newNode->right = s->top;
@@ -78,6 +78,45 @@ stack_terminal_t* stack_top_terminal(Stack* stack) {
     return NULL;
 }
 
+bool stack_push_after(Stack* stack, sem_data_type_t data_type, token_type_t token_type) {
+    Node* prev = NULL;
+    Node* continueTok = stack->top;
+
+    while (continueTok != NULL) {
+        if (((stack_terminal_t*)continueTok->data)->type < TOK_ENDMARKER) {
+            Node* new_node = (Node*)malloc(sizeof(Node));
+            if (!new_node) {
+                return false;
+            }
+
+            stack_terminal_t* new_terminal = (stack_terminal_t*)malloc(sizeof(stack_terminal_t));
+            if (!new_terminal) {
+                free(new_node);
+                return false;
+            }
+
+            new_terminal->data = data_type;
+            new_terminal->type = token_type;
+            new_terminal->right = NULL;
+
+            new_node->data = new_terminal;
+
+            if (prev == NULL) {
+                new_node->right = stack->top;
+                stack->top = new_node;
+            } else {
+                new_node->right = prev->right;
+                prev->right = new_node;
+            }
+
+            return true;
+        }
+        prev = continueTok;
+        continueTok = continueTok->right;
+    }
+    return false;
+}
+
 
 bool stack_pop_token(Stack* stack) {
     if(stack->top == NULL)
@@ -94,29 +133,3 @@ void stack_pop_more(Stack* stack, int number) {
         stack_pop_token(stack);
     }
 }
-
-//NEED FIXING
-/*stack_terminal_t* terminal_init(token_t symbol, bool term) {
-    stack_terminal_t *new_term = malloc(sizeof(stack_terminal_t));
-    if(new_term == NULL) {
-        err = ERR_INTERNAL;
-        return;
-    }
-
-    new_term->right = NULL;
-    new_term->type = symbol.type;
-
-    new_term->token = symbol;
-    new_term->term = term;
-
-    return new_term;
-}
-
-stack_terminal_t* terminal_free(stack_terminal_t* terminal) {
-    if(terminal) {
-        terminal_free(terminal->right);
-
-        terminal->right = NULL;
-        //TODO: need to free the token from terminal
-    }
-}*/
