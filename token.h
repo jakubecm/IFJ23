@@ -7,14 +7,8 @@
 
 #include <stdbool.h> // lmao musim importovat knihovnu abych mohl mit bool hodnoty miluju c muj oblibeny jazyk
 
-/**
- * @brief struct representing a Token
- */
-typedef struct token
-{
-    token_type_t type;
-    token_attribute_t attribute;
-} token_t;
+#ifndef TOKEN_H
+#define TOKEN_H
 
 /**
  * @brief All the possible Token types
@@ -91,3 +85,14 @@ typedef union token_attribute
     char *string;
     bool boolean;
 } token_attribute_t;
+
+/**
+ * @brief struct representing a Token
+ */
+typedef struct token
+{
+    token_type_t type;
+    token_attribute_t attribute;
+} token_t;
+
+#endif
