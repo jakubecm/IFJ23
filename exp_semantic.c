@@ -9,9 +9,9 @@
 //      ADDING GENERATORS
 
 #include "exp_semantic.h"
+#include "expression.h"
 #include "error.h"
 #include "stack.h"
-#include "expression.h"
 
 error_t error;
 
@@ -87,26 +87,26 @@ sem_data_type_t tok_term_type(stack_terminal_t* token) {
     }
 }
 
-bool sem_analysis(stack_terminal_t* tok1, stack_terminal_t* tok2, stack_terminal_t* tok3, sem_data_type_t *end_type) {
+bool sem_analysis(analysis_t* analysis) {
     bool tok1_float = false, tok3_float = false;
 
-    switch(tok2->type) {   
+    switch(analysis->tok2->type) {   
         case TOK_PLUS:
         case TOK_MINUS:
         case TOK_MUL:
-            *end_type = SEM_FLOAT;
-            if((tok1->data == SEM_STRING) && (tok3->data == SEM_STRING) && (tok2->type = TOK_PLUS)) {
-                *end_type = TOK_STRING;
+            analysis->end_type = SEM_FLOAT;
+            if((analysis->tok1->data == SEM_STRING) && (analysis->tok3->data == SEM_STRING) && (analysis->tok2->type = TOK_PLUS)) {
+                analysis->end_type = TOK_STRING;
                 break;
                }
             
-            if((tok1->data == SEM_STRING) || (tok3->data == SEM_STRING)) {
+            if((analysis->tok1->data == SEM_STRING) || (analysis->tok3->data == SEM_STRING)) {
                 error = ERR_SEM_TYPE;
                 return false;
                }
 
-            if((tok1->data == SEM_INT) && (tok3->data == SEM_INT)) {
-                *end_type = SEM_INT;
+            if((analysis->tok1->data == SEM_INT) && (analysis->tok3->data == SEM_INT)) {
+                analysis->end_type = SEM_INT;
                 break;
                }
             
@@ -114,8 +114,8 @@ bool sem_analysis(stack_terminal_t* tok1, stack_terminal_t* tok2, stack_terminal
             tok3_float = true;
 
         case TOK_DIV:
-            *end_type = SEM_FLOAT;
-            if((tok1->data == SEM_STRING) || (tok3->data == SEM_STRING)) {
+            analysis->end_type = SEM_FLOAT;
+            if((analysis->tok1->data == SEM_STRING) || (analysis->tok3->data == SEM_STRING)) {
                 error = ERR_SEM_TYPE;
                 return false;
                }
@@ -130,9 +130,9 @@ bool sem_analysis(stack_terminal_t* tok1, stack_terminal_t* tok2, stack_terminal
         case TOK_NOTEQUAL:
         case TOK_GREATEREQ:
         case TOK_LESSEQ:
-            *end_type = SEM_BOOL;
+            analysis->end_type = SEM_BOOL;
 
-            if(tok1->data != tok3->data) {
+            if(analysis->tok1->data != analysis->tok3->data) {
                 tok1_float = true;
                 tok3_float = true;
             }

@@ -83,21 +83,21 @@ int precedence(stack_terminal_t* top, token_t input) {
     return precedence_tab[result1][result2];
 }
 
-int get_num(Stack* stack, stack_terminal_t* tok1, stack_terminal_t* tok2, stack_terminal_t* tok3) {
+int get_num(Stack* stack, analysis_t* analysis) {
     int num = 0;
     stack_terminal_t *top = stack_top_token(stack);
-    tok1 = NULL;
-    tok2 = NULL;
-    tok3 = NULL;
+    analysis->tok1 = NULL;
+    analysis->tok2 = NULL;
+    analysis->tok3 = NULL;
 
     while (top != NULL && top->type != TOK_ENDMARKER) {
         num++;
         if (num == 1) {
-            tok1 = top;
+            analysis->tok1 = top;
         } else if (num == 2) {
-            tok2 = top;
+            analysis->tok2 = top;
         } else if (num == 3) {
-            tok3 = top;
+            analysis->tok3 = top;
         }
         top = top->right;
         stack_pop(stack);
@@ -136,11 +136,11 @@ void shift(Stack* stack, parser_t* parserData, sem_data_type_t input_type) {
     get_next_token();
 }
 
-void reduce(Stack* stack, int num, stack_terminal_t* tok1, stack_terminal_t* tok2, stack_terminal_t *tok3, sem_data_type_t end_type) {
+void reduce(Stack* stack, int num, analysis_t* analysis) {
     switch(num) {
         case 1:
-            if(tok1->type == TOK_INT || tok1->type == TOK_DOUBLE || tok1->type == TOK_STRING) { //operand rule, ADD SEM CHECK TO OPERATOR
-                stack_push_token(stack, tok1->data, TOK_NTERM);
+            if(analysis->tok1->type == TOK_INT || analysis->tok1->type == TOK_DOUBLE || analysis->tok1->type == TOK_STRING) { //operand rule, ADD SEM CHECK TO OPERATOR
+                stack_push_token(stack, analysis->tok1->data, TOK_NTERM);
 
             } else {
                 error = ERR_SYN;
@@ -149,8 +149,8 @@ void reduce(Stack* stack, int num, stack_terminal_t* tok1, stack_terminal_t* tok
             break;
 
         case 2:
-            if(tok1->type == TOK_NOT && tok2->type == TOK_NTERM) { //NOT rule
-                if(tok2->data != SEM_STRING) {
+            if(analysis->tok1->type == TOK_NOT && analysis->tok2->type == TOK_NTERM) { //NOT rule
+                if(analysis->tok2->data != SEM_STRING) {
                     error = ERR_SEM_INCOMPATIBLE;
                     return;
                 }
@@ -164,15 +164,15 @@ void reduce(Stack* stack, int num, stack_terminal_t* tok1, stack_terminal_t* tok
             break;
 
         case 3:
-            if(tok1->type == TOK_LBRACKET && tok2->type == TOK_NTERM && tok3->type == TOK_RBRACKET) { //bracket rule
-                stack_push_token(stack, tok2->data, TOK_NTERM);
+            if(analysis->tok1->type == TOK_LBRACKET && analysis->tok2->type == TOK_NTERM && analysis->tok3->type == TOK_RBRACKET) { //bracket rule
+                stack_push_token(stack, analysis->tok2->data, TOK_NTERM);
 
-            } else if(tok1->type == TOK_NTERM && tok3->type == TOK_NTERM) {
+            } else if(analysis->tok1->type == TOK_NTERM && analysis->tok3->type == TOK_NTERM) {
                 //Sem check if there are 3 tokens on the top of stack
-                if(!sem_analysis(&tok1, &tok2, &tok3, &end_type)) {
+                if(!sem_analysis(analysis)) {
                     return;
                 }
-                stack_push_token(stack, end_type, TOK_NTERM);
+                stack_push_token(stack, analysis->end_type, TOK_NTERM);
                 //GENERATOR
 
             } else {
@@ -192,8 +192,9 @@ void exp_parsing(parser_t* parserData)  {
     stack_init(&stack);
     stack_terminal_t *tmp;
     bool continue_while = true;
-    sem_data_type_t stack_type, input_type, end_type = SEM_UNDEF;
+    sem_data_type_t stack_type, input_type;
     int num = 0;
+    analysis_t analysis;
 
     stack_push_token(&stack, SEM_UNDEF, TOK_DOLLAR);
 
@@ -218,13 +219,10 @@ void exp_parsing(parser_t* parserData)  {
                 break;
 
             case '>':
-                stack_terminal_t tok1;
-                stack_terminal_t tok2;
-                stack_terminal_t tok3;
+                analysis.end_type = SEM_UNDEF;
+                num = get_num(&stack, &analysis); //get token amount from stack before endmarker
 
-                num = get_num(&stack, &tok1, &tok2, &tok3); //get token amount from stack before endmarker
-
-                reduce(&stack, num, &tok1, &tok2, &tok3, end_type);
+                reduce(&stack, num, &analysis);
 
                 if(parserData->token.type == TOK_DOLLAR && stack_top_terminal(&stack)->type == TOK_DOLLAR) {
                     continue_while = false;

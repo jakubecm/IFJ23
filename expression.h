@@ -8,27 +8,12 @@
 #include "token.h"
 #include "stack.h"
 
-/**
- * @brief Parsing rules
- */
-/* typedef enum exp_rules {
-    PR_UNDEF,
-    PR_OP,      // E -> i
-    PR_NOT,     // E -> !E
-    PR_BRACKET, // E -> (E)
-    PR_PLUS,    // E -> E + E
-    PR_MINUS,   // E -> E - E
-    PR_MUL,     // E -> E * E
-    PR_DIV,     // E -> E / E
-    PR_EQ,      // E -> E == E
-    PR_NEQ,     // E -> E != E
-    PR_LEQ,     // E -> E <= E
-    PR_MEQ,     // E -> E >= E
-    PR_LESS,    // E -> E < E
-    PR_MORE,    // E -> E > E
-    PR_DQUE     // E -> E ?? E
-
-} rules_enum; */
+typedef struct analysis {
+    stack_terminal_t* tok1;
+    stack_terminal_t* tok2;
+    stack_terminal_t* tok3;
+    sem_data_type_t end_type;
+} analysis_t;
 
 /**
  *  @brief Function for getting the precedence from the table

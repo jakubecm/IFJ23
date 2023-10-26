@@ -6,8 +6,6 @@
  */
 
 #include <stdio.h>
-#include "error.h"
-#include "stack.h"
 
 typedef enum sem_data_type {
     SEM_OPERATOR,
@@ -26,4 +24,4 @@ typedef enum sem_data_type {
  *  @param rule - Rule given to sem. analysis by expression parser
  *  @param end_type - the final type of the expression (including generator changes)
  */
-bool sem_analysis(stack_terminal_t* tok1, stack_terminal_t* tok2, stack_terminal_t* tok3, sem_data_type_t *end_type);
+bool sem_analysis(analysis_t* analysis);
