@@ -6,6 +6,9 @@
  *  @authors Jiri Tesar (xtesar44)
  */
 
+#ifndef STR_H
+#define STR_H
+
 extern const int STR_CHUNK; 
 
 /**
@@ -43,5 +46,7 @@ void destroy(mystring_t *str);
  *   @param str structer for dynamic string 
  */ 
 void addcap(mystring_t *str);
+
+#endif
 
 /* end of file str.h */
