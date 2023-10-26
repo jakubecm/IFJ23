@@ -8,8 +8,10 @@
 #include "token.h"
 #include "scanner.h"
 #include "error.h"
+#include "str.h"
 #include <stdio.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 
 int myungetc(int inchar){
@@ -21,9 +23,13 @@ token_t get_next_token(){
     token_t token;    
     
     int state = START;
-    
+    int inchar;
+
     while(true){
-        int inchar = getchar();
+        if(state == COMMENT || state == START){
+            inchar = getchar();
+        }
+        
         
         if(inchar == EOF){
             token.type = TOK_EOF;
@@ -188,9 +194,13 @@ token_t get_next_token(){
                 }
             }
 
-
-
+            
+            else if(inchar >= '0' && inchar <= '9'){
+                state = NUM;
+            }
+            
             break;
+            
         
         case(COMMENT):
             {
@@ -217,6 +227,76 @@ token_t get_next_token(){
             else{
                 state = START;
             }
+            break;
+
+        case(NUM):
+            mystring_t number;
+            initstr(&number);
+            
+            do{
+                makestr(&number,inchar);
+                inchar = getchar();
+            }
+            while(inchar >= '0' && inchar <= '9');
+
+            if(inchar == '.'){
+                makestr(&number,inchar);
+                inchar = getchar();
+                state = DNUM;
+            }
+
+            else if((inchar == 'e') || (inchar == 'E')){
+                makestr(&number,inchar);
+                inchar = getchar();
+                state = ENUM;
+            }
+
+            else{
+                myungetc(inchar);
+                token.attribute.number = atoi(number.string);
+                token.type = TOK_INT;
+                return token;
+            }
+            break;
+            
+        case(DNUM):
+            do{
+                makestr(&number,inchar);
+                inchar = getchar();
+            }
+            while(inchar >= '0' && inchar <= '9');
+            
+            if((inchar == 'e') || (inchar == 'E')){
+                makestr(&number,inchar);
+                inchar = getchar();
+                state = ENUM;
+            }
+
+            else{
+                myungetc(inchar);
+                token.attribute.decimal = atof(number.string);
+                token.type = TOK_DOUBLE;
+                return token;
+            }
+            break;
+        
+        case(ENUM):
+            if((inchar == '+') || (inchar == '-')){
+                makestr(&number,inchar);
+                inchar = getchar();
+            }
+
+            do{
+                makestr(&number,inchar);
+                inchar = getchar();
+            }
+            while(inchar >= '0' && inchar <= '9');
+      
+            myungetc(inchar);
+            token.attribute.decimal = atof(number.string);
+            token.type = TOK_DOUBLE;
+            return token;
+
             break;
 
         default:    

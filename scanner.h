@@ -1,7 +1,7 @@
 /**
  *  @file scanner.h
  * 
- * 
+ *  @author Jiri Tesar (xtesar44)
  *  @author Jakub Ráček (xracek12)
  *  @author Milan Jakubec (xjakub41)
  */
@@ -14,6 +14,9 @@ typedef enum scanner_state {
     START,
     COMMENT,
     MCOMMENT,
+    NUM,
+    DNUM,
+    ENUM,
 } scanner_state_t;
 
 // Scanner structure itself
