@@ -88,11 +88,13 @@ sem_data_type_t tok_term_type(stack_terminal_t* token) {
 }
 
 bool sem_analysis(stack_terminal_t* tok1, stack_terminal_t* tok2, stack_terminal_t* tok3, sem_data_type_t *end_type) {
+    bool tok1_float = false, tok3_float = false;
+
     switch(tok2->type) {   
         case TOK_PLUS:
         case TOK_MINUS:
         case TOK_MUL:
-            *end_type = TOK_DOUBLE;
+            *end_type = SEM_FLOAT;
             if((tok1->data == SEM_STRING) && (tok3->data == SEM_STRING) && (tok2->type = TOK_PLUS)) {
                 *end_type = TOK_STRING;
                 break;
@@ -103,22 +105,23 @@ bool sem_analysis(stack_terminal_t* tok1, stack_terminal_t* tok2, stack_terminal
                 return false;
                }
 
-            if((tok1->data == TOK_INT || tok1->data == K_INTE || tok1->data == K_INTQ)
-                &&
-               (tok3->data == TOK_INT || tok3->data == K_INTE || tok3->data == K_INTQ)) {
-                *end_type = TOK_INT;
+            if((tok1->data == SEM_INT) && (tok3->data == SEM_INT)) {
+                *end_type = SEM_INT;
                 break;
                }
-            // NEED TO ADD GENERATING TO DIFFERENT TYPES!!!!
+            
+            tok1_float = true;
+            tok3_float = true;
 
         case TOK_DIV:
-            *end_type = TOK_DOUBLE;
+            *end_type = SEM_FLOAT;
             if((tok1->data == SEM_STRING) || (tok3->data == SEM_STRING)) {
                 error = ERR_SEM_TYPE;
                 return false;
                }
             
-            //GENERATOR FOR INTO TO DOUBLE
+            tok1_float = true;
+            tok3_float = true;
             break;
 
         case TOK_LESS:
@@ -127,16 +130,22 @@ bool sem_analysis(stack_terminal_t* tok1, stack_terminal_t* tok2, stack_terminal
         case TOK_NOTEQUAL:
         case TOK_GREATEREQ:
         case TOK_LESSEQ:
-            *end_type = TOK_BOOL;
-
-            //GENERATOR FOR INT TO DOUBLE
+            *end_type = SEM_BOOL;
 
             if(tok1->data != tok3->data) {
-                error = ERR_SEM_TYPE;
-                return false;
+                tok1_float = true;
+                tok3_float = true;
             }
             break;
 
         case TOK_DQUESTMK:
+    }
+
+    if(tok1_float) {
+        //generate code for conversion
+    }
+
+    if(tok3_float) {
+        //generate code for conversion
     }
 }
