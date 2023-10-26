@@ -102,8 +102,10 @@ int get_num(Stack* stack, stack_terminal_t* tok1, stack_terminal_t* tok2, stack_
         top = top->right;
         stack_pop(stack);
     }
-    //ADD SOMEWHERE POP FOR ENDMARKER
-    if(num == 0) {
+
+    stack_pop(stack); //pop endmarker
+
+    if(num == 0 || num > 3) {
         error = ERR_SYN;
         return -1;
     }
@@ -123,7 +125,13 @@ void shift(Stack* stack, parser_t* parserData, sem_data_type_t input_type) {
     }
 
     stack_push_token(stack, input_type, parserData->token.type);
-    //GENERATOR IF TOKEN IS ID
+
+    token_type_t tmpTok = parserData->token.type;
+    
+    if(tmpTok == TOK_IDENTIFIER || tmpTok == TOK_INT || tmpTok == TOK_DOUBLE || tmpTok == TOK_STRING) {
+        //geenerate instruction
+    }
+
 
     get_next_token();
 }
@@ -184,7 +192,7 @@ void exp_parsing(parser_t* parserData)  {
     stack_init(&stack);
     stack_terminal_t *tmp;
     bool continue_while = true;
-    sem_data_type_t input_type, end_type = SEM_UNDEF;
+    sem_data_type_t stack_type, input_type, end_type = SEM_UNDEF;
     int num = 0;
 
     stack_push_token(&stack, SEM_UNDEF, TOK_DOLLAR);
@@ -242,6 +250,7 @@ void exp_parsing(parser_t* parserData)  {
 
     //Last token on the top of stack
     if(stack_top_token(&stack)->type == TOK_NTERM) {
+        stack_type = stack_top_token(&stack)->data;
         //...
     }
 }
