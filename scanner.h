@@ -21,7 +21,7 @@ typedef enum scanner_state {
 
 // Scanner structure itself
 typedef struct{
-    enum fsm_curr_state state; // Current state the FSM is in
+    scanner_state_t state; // Current state the FSM is in
 
 } scanner_t;
 
