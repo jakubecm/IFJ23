@@ -17,6 +17,7 @@ typedef enum scanner_state {
     NUM,
     DNUM,
     ENUM,
+    ID,
 } scanner_state_t;
 
 // Scanner structure itself
@@ -41,3 +42,5 @@ token_t get_next_token(void);
 int myungetc(int backchar);
 
 // Missing functions to initialize and destroy the scanner
+
+/* end of file scanner.h */

@@ -25,6 +25,7 @@ token_t get_next_token(){
     
     int state = START;
     int inchar;
+    int preinchar;
 
     while(true){
         if(state == COMMENT || state == START){
@@ -180,7 +181,6 @@ token_t get_next_token(){
 
                 if(inchar == '/'){
                     state = COMMENT;
-                    printf("prechod do comment\n");
                 }
 
                 else if(inchar == '*'){
@@ -199,19 +199,47 @@ token_t get_next_token(){
             else if(inchar >= '0' && inchar <= '9'){
                 state = NUM;
             }
+
+            else if(inchar == '_' || (inchar >= 'a' && inchar <= 'z')|| (inchar >= 'A' && inchar <= 'Z')){
+                
+                if(inchar == '_'){
+                    preinchar = inchar;
+                    inchar = getchar();
+
+                    if(inchar == '_' || (inchar >= 'a' && inchar <= 'z') || (inchar >= 'A' && inchar <= 'Z') || (inchar >= '0' && inchar <= '9')){            
+                        state = ID;
+                    }
+
+                    else{
+                        myungetc(inchar);
+                        token.type = TOK_UNDERSCORE;
+                        return token;
+                    }
+                }
+
+                else{
+                    state = ID;
+                }
+            }
             
             else{
                 error = ERR_LEX;
             }
             break;
             
-        
+
+
+
+
+
+
+
         case(COMMENT):
             {
                 while((inchar != '\n') && (inchar != EOF)){
                     inchar = getchar();
                 }
-                printf("konec komentare\n");
+    
                 state = START;
                 break;
             }
@@ -277,9 +305,7 @@ token_t get_next_token(){
             do{
                 makestr(&number,inchar);
                 inchar = getchar();
-            }
-            while(inchar >= '0' && inchar <= '9');
-            
+            }while(inchar >= '0' && inchar <= '9');      
 
             if((inchar == 'e') || (inchar == 'E')){
                 makestr(&number,inchar);
@@ -311,8 +337,7 @@ token_t get_next_token(){
             do{
                 makestr(&number,inchar);
                 inchar = getchar();
-            }
-            while(inchar >= '0' && inchar <= '9');
+            }while(inchar >= '0' && inchar <= '9');
       
             myungetc(inchar);
             token.attribute.decimal = atof(number.string);
@@ -321,8 +346,33 @@ token_t get_next_token(){
 
             break;
 
+        case(ID):
+            mystring_t id;
+            initstr(&id);
+
+            if(preinchar == '_'){
+                makestr(&id,preinchar);
+            }
+
+            do{
+                makestr(&id,inchar);
+                inchar = getchar();
+            }while(inchar == '_' || (inchar >= 'a' && inchar <= 'z')|| (inchar >= 'A' && inchar <= 'Z') || (inchar >= '0' && inchar <= '9') && inchar == EOF);
+            
+            myungetc(inchar);
+
+            tokinit(&token,id.lenght);
+            token.type = TOK_IDENTIFIER;
+            token.attribute.string = id.string;
+
+            iskeyw(&token);
+            return token;
+
         default:
+
             break;
         }
     }
 }
+
+/* end of file scanner.c */

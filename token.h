@@ -1,11 +1,11 @@
 /**
- *  token.h and shit
+ *  token.h 
  *
- *
+ * @authors Jiri Tesar (xtesar44)
  * @authors Jakub Ráček (xracek12)
  */
 
-#include <stdbool.h> // lmao musim importovat knihovnu abych mohl mit bool hodnoty miluju c muj oblibeny jazyk
+#include <stdbool.h> 
 
 #ifndef TOKEN_H
 #define TOKEN_H
@@ -40,8 +40,6 @@ typedef enum token_type
     TOK_UNDERSCORE,    // _
     TOK_INT,           // integer literal (eg. 2,3,4..)
     TOK_DOUBLE,        // double/float (decimal) literal (eg. 2.3, 4.5)
-    TOK_EINT,          // integer literal with exponent (eg. 2e3, 4e5?)
-    TOK_EDOUBLE,       // double/float with exponent (eg. 2.3e3, 4.5e5?)
     TOK_STRING,        // string literal (eg. "hello world")
     TOK_MLSTRING,      // multiline string 
     TOK_DIV,           // ÷
@@ -94,5 +92,27 @@ typedef struct token
     token_type_t type;
     token_attribute_t attribute;
 } token_t;
+
+/**
+ *   @brief Allocate memory for token.
+ * 
+ *   @param token structer for token
+ *   @param lenght lenght for allocate memory
+ */ 
+void tokinit(token_t *token, int lenght);
+
+/**
+ *   @brief Allocate destory token
+ * 
+ *   @param token structer for token
+ */ 
+void tokdestroy(token_t *token);
+
+/**
+ *   @brief Check if token in keyword.
+ * 
+ *   @param token structer for token
+ */ 
+void iskeyw(token_t *token);
 
 #endif
