@@ -13,6 +13,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 
+error_t error;
 
 int myungetc(int inchar){
     ungetc(inchar,stdin);
@@ -199,6 +200,9 @@ token_t get_next_token(){
                 state = NUM;
             }
             
+            else{
+                error = ERR_LEX;
+            }
             break;
             
         
@@ -243,12 +247,22 @@ token_t get_next_token(){
                 makestr(&number,inchar);
                 inchar = getchar();
                 state = DNUM;
+                if(!(inchar >= '0' && inchar <= '9')){
+                    error = ERR_LEX;
+                }
             }
 
             else if((inchar == 'e') || (inchar == 'E')){
                 makestr(&number,inchar);
                 inchar = getchar();
-                state = ENUM;
+
+                if((inchar >= '0' && inchar <= '9') || (inchar == '+' || inchar == '-')){
+                    state = ENUM;
+                }
+
+                else{
+                    error = ERR_LEX;
+                }
             }
 
             else{
@@ -266,10 +280,18 @@ token_t get_next_token(){
             }
             while(inchar >= '0' && inchar <= '9');
             
+
             if((inchar == 'e') || (inchar == 'E')){
                 makestr(&number,inchar);
                 inchar = getchar();
-                state = ENUM;
+
+                if((inchar >= '0' && inchar <= '9') || (inchar == '+' || inchar == '-')){
+                    state = ENUM;
+                }
+
+                else{
+                    error = ERR_LEX;
+                }
             }
 
             else{
@@ -299,7 +321,7 @@ token_t get_next_token(){
 
             break;
 
-        default:    
+        default:
             break;
         }
     }
