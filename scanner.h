@@ -6,7 +6,11 @@
  *  @author Milan Jakubec (xjakub41)
  */
 
+#ifndef SCANNER_H
+#define SCANNER_H
+
 #include "token.h"
+#include "str.h"
 
 // Enum for all the states of the FSM
 typedef enum scanner_state {
@@ -18,6 +22,7 @@ typedef enum scanner_state {
     DNUM,
     ENUM,
     ID,
+    STRING,
 } scanner_state_t;
 
 // Scanner structure itself
@@ -41,6 +46,15 @@ token_t get_next_token(void);
 */
 int myungetc(int backchar);
 
+/**
+ * @brief Check if backlash chars is correct.
+ * 
+ * @param str structur for string
+*/
+void backslash(mystring_t *str);
+
 // Missing functions to initialize and destroy the scanner
+
+#endif
 
 /* end of file scanner.h */

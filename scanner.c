@@ -221,6 +221,10 @@ token_t get_next_token(){
                     state = ID;
                 }
             }
+
+            else if(inchar == '"'){
+                state = STRING;
+            }
             
             else{
                 error = ERR_LEX;
@@ -368,10 +372,90 @@ token_t get_next_token(){
             iskeyw(&token);
             return token;
 
+        case(STRING):
+            mystring_t str;
+            initstr(&str);
+
+            do{
+                if(inchar != '"'){
+                    makestr(&str,inchar);
+                }
+                
+                if(inchar == '\\'){
+                    backslash(&str);
+                }
+                
+                inchar = getchar();
+
+                if(inchar == '"'){
+                    break;
+                }
+
+            }while(inchar >= 32 && inchar <= 255);
+
+            if(inchar == '"'){
+                tokinit(&token,str.lenght);
+                token.attribute.string = str.string;
+                token.type = TOK_STRING;
+                return token;
+            }
+
+            else{
+                error = ERR_LEX;
+            }
+
         default:
 
             break;
         }
+    }
+}
+
+void backslash(mystring_t *str){
+    int inchar = getchar();
+
+    if(inchar == '\\' || inchar == 'n' ||inchar == '"' ||inchar == 't' ||inchar == 'r'){
+        makestr(str,inchar);
+    }
+
+    else if(inchar == 'u'){
+        makestr(str,inchar);
+        inchar = getchar();
+
+        if(inchar == '{'){
+            int count = 0;
+            makestr(str,inchar); 
+            inchar = getchar();
+            if((inchar >= 'a' && inchar <= 'f')|| (inchar >= 'A' && inchar <= 'F') || (inchar >= '0' && inchar <= '9') && inchar == EOF){
+                do{
+                    makestr(str,inchar); 
+                    inchar = getchar();
+                    count++;
+                }while((inchar >= 'a' && inchar <= 'f')|| (inchar >= 'A' && inchar <= 'F') || (inchar >= '0' && inchar <= '9') && inchar == EOF && count < 7);
+
+                if(inchar == '}'){
+                    makestr(str,inchar); 
+                }
+
+                else{
+                    error = ERR_LEX;
+                }
+            }
+
+            else{
+                error = ERR_LEX;
+            }
+         
+        }
+
+        else{
+            error = ERR_LEX;
+        }
+        
+    }
+
+    else{
+        error = ERR_LEX;
     }
 }
 
