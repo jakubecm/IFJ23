@@ -57,7 +57,7 @@ void iskeyw(token_t *token){
         token->type = K_FUNC;
     }
 
-    else if(strcmp(token->attribute.string, "double") == 0){
+    else if(strcmp(token->attribute.string, "Double") == 0){
         inchar = getchar();
 
         if(inchar == '?'){
@@ -74,7 +74,7 @@ void iskeyw(token_t *token){
         }
     }
 
-    else if(strcmp(token->attribute.string, "int") == 0){
+    else if(strcmp(token->attribute.string, "Int") == 0){
         inchar = getchar();
 
         if(inchar == '?'){
@@ -91,7 +91,7 @@ void iskeyw(token_t *token){
         }
     }
 
-    else if(strcmp(token->attribute.string, "string") == 0){
+    else if(strcmp(token->attribute.string, "String") == 0){
         inchar = getchar();
 
         if(inchar == '?'){
