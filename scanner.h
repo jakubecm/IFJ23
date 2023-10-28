@@ -23,6 +23,7 @@ typedef enum scanner_state {
     ENUM,
     ID,
     STRING,
+    MSTRING,
 } scanner_state_t;
 
 // Scanner structure itself

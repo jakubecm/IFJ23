@@ -230,12 +230,6 @@ token_t get_next_token(){
                 error = ERR_LEX;
             }
             break;
-            
-
-
-
-
-
 
 
         case(COMMENT):
@@ -247,6 +241,7 @@ token_t get_next_token(){
                 state = START;
                 break;
             }
+
 
         case(MCOMMENT):
             //TODO zanorene komentare a neukoncene komentare
@@ -264,6 +259,7 @@ token_t get_next_token(){
                 state = START;
             }
             break;
+
 
         case(NUM):
             mystring_t number;
@@ -304,6 +300,7 @@ token_t get_next_token(){
                 return token;
             }
             break;
+
             
         case(DNUM):
             do{
@@ -331,6 +328,7 @@ token_t get_next_token(){
                 return token;
             }
             break;
+
         
         case(ENUM):
             if((inchar == '+') || (inchar == '-')){
@@ -372,6 +370,7 @@ token_t get_next_token(){
             iskeyw(&token);
             return token;
 
+
         case(STRING):
             mystring_t str;
             initstr(&str);
@@ -388,16 +387,104 @@ token_t get_next_token(){
                 inchar = getchar();
 
                 if(inchar == '"'){
-                    break;
+                    inchar = getchar();
+
+                    if(inchar == '"'){
+                        state = MSTRING;
+                        break;
+                    }
+
+                    else{
+                        myungetc(inchar);
+                        tokinit(&token,str.lenght);
+                        token.attribute.string = str.string;
+                        token.type = TOK_STRING;
+                        return token;
+                    }
+                    
                 }
 
             }while(inchar >= 32 && inchar <= 255);
 
-            if(inchar == '"'){
+            if(inchar == '"' && state != MSTRING){
                 tokinit(&token,str.lenght);
                 token.attribute.string = str.string;
                 token.type = TOK_STRING;
                 return token;
+            }
+
+            else if(state == MSTRING){
+                break;
+            }
+
+            else{
+                error = ERR_LEX;
+            }
+
+
+        case(MSTRING):
+            mystring_t mstr;
+            initstr(&mstr);
+            inchar = getchar();
+            char newline = '\n';
+
+            if(inchar == '\n'){
+                do{
+                    //makestr(&mstr,inchar);
+                    preinchar = inchar;
+                    inchar = getchar();
+
+                    if(inchar == '\\'){                       
+                        //myungetc(inchar);
+                        if(preinchar != '\\'){
+                            makestr(&mstr,preinchar);
+                        }
+                        
+                        makestr(&mstr,inchar);
+                        backslash(&mstr);
+                        
+                        continue;
+                    }
+
+                    if(inchar == '"' && preinchar == 10){
+                        
+                        preinchar = inchar;
+                        inchar = getchar();
+                        if(inchar == '"'){
+                            
+                            preinchar = inchar;
+                            inchar = getchar();
+                            if(inchar == '"'){
+                                tokinit(&token,mstr.lenght);
+                                token.attribute.string = mstr.string;
+                                token.type = TOK_MLSTRING;
+                                return token;
+                            }
+
+                            else{
+                                makestr(&mstr,newline);
+                                makestr(&mstr,preinchar);
+                                makestr(&mstr,preinchar);
+                            }
+                        }
+
+                        else{
+                            makestr(&mstr,newline);
+                            makestr(&mstr,preinchar);
+                        }
+                    }    
+                    
+                    else{
+                        
+                        if(preinchar == '\\'){
+                            continue;
+                        }
+                        
+                        makestr(&mstr,preinchar);
+                    }
+
+                                     
+                }while((inchar >= 32 && inchar <= 255)|| inchar == '\n');
             }
 
             else{
@@ -426,12 +513,12 @@ void backslash(mystring_t *str){
             int count = 0;
             makestr(str,inchar); 
             inchar = getchar();
-            if((inchar >= 'a' && inchar <= 'f')|| (inchar >= 'A' && inchar <= 'F') || (inchar >= '0' && inchar <= '9') && inchar == EOF){
+            if((inchar >= '0' && inchar <= '9') || (inchar >= 'a' && inchar <= 'z') || (inchar >= 'A' && inchar <= 'Z')){
                 do{
                     makestr(str,inchar); 
                     inchar = getchar();
                     count++;
-                }while((inchar >= 'a' && inchar <= 'f')|| (inchar >= 'A' && inchar <= 'F') || (inchar >= '0' && inchar <= '9') && inchar == EOF && count < 7);
+                }while(count < 8 && ((inchar >= 'a' && inchar <= 'f') || (inchar >= 'A' && inchar <= 'F') || (inchar >= '0' && inchar <= '9') && inchar != EOF));
 
                 if(inchar == '}'){
                     makestr(str,inchar); 
