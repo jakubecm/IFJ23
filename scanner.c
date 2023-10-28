@@ -211,6 +211,7 @@ token_t get_next_token(){
                     }
 
                     else{
+                        preinchar = inchar;
                         myungetc(inchar);
                         token.type = TOK_UNDERSCORE;
                         return token;
