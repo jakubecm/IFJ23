@@ -5,15 +5,12 @@
  *  @authors Norman Babiak (xbabia01)
  */
 
-#include "token.h"
-#include "stack.h"
+#ifndef EXPRESSION_H
+#define EXPRESSION_H
 
-typedef struct analysis {
-    stack_terminal_t* tok1;
-    stack_terminal_t* tok2;
-    stack_terminal_t* tok3;
-    sem_data_type_t end_type;
-} analysis_t;
+#include "token.h"
+#include "parser.h"
+#include "stack.h"
 
 /**
  *  @brief Function for getting the precedence from the table
@@ -28,3 +25,5 @@ int precedence(stack_terminal_t* top, token_t* input);
  *  @param
  */
 void exp_parsing(parser_t* parserData);
+
+#endif

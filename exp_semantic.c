@@ -9,9 +9,7 @@
 //      ADDING GENERATORS
 
 #include "exp_semantic.h"
-#include "expression.h"
 #include "error.h"
-#include "stack.h"
 
 error_t error;
 
@@ -31,13 +29,11 @@ sem_data_type_t tok_type(token_t token) {
         case TOK_DQUESTMK:
             return SEM_OPERATOR;
         case TOK_INT:
-        case TOK_EINT:
         case K_INT:
         case K_INTE:
         case K_INTQ:
             return SEM_INT;
         case TOK_DOUBLE:
-        case TOK_EDOUBLE:
         case K_DOUBLE:
         case K_DOUBLEE:
         case K_DOUBLEQ:
@@ -67,13 +63,11 @@ sem_data_type_t tok_term_type(stack_terminal_t* token) {
         case TOK_DQUESTMK:
             return SEM_OPERATOR;
         case TOK_INT:
-        case TOK_EINT:
         case K_INT:
         case K_INTE:
         case K_INTQ:
             return SEM_INT;
         case TOK_DOUBLE:
-        case TOK_EDOUBLE:
         case K_DOUBLE:
         case K_DOUBLEE:
         case K_DOUBLEQ:

@@ -5,16 +5,16 @@
  *  @authors Norman Babiak (xbabia01)
  */
 
-#include <stdio.h>
+#ifndef EXP_SEMANTIC_H
+#define EXP_SEMANTIC_H
 
-typedef enum sem_data_type {
-    SEM_OPERATOR,
-    SEM_INT,
-    SEM_FLOAT,
-    SEM_STRING,
-    SEM_BOOL,
-    SEM_UNDEF
-} sem_data_type_t;
+#include <stdio.h>
+#include "expression.h"
+
+struct analysis;
+
+sem_data_type_t tok_type(token_t token);
+sem_data_type_t tok_term_type(stack_terminal_t* token);
 
 /**
  *  @brief Function to check the semantic of the expression given to expression parser
@@ -25,3 +25,6 @@ typedef enum sem_data_type {
  *  @param end_type - the final type of the expression (including generator changes)
  */
 bool sem_analysis(analysis_t* analysis);
+
+
+#endif // EXP_SEMANTIC_H

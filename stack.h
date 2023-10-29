@@ -6,20 +6,38 @@
  *  @authors Jakub Ráček (xracek12)
  */
 
+#ifndef STACK_H
+#define STACK_H
+
 #include <stdbool.h>
 #include "token.h"
-#include "exp_semantic.h"
+
+typedef enum sem_data_type {
+    SEM_OPERATOR,
+    SEM_INT,
+    SEM_FLOAT,
+    SEM_STRING,
+    SEM_BOOL,
+    SEM_UNDEF
+} sem_data_type_t;
 
 /**
  *  @brief Struct to represent nodes in a tree. Each has a token, type of it,
  *         pointer to children if they exist.
  */
+
 typedef struct stack_terminal {
     sem_data_type_t data;
     token_type_t type;
-    bool term;
-    stack_terminal_t* right;
+    struct stack_terminal* right;
 } stack_terminal_t;
+
+typedef struct analysis {
+    stack_terminal_t* tok1;
+    stack_terminal_t* tok2;
+    stack_terminal_t* tok3;
+    sem_data_type_t end_type;
+} analysis_t;
 
 typedef struct Node {
     void *data;
@@ -100,3 +118,4 @@ stack_terminal_t* terminal_init(token_t symbol, bool term);
  */
 stack_terminal_t* terminal_free(stack_terminal_t* terminal);
 
+#endif // STACK_H

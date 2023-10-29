@@ -7,10 +7,7 @@
 
 #include <stdio.h>
 #include "error.h"
-#include "expression.h"
-#include "stack.h"
 #include "exp_semantic.h"
-#include "parser.h"
 
 #define TABLE_SIZE 20
 
@@ -42,7 +39,9 @@ static char precedence_tab[TABLE_SIZE][TABLE_SIZE] =
 };
 
 int precedence(stack_terminal_t* top, token_t* input) {
-    if(iskeyw(input)) // TODO
+    if(iskeyw(input) == true) {
+        input->type = TOK_DOLLAR;
+    }
     if(top->type == TOK_MLSTRING) {
         top->type = TOK_STRING;
     }
