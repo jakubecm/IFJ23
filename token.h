@@ -17,33 +17,34 @@ typedef enum token_type
 {
     // TOKENS
     TOK_PLUS,          // '+'
-    TOK_COLON,         // :
-    TOK_MUL,           // *
     TOK_MINUS,         // -
-    TOK_COMMA,         // ,
-    TOK_ARROW,         // ->
-    TOK_LESS,          // <
-    TOK_LESSEQ,        // <=
-    TOK_GREATER,       // >
-    TOK_GREATEREQ,     // >=
+    TOK_MUL,           // *
+    TOK_DIV,           // ÷
     TOK_EQUAL,         // ==
     TOK_NOTEQUAL,      // !=
-    TOK_ASSIGNMENT,    // =
-    TOK_LCURLYBRACKET, // {
-    TOK_RCURLYBRACKET, // }
-    TOK_LBRACKET,      // (
-    TOK_RBRACKET,      // )
-    TOK_QUESTMK,       // ?
+    TOK_LESS,          // <
+    TOK_GREATER,       // >
+    TOK_LESSEQ,        // <=
+    TOK_GREATEREQ,     // >=
     TOK_DQUESTMK,      // ??
     TOK_NOT,           // !
-    TOK_EOF,           // end of file
-    TOK_UNDERSCORE,    // _
+    TOK_LBRACKET,      // (
+    TOK_RBRACKET,      // )
+    TOK_IDENTIFIER,    // identifier
     TOK_INT,           // integer literal (eg. 2,3,4..)
     TOK_DOUBLE,        // double/float (decimal) literal (eg. 2.3, 4.5)
     TOK_STRING,        // string literal (eg. "hello world")
+    TOK_NIL,           // nil
+    TOK_COLON,         // :
+    TOK_COMMA,         // ,
+    TOK_ARROW,         // ->
+    TOK_ASSIGNMENT,    // =
+    TOK_LCURLYBRACKET, // {
+    TOK_RCURLYBRACKET, // }
+    TOK_QUESTMK,       // ?
+    TOK_EOF,           // end of file
+    TOK_UNDERSCORE,    // _
     TOK_MLSTRING,      // multiline string 
-    TOK_DIV,           // ÷
-    TOK_IDENTIFIER,    // identifier
     TOK_BOOL,          // boolean
     TOK_UNDEF,         // undefined
 
