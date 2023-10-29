@@ -34,8 +34,9 @@ typedef enum token_type
     TOK_INT,           // integer literal (eg. 2,3,4..)
     TOK_DOUBLE,        // double/float (decimal) literal (eg. 2.3, 4.5)
     TOK_STRING,        // string literal (eg. "hello world")
-    TOK_NIL,           // nil
+    K_NIL,             // nil (keyword, here due to precedence table)
     TOK_DOLLAR,        // $
+    TOK_ENDMARKER,     // symbol used for precedence analysis (dont move it from here)
     TOK_COLON,         // :
     TOK_COMMA,         // ,
     TOK_ARROW,         // ->
@@ -55,7 +56,6 @@ typedef enum token_type
     K_VAR,     // var
     K_WHILE,   // while
     K_LET,     // let
-    K_NIL,     // nil
     K_FUNC,    // func
     K_DOUBLE,  // double
     K_DOUBLEQ, // double?
@@ -69,7 +69,6 @@ typedef enum token_type
     K_RETURN,  // return
 
     // ONLY FOR EXP PARSER
-    TOK_ENDMARKER,
     TOK_NTERM,
 
 } token_type_t;
