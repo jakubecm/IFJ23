@@ -20,7 +20,7 @@ typedef struct analysis {
  *  @param top - Top token from the stack
  *  @param input - Input token from scanner
  */ 
-int precedence(stack_terminal_t* top, token_t input);
+int precedence(stack_terminal_t* top, token_t* input);
 
 /**
  *  @brief Function for parsing expressions

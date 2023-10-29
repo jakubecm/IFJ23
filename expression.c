@@ -12,75 +12,49 @@
 #include "exp_semantic.h"
 #include "parser.h"
 
-#define TABLE_SIZE 16
+#define TABLE_SIZE 20
 
 error_t error;
 
-//NEED TO RECHECK THE TABLE!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 static char precedence_tab[TABLE_SIZE][TABLE_SIZE] =
 {
-    //   +-  */   ==   !=    <    >   <=   >=   ??    !    (    )    i    $
-    {   '>', '>', '<', '<', '<', '<', '<', '<', '<', '>', '<', '>', '<', '>' },  // +-
-    {   '<', '>', '<', '<', '<', '<', '<', '<', '<', '>', '<', '>', '<', '>' },  // */
-    {   '>', '>', 'X', 'X', 'X', 'X', 'X', 'X', '<', '>', '<', '>', '<', '>' },  // ==
-    {   '>', '>', 'X', 'X', 'X', 'X', 'X', 'X', '<', '>', '<', '>', '<', '>' },  // !=
-    {   '>', '>', 'X', 'X', 'X', 'X', 'X', 'X', '<', '>', '<', '>', '<', '>' },  // <
-    {   '>', '>', 'X', 'X', 'X', 'X', 'X', 'X', '<', '>', '<', '>', '<', '>' },  // >
-    {   '>', '>', 'X', 'X', 'X', 'X', 'X', 'X', '<', '>', '<', '>', '<', '>' },  // <=
-    {   '>', '>', 'X', 'X', 'X', 'X', 'X', 'X', '<', '>', '<', '>', '<', '>' },  // >=
-    {   '>', '>', '>', '>', '>', '>', '>', '>', '<', '>', '<', '>', '<', '>' },  // ??
-    {   '<', '<', '<', '<', '<', '<', '<', '<', '<', 'X', '<', '>', '<', '>' },  // !
-    {   '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '=', '<', 'X' },  // (
-    {   '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', 'X', '>', 'X', '>' },  // )
-    {   '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', 'X', '>', 'X', '>' },  // i
-    {   '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', 'X', '<', 'X' }   // $
+    //   +    -    *    /   ==   !=    <    >   <=   >=   ??    !    (    )    id  int  flo  str  nil   $
+    {   '>', '>', '<', '<', '>', '>', '>', '>', '>', '>', '>', '<', '<', '>', '<', '<', '<', '<', '<', '>' },  // +
+    {   '>', '>', '<', '<', '>', '>', '>', '>', '>', '>', '>', '<', '<', '>', '<', '<', '<', '<', '<', '>' },  // -
+    {   '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '<', '<', '>', '<', '<', '<', '<', '<', '>' },  // *
+    {   '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '<', '<', '>', '<', '<', '<', '<', '<', '>' },  // /
+    {   '<', '<', '<', '<', 'X', 'X', 'X', 'X', 'X', 'X', '>', '<', '<', '>', '<', '<', '<', '<', '<', '>' },  // ==
+    {   '<', '<', '<', '<', 'X', 'X', 'X', 'X', 'X', 'X', '>', '<', '<', '>', '<', '<', '<', '<', '<', '>' },  // !=
+    {   '<', '<', '<', '<', 'X', 'X', 'X', 'X', 'X', 'X', '>', '<', '<', '>', '<', '<', '<', '<', '<', '>' },  // <
+    {   '<', '<', '<', '<', 'X', 'X', 'X', 'X', 'X', 'X', '>', '<', '<', '>', '<', '<', '<', '<', '<', '>' },  // >
+    {   '<', '<', '<', '<', 'X', 'X', 'X', 'X', 'X', 'X', '>', '<', '<', '>', '<', '<', '<', '<', '<', '>' },  // <=
+    {   '<', '<', '<', '<', 'X', 'X', 'X', 'X', 'X', 'X', '>', '<', '<', '>', '<', '<', '<', '<', '<', '>' },  // >=
+    {   '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '>', '<', '<', '<', '<', '<', '>' },  // ??
+    {   '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', 'X', '<', '>', '<', '<', '<', '<', '<', '>' },  // !
+    {   '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '=', '<', '<', '<', '<', '<', 'X' },  // (
+    {   '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', 'X', '>', 'X', 'X', 'X', 'X', 'X', '>' },  // )
+    {   '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', 'X', '>', 'X', 'X', 'X', 'X', 'X', '>' },  // id
+    {   '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', 'X', '>', 'X', 'X', 'X', 'X', 'X', '>' },  // int
+    {   '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', 'X', '>', 'X', 'X', 'X', 'X', 'X', '>' },  // flo
+    {   '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', 'X', '>', 'X', 'X', 'X', 'X', 'X', '>' },  // str
+    {   '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', 'X', '>', 'X', 'X', 'X', 'X', 'X', '>' },  // nil
+    {   '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', 'X', '<', '<', '<', '<', '<', 'X' }   // $
 };
 
-int get_precedence_value(token_type_t type) {
-    switch (type) {
-        case TOK_PLUS:
-        case TOK_MINUS:
-            return 0;
-        case TOK_MUL:
-        case TOK_DIV:
-            return 1;
-        case TOK_EQUAL:
-        case TOK_NOTEQUAL:
-        case TOK_LESS:
-        case TOK_GREATER:
-        case TOK_GREATEREQ:
-        case TOK_LESSEQ:
-            return 2;
-        case TOK_DQUESTMK:
-            return 3;
-        case TOK_NOT:
-            return 4;
-        case TOK_LBRACKET:
-            return 5;
-        case TOK_RBRACKET:
-            return 6;
-        case TOK_IDENTIFIER:
-        case TOK_INT:
-        case TOK_DOUBLE:
-        case TOK_STRING:
-            return 7;
-        case TOK_DOLLAR:
-            return 8;
-        default:
-            return -1;
+int precedence(stack_terminal_t* top, token_t* input) {
+    if(iskeyw(input)) // TODO
+    if(top->type == TOK_MLSTRING) {
+        top->type = TOK_STRING;
     }
-}
-
-int precedence(stack_terminal_t* top, token_t input) {
-    int result1 = get_precedence_value(top->type);
-    int result2 = get_precedence_value(input.type);
-
-    if (result1 == -1 || result2 == -1) {
-        //TODO ERROR
-        return -1;
+    if(input->type == TOK_MLSTRING) {
+        input->type = TOK_STRING;
     }
 
-    return precedence_tab[result1][result2];
+    if (top->type >= 20 || input->type >= 20) {
+        return '>';
+    }
+
+    return precedence_tab[top->type][input->type];
 }
 
 int get_num(Stack* stack, analysis_t* analysis) {
@@ -139,7 +113,8 @@ void shift(Stack* stack, parser_t* parserData, sem_data_type_t input_type) {
 void reduce(Stack* stack, int num, analysis_t* analysis) {
     switch(num) {
         case 1:
-            if(analysis->tok1->type == TOK_INT || analysis->tok1->type == TOK_DOUBLE || analysis->tok1->type == TOK_STRING) { //operand rule, ADD SEM CHECK TO OPERATOR
+            if(analysis->tok1->type == TOK_INT || analysis->tok1->type == TOK_DOUBLE || analysis->tok1->type == TOK_STRING || analysis->tok1->type == TOK_IDENTIFIER || analysis->tok1->type == TOK_NIL) { 
+                //operand rule
                 stack_push_token(stack, analysis->tok1->data, TOK_NTERM);
 
             } else {
@@ -210,7 +185,7 @@ void exp_parsing(parser_t* parserData)  {
             parserData->token.type = TOK_DOLLAR;
         }
 
-        int prec = precedence(tmp, parserData->token);
+        int prec = precedence(tmp, &parserData->token);
         input_type = tok_type(parserData->token);
 
         switch(prec) {
