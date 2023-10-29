@@ -114,6 +114,6 @@ void tokdestroy(token_t *token);
  * 
  *   @param token structer for token
  */ 
-void iskeyw(token_t *token);
+bool iskeyw(token_t *token);
 
 #endif

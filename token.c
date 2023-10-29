@@ -26,35 +26,42 @@ void tokdestroy(token_t *token){
     token->attribute.string = NULL;
 }
 
-void iskeyw(token_t *token){
+bool iskeyw(token_t *token){
     char inchar;
 
     if(strcmp(token->attribute.string, "if") == 0){
         token->type = K_IF;
+        return true;
     }
 
     else if(strcmp(token->attribute.string, "else") == 0){
         token->type = K_ELSE;
+        return true;
     }
 
     else if(strcmp(token->attribute.string, "var") == 0){
         token->type = K_VAR;
+        return true;
     }
 
     else if(strcmp(token->attribute.string, "while") == 0){
         token->type = K_WHILE;
+        return true;
     }
 
     else if(strcmp(token->attribute.string, "let") == 0){
         token->type = K_LET;
+        return true;
     }
 
     else if(strcmp(token->attribute.string, "nil") == 0){
         token->type = K_NIL;
+        return true;
     }
 
     else if(strcmp(token->attribute.string, "func") == 0){
         token->type = K_FUNC;
+        return true;
     }
 
     else if(strcmp(token->attribute.string, "Double") == 0){
@@ -62,15 +69,18 @@ void iskeyw(token_t *token){
 
         if(inchar == '?'){
             token->type = K_DOUBLEQ;
+            return true;
         }
 
         else if(inchar == '!'){
             token->type = K_DOUBLEE;
+            return true;
         }
 
         else{
             myungetc(inchar);
             token->type = K_DOUBLE;
+            return true;
         }
     }
 
@@ -79,15 +89,18 @@ void iskeyw(token_t *token){
 
         if(inchar == '?'){
             token->type = K_INTQ;
+            return true;
         }
 
         else if(inchar == '!'){
             token->type = K_INTE;
+            return true;
         }
 
         else{
             myungetc(inchar);
             token->type = K_INT;
+            return true;
         }
     }
 
@@ -96,19 +109,27 @@ void iskeyw(token_t *token){
 
         if(inchar == '?'){
             token->type = K_STRINGQ;
+            return true;
         }
 
         else if(inchar == '!'){
             token->type = K_STRINGE;
+            return true;
         }
 
         else{
             myungetc(inchar);
             token->type = K_STRING;
+            return true;
         }
     }
 
     else if(strcmp(token->attribute.string, "return") == 0){
         token->type = K_RETURN;
+        return true;
+    }
+
+    else{
+        return false;
     }
 }
