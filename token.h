@@ -35,6 +35,7 @@ typedef enum token_type
     TOK_DOUBLE,        // double/float (decimal) literal (eg. 2.3, 4.5)
     TOK_STRING,        // string literal (eg. "hello world")
     TOK_NIL,           // nil
+    TOK_DOLLAR,        // $
     TOK_COLON,         // :
     TOK_COMMA,         // ,
     TOK_ARROW,         // ->
@@ -68,7 +69,6 @@ typedef enum token_type
     K_RETURN,  // return
 
     // ONLY FOR EXP PARSER
-    TOK_DOLLAR,
     TOK_ENDMARKER,
     TOK_NTERM,
 
