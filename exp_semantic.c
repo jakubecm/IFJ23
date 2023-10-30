@@ -29,21 +29,14 @@ sem_data_type_t tok_type(token_t token) {
         case TOK_DQUESTMK:
             return SEM_OPERATOR;
         case TOK_INT:
-        case K_INT:
-        case K_INTE:
-        case K_INTQ:
             return SEM_INT;
         case TOK_DOUBLE:
-        case K_DOUBLE:
-        case K_DOUBLEE:
-        case K_DOUBLEQ:
             return SEM_FLOAT;
         case TOK_STRING:
         case TOK_MLSTRING:
-        case K_STRING:
-        case K_STRINGE:
-        case K_STRINGQ:
             return SEM_STRING;
+        case K_NIL:
+            return SEM_NIL;
     }
 }
 
@@ -63,43 +56,68 @@ sem_data_type_t tok_term_type(stack_terminal_t* token) {
         case TOK_DQUESTMK:
             return SEM_OPERATOR;
         case TOK_INT:
-        case K_INT:
-        case K_INTE:
-        case K_INTQ:
             return SEM_INT;
         case TOK_DOUBLE:
-        case K_DOUBLE:
-        case K_DOUBLEE:
-        case K_DOUBLEQ:
             return SEM_FLOAT;
         case TOK_STRING:
         case TOK_MLSTRING:
-        case K_STRING:
-        case K_STRINGE:
-        case K_STRINGQ:
             return SEM_STRING;
+        case K_NIL:
+            return SEM_NIL;
     }
 }
+
+bool is_string(sem_data_type_t data) {
+    return (data == SEM_STRING);
+}
+
+bool is_int(sem_data_type_t data) {
+    return (data == SEM_INT);
+}
+
+bool is_float(sem_data_type_t data) {
+    return (data == SEM_FLOAT);
+}
+
 
 bool sem_analysis(analysis_t* analysis) {
     bool tok1_float = false, tok3_float = false;
 
     switch(analysis->tok2->type) {   
         case TOK_PLUS:
-        case TOK_MINUS:
-        case TOK_MUL:
             analysis->end_type = SEM_FLOAT;
-            if((analysis->tok1->data == SEM_STRING) && (analysis->tok3->data == SEM_STRING) && (analysis->tok2->type = TOK_PLUS)) {
+            if((is_string(analysis->tok1->data)) && (is_string(analysis->tok3->data))) {
                 analysis->end_type = TOK_STRING;
                 break;
                }
             
-            if((analysis->tok1->data == SEM_STRING) || (analysis->tok3->data == SEM_STRING)) {
+            if((is_string(analysis->tok1->data)) || (is_string(analysis->tok3->data))) {
                 error = ERR_SEM_TYPE;
                 return false;
                }
 
-            if((analysis->tok1->data == SEM_INT) && (analysis->tok3->data == SEM_INT)) {
+            if((is_int(analysis->tok1->data)) && (is_int(analysis->tok3->data))) {
+                analysis->end_type = SEM_INT;
+                break;
+               }
+            
+            tok1_float = true;
+            tok3_float = true;
+
+        case TOK_MINUS:
+        case TOK_MUL:
+            analysis->end_type = SEM_FLOAT;
+            if((is_string(analysis->tok1->data)) && (is_string(analysis->tok3->data))) {
+                analysis->end_type = TOK_STRING;
+                break;
+               }
+            
+            if((is_string(analysis->tok1->data)) || (is_string(analysis->tok3->data))) {
+                error = ERR_SEM_TYPE;
+                return false;
+               }
+
+            if((is_int(analysis->tok1->data)) && (is_int(analysis->tok3->data))) {
                 analysis->end_type = SEM_INT;
                 break;
                }
@@ -109,7 +127,7 @@ bool sem_analysis(analysis_t* analysis) {
 
         case TOK_DIV:
             analysis->end_type = SEM_FLOAT;
-            if((analysis->tok1->data == SEM_STRING) || (analysis->tok3->data == SEM_STRING)) {
+            if((is_string(analysis->tok1->data)) || (is_string(analysis->tok3->data))) {
                 error = ERR_SEM_TYPE;
                 return false;
                }
