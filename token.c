@@ -8,16 +8,17 @@
 #include "token.h"
 #include "str.h"
 #include "scanner.h"
+#include "error.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+extern error_t error;
 
 void tokinit(token_t *token, int lenght){
     token->attribute.string = (char*)malloc(lenght * sizeof(char));
     if(token->attribute.string == NULL){
-        fprintf(stderr,"memory_error");
-        exit(1);
+        error = ERR_INTERNAL;
     }
 }
 
