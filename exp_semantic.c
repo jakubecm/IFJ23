@@ -37,11 +37,13 @@ sem_data_type_t tok_type(token_t token) {
             return SEM_STRING;
         case K_NIL:
             return SEM_NIL;
+        default:
+            return SEM_UNDEF;
     }
 }
 
 sem_data_type_t tok_term_type(stack_terminal_t* token) { 
-    switch(token->data) {
+    switch(token->type) {
         case TOK_NOT:
         case TOK_PLUS:
         case TOK_MINUS:
@@ -64,6 +66,8 @@ sem_data_type_t tok_term_type(stack_terminal_t* token) {
             return SEM_STRING;
         case K_NIL:
             return SEM_NIL;
+        default:
+            return SEM_UNDEF;
     }
 }
 
@@ -103,6 +107,7 @@ bool sem_analysis(analysis_t* analysis) {
             
             tok1_float = true;
             tok3_float = true;
+            break;
 
         case TOK_MINUS:
         case TOK_MUL:
@@ -124,6 +129,7 @@ bool sem_analysis(analysis_t* analysis) {
             
             tok1_float = true;
             tok3_float = true;
+            break;
 
         case TOK_DIV:
             analysis->end_type = SEM_FLOAT;
@@ -151,6 +157,9 @@ bool sem_analysis(analysis_t* analysis) {
             break;
 
         case TOK_DQUESTMK:
+        default:
+            error = ERR_SEM_TYPE;
+            return false;
     }
 
     if(tok1_float) {
@@ -160,4 +169,6 @@ bool sem_analysis(analysis_t* analysis) {
     if(tok3_float) {
         //generate code for conversion
     }
+
+    return false;
 }
