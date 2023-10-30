@@ -7,6 +7,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "error.h"
 #include "stack.h"
 
@@ -29,7 +30,7 @@ bool stack_pop(Stack *s) {
 
     Node *topNode = s->top;
     s->top = topNode->right;
-    void *data = topNode->data;
+    s->top->data = topNode->data;
     free(topNode);
     return true;
 }
@@ -55,7 +56,7 @@ void stack_push_token(Stack* stack, sem_data_type_t data_type, token_type_t toke
     new_token->data = data_type;
     new_token->type = token_type;
 
-    push(stack, new_token);
+    stack_push(stack, new_token);
 }
 
 stack_terminal_t* stack_top_token(Stack* stack) {
@@ -124,12 +125,6 @@ bool stack_pop_token(Stack* stack) {
 
     stack_terminal_t* token = stack->top->data;
     free(token);
-    pop(stack);
+    stack_pop(stack);
     return true;
-}
-
-void stack_pop_more(Stack* stack, int number) {
-    for(int i = 0; i < number; i++) {
-        stack_pop_token(stack);
-    }
 }

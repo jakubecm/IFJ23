@@ -96,27 +96,6 @@ stack_terminal_t* stack_top_terminal(Stack* stack);
  *  @param stack - Stack to be popped from
  *  @return True if pop was successfull, else false
  */
-bool stack_pop(Stack* stack);
-
-/**
- *  @brief Pops stack multiple times
- *  @param stack - Stack to be popped from
- *  @param number - Number indicating how many pops are going to happen
- */
-void stack_pop_more(Stack* stack, int number);
-
-/**
- *  @brief Initializes new stack terminal with it's information
- *  @param symbol - Symbol to be used
- *  @param term - Indicates for stack if symbol is terminal or not
- *  @return New term/symbol for stack
- */ 
-stack_terminal_t* terminal_init(token_t symbol, bool term);
-
-/**
- *  @brief Frees stack_terminal_t
- *  @param terminal - Highest terminal in the tree
- */
-stack_terminal_t* terminal_free(stack_terminal_t* terminal);
+bool stack_pop_token(Stack* stack);
 
 #endif // STACK_H
