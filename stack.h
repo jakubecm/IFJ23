@@ -18,6 +18,7 @@ typedef enum sem_data_type {
     SEM_FLOAT,
     SEM_STRING,
     SEM_BOOL,
+    SEM_NIL,
     SEM_UNDEF
 } sem_data_type_t;
 

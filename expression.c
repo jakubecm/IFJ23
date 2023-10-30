@@ -39,7 +39,7 @@ static char precedence_tab[TABLE_SIZE][TABLE_SIZE] =
 };
 
 int precedence(stack_terminal_t* top, token_t* input) {
-    if(iskeyw(input) == true) {
+    if(iskeyw(input) == true && input->type != K_NIL) {
         input->type = TOK_DOLLAR;
     }
     if(top->type == TOK_MLSTRING) {
@@ -112,7 +112,7 @@ void shift(Stack* stack, parser_t* parserData, sem_data_type_t input_type) {
 void reduce(Stack* stack, int num, analysis_t* analysis) {
     switch(num) {
         case 1:
-            if(analysis->tok1->type == TOK_INT || analysis->tok1->type == TOK_DOUBLE || analysis->tok1->type == TOK_STRING || analysis->tok1->type == TOK_IDENTIFIER || analysis->tok1->type == TOK_NIL) { 
+            if(analysis->tok1->type == TOK_INT || analysis->tok1->type == TOK_DOUBLE || analysis->tok1->type == TOK_STRING || analysis->tok1->type == TOK_IDENTIFIER || analysis->tok1->type == K_NIL) { 
                 //operand rule
                 stack_push_token(stack, analysis->tok1->data, TOK_NTERM);
 
