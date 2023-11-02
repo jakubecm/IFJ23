@@ -90,83 +90,139 @@ bool is_operator(sem_data_type_t data) {
     return (data = SEM_OPERATOR);
 }
 
+bool is_number(sem_data_type_t data) {
+    return (is_float(data) || is_int(data));
+}
 
-bool sem_analysis(analysis_t* analysis) {
-
-    switch(analysis->tok2->type) {   
+bool check_operator_compatibility(stack_terminal_t* operator, stack_terminal_t* left, stack_terminal_t* right) {
+    switch(operator->type) {
         case TOK_PLUS:
-            analysis->end_type = SEM_FLOAT;
-            if((is_string(analysis->tok1->data)) && (is_string(analysis->tok3->data))) {
-                analysis->end_type = TOK_STRING;
-                break;
-               }
-            
-            if((is_string(analysis->tok1->data)) || (is_string(analysis->tok3->data))) {
-                error = ERR_SEM_TYPE;
-                return false;
-               }
-
-            if((is_int(analysis->tok1->data)) && (is_int(analysis->tok3->data))) {
-                analysis->end_type = SEM_INT;
-                break;
-               }
-            
-            //gen from int to float
-            break;
+            return (is_string(left->data) && is_string(right->data)) ||
+                   (is_number(left->data) && is_number(right->data));
 
         case TOK_MINUS:
         case TOK_MUL:
-            analysis->end_type = SEM_FLOAT;
-            if((is_string(analysis->tok1->data)) || (is_string(analysis->tok3->data))) {
-                error = ERR_SEM_TYPE;
-                return false;
-               }
-
-            if((is_int(analysis->tok1->data)) && (is_int(analysis->tok3->data))) {
-                analysis->end_type = SEM_INT;
-                break;
-               }
-            
-            //gen from int to float
-            break;
-
         case TOK_DIV:
-            analysis->end_type = SEM_FLOAT;
-            if((is_string(analysis->tok1->data)) || (is_string(analysis->tok3->data))) {
-                error = ERR_SEM_TYPE;
-                return false;
-               }
-            
-            //gen from int to float
-            break;
-
+            return is_number(left->data) && is_number(right->data);
+        
         case TOK_LESS:
         case TOK_GREATER:
         case TOK_EQUAL:
         case TOK_NOTEQUAL:
         case TOK_GREATEREQ:
         case TOK_LESSEQ:
-            analysis->end_type = SEM_BOOL;
-
-            if(analysis->tok1->data != analysis->tok3->data) {
-                //gen from int to float
-            }
-            break;
+            return is_number(left->data) && is_number(right->data);
 
         case TOK_DQUESTMK:
-            if(is_nil(analysis->tok1->data) && (!is_operator(analysis->tok3->data))) {
-                analysis->end_type = analysis->tok3->data;
-
-            } else if(!is_operator(analysis->tok1->data) && (is_nil(analysis->tok3->data))) {
-                analysis->end_type = analysis->tok1->data;
-            } else if(is_nil(analysis->tok1->data) && (is_nil))
-
-            break;
+            return true;
 
         default:
             error = ERR_SEM_TYPE;
-            return false;
+            break;
+    }
+
+    error = ERR_SEM_TYPE;
+    return false;
+}
+
+int get_result_type(stack_terminal_t* operator, stack_terminal_t* left, stack_terminal_t* right) {
+    if(operator->type == TOK_PLUS) {
+        if(is_number(left->data) && is_number(right->data)) {
+            if(is_int(left->data) && is_int(right->data)) {
+                return SEM_INT;
+            } else {
+                //left, right to float gen
+                return SEM_FLOAT;
+            }
+        } else {
+            return SEM_STRING;
+        }
+    }
+
+    if(operator->type == TOK_MINUS || operator->type == TOK_MUL || operator->type == TOK_DIV) {
+        if(is_number(left->data) && is_number(right->data)) {
+            if(is_int(left->data) && is_int(right->data)) {
+                return SEM_INT;
+            } else {
+                //left, right to float gen
+                return SEM_FLOAT;
+            }
+        }
+    }
+
+    if(operator->type == TOK_LESS || operator->type == TOK_GREATER || operator->type == TOK_EQUAL ||
+       operator->type == TOK_NOTEQUAL || operator->type == TOK_GREATEREQ || operator->type == TOK_LESSEQ) {
+        if(right->data != left->data) {
+            //left, right to float gen
+        }
+        //printf("to bool\n");
+        return SEM_BOOL;
+    }
+
+    if(operator->type == TOK_DQUESTMK) {
+        if(is_nil(right->data)) {
+            return left->data;
+
+        } else if(is_nil(right->data) && is_nil(left->data)) {
+            return SEM_NIL;
+
+        } else if(is_nil(left->data)) {
+            return right->data;
+
+        } else {
+            return left->data;
+        }
+    }
+
+    return SEM_UNDEF;
+}
+
+bool sem_analysis(analysis_t* analysis) {
+    if (!check_operator_compatibility(analysis->tok2, analysis->tok1, analysis->tok3)) {
+        error = ERR_SEM_TYPE;
+        //printf("here\n");
+        return false;
+    }
+    //printf("here 1\n");
+    analysis->end_type = get_result_type(analysis->tok2, analysis->tok1, analysis->tok3);
+    if(analysis->end_type == SEM_UNDEF) {
+        error = ERR_SEM_TYPE;
+        return false;
     }
 
     return true;
 }
+
+/**
+int main() {
+    stack_terminal_t* tok1 = malloc(sizeof(stack_terminal_t)); // Allocate memory for tok1
+    stack_terminal_t* tok2 = malloc(sizeof(stack_terminal_t)); // Allocate memory for tok2
+    stack_terminal_t* tok3 = malloc(sizeof(stack_terminal_t)); // Allocate memory for tok3
+
+    tok2->type = TOK_DQUESTMK;
+    tok1->type = K_NIL;
+    tok3->type = K_NIL;
+    tok1->data = tok_term_type(tok1);
+    tok2->data = tok_term_type(tok2);
+    tok3->data = tok_term_type(tok3);
+
+    analysis_t analysis;
+    analysis.tok1 = tok1;
+    analysis.tok2 = tok2;
+    analysis.tok3 = tok3;
+    analysis.end_type = SEM_UNDEF;
+
+    printf("%d %d %d\n", analysis.tok1->type, analysis.tok2->type, analysis.tok3->type);
+
+    sem_analysis(&analysis);
+    printf("END TYPE: %d\n", analysis.end_type);
+    printf("%d\n", error);
+
+
+    free(tok1); // Free the allocated memory when done
+    free(tok2);
+    free(tok3);
+
+    return 0;
+}
+*/
