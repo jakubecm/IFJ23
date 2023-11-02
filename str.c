@@ -7,8 +7,11 @@
  */
 
 #include "str.h"
+#include "error.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+extern error_t error;
 
 const int STR_CHUNK = 10;
 
@@ -29,8 +32,7 @@ void initstr(mystring_t *str){
 
     str->string = (char*)malloc(str->capacity * sizeof(char));
     if(str->string == NULL){
-        fprintf(stderr,"memory_error");
-        exit(1);
+        error = ERR_INTERNAL;
     }
 }
 
@@ -39,8 +41,7 @@ void addcap(mystring_t *str){
 
     str->string = realloc(str->string,str->capacity * sizeof(char));
     if(str->string == NULL){
-        fprintf(stderr,"memory_error");
-        exit(1);
+        error = ERR_INTERNAL;
     }
 }
 

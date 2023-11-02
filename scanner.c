@@ -26,12 +26,14 @@ token_t get_next_token(){
     int state = START;
     int inchar;
     int preinchar;
+    int whitespace = 0;
 
     while(true){
         if(state == COMMENT || state == START){
             inchar = getchar();
         }
-        
+
+        whitespace--;         
         
         if(inchar == EOF){
             token.type = TOK_EOF;
@@ -83,6 +85,7 @@ token_t get_next_token(){
             }
 
             else if(isspace(inchar)){
+                whitespace = 2;
                 state = START;
             }
 
@@ -155,9 +158,14 @@ token_t get_next_token(){
                 }
 
                 else{
-                    myungetc(inchar);
-                    token.type = TOK_NOT;
-                    return token;
+                    if(whitespace != 1){
+                        myungetc(inchar);
+                        token.type = TOK_NOT;
+                        return token;
+                    }
+                    else{
+                        error = ERR_LEX;
+                    }
                 }
             }
 
