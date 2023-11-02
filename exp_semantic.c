@@ -5,8 +5,7 @@
  *  @authors Norman Babiak (xbabia01)
  */
 
-//TODO: PR_DQUE
-//      ADDING GENERATORS
+//TODO: ADDING GENERATORS
 
 #include "exp_semantic.h"
 #include "error.h"
@@ -83,9 +82,16 @@ bool is_float(sem_data_type_t data) {
     return (data == SEM_FLOAT);
 }
 
+bool is_nil(sem_data_type_t data) {
+    return (data == SEM_NIL);
+}
+
+bool is_operator(sem_data_type_t data) {
+    return (data = SEM_OPERATOR);
+}
+
 
 bool sem_analysis(analysis_t* analysis) {
-    bool tok1_float = false, tok3_float = false;
 
     switch(analysis->tok2->type) {   
         case TOK_PLUS:
@@ -105,18 +111,12 @@ bool sem_analysis(analysis_t* analysis) {
                 break;
                }
             
-            tok1_float = true;
-            tok3_float = true;
+            //gen from int to float
             break;
 
         case TOK_MINUS:
         case TOK_MUL:
             analysis->end_type = SEM_FLOAT;
-            if((is_string(analysis->tok1->data)) && (is_string(analysis->tok3->data))) {
-                analysis->end_type = TOK_STRING;
-                break;
-               }
-            
             if((is_string(analysis->tok1->data)) || (is_string(analysis->tok3->data))) {
                 error = ERR_SEM_TYPE;
                 return false;
@@ -127,8 +127,7 @@ bool sem_analysis(analysis_t* analysis) {
                 break;
                }
             
-            tok1_float = true;
-            tok3_float = true;
+            //gen from int to float
             break;
 
         case TOK_DIV:
@@ -138,8 +137,7 @@ bool sem_analysis(analysis_t* analysis) {
                 return false;
                }
             
-            tok1_float = true;
-            tok3_float = true;
+            //gen from int to float
             break;
 
         case TOK_LESS:
@@ -151,24 +149,24 @@ bool sem_analysis(analysis_t* analysis) {
             analysis->end_type = SEM_BOOL;
 
             if(analysis->tok1->data != analysis->tok3->data) {
-                tok1_float = true;
-                tok3_float = true;
+                //gen from int to float
             }
             break;
 
         case TOK_DQUESTMK:
+            if(is_nil(analysis->tok1->data) && (!is_operator(analysis->tok3->data))) {
+                analysis->end_type = analysis->tok3->data;
+
+            } else if(!is_operator(analysis->tok1->data) && (is_nil(analysis->tok3->data))) {
+                analysis->end_type = analysis->tok1->data;
+            } else if(is_nil(analysis->tok1->data) && (is_nil))
+
+            break;
+
         default:
             error = ERR_SEM_TYPE;
             return false;
     }
 
-    if(tok1_float) {
-        //generate code for conversion
-    }
-
-    if(tok3_float) {
-        //generate code for conversion
-    }
-
-    return false;
+    return true;
 }
