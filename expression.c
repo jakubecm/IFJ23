@@ -112,24 +112,10 @@ void shift(Stack* stack, parser_t* parserData, sem_data_type_t input_type) {
 void reduce(Stack* stack, int num, analysis_t* analysis) {
     switch(num) {
         case 1:
-            if(analysis->tok1->type == TOK_INT || analysis->tok1->type == TOK_DOUBLE || analysis->tok1->type == TOK_STRING || analysis->tok1->type == TOK_IDENTIFIER || analysis->tok1->type == K_NIL) { 
+            if(analysis->tok1->type == TOK_INT || analysis->tok1->type == TOK_DOUBLE || analysis->tok1->type == TOK_STRING 
+               || analysis->tok1->type == TOK_IDENTIFIER || analysis->tok1->type == K_NIL) { 
                 //operand rule
                 stack_push_token(stack, analysis->tok1->data, TOK_NTERM);
-
-            } else {
-                error = ERR_SYN;
-                return;
-            }
-            break;
-
-        case 2:
-            if(analysis->tok1->type == TOK_NOT && analysis->tok2->type == TOK_NTERM) { //NOT rule
-                if(analysis->tok2->data != SEM_STRING) {
-                    error = ERR_SEM_INCOMPATIBLE;
-                    return;
-                }
-            stack_push_token(stack, SEM_INT, TOK_NTERM);
-            //GENERATOR
 
             } else {
                 error = ERR_SYN;
