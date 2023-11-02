@@ -96,6 +96,6 @@ stack_terminal_t* stack_top_terminal(Stack* stack);
  *  @param stack - Stack to be popped from
  *  @return True if pop was successfull, else false
  */
-bool stack_pop_token(Stack* stack);
+bool stack_pop(Stack* stack);
 
 #endif // STACK_H

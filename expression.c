@@ -73,10 +73,10 @@ int get_num(Stack* stack, analysis_t* analysis) {
             analysis->tok3 = top;
         }
         top = top->right;
-        stack_pop(stack);
+        stack_pop_token(stack);
     }
 
-    stack_pop(stack); //pop endmarker
+    stack_pop_token(stack); //pop endmarker
 
     if(num == 0 || num > 3) {
         error = ERR_SYN;
