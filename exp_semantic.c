@@ -38,6 +38,9 @@ sem_data_type_t tok_type(token_t token) {
             return SEM_STRING;
         case K_NIL:
             return SEM_NIL;
+        case TOK_IDENTIFIER:
+            //ADD SEARCH IN SYMTABLE
+            return SEM_STRING;
         default:
             return SEM_UNDEF;
     }
@@ -69,6 +72,8 @@ sem_data_type_t tok_term_type(stack_terminal_t* token) {
             return SEM_STRING;
         case K_NIL:
             return SEM_NIL;
+        case TOK_IDENTIFIER:
+            //ADD SEARCH IN SYMTABLE
         default:
             return SEM_UNDEF;
     }

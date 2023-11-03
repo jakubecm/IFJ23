@@ -210,7 +210,10 @@ void exp_parsing(parser_t* parserData)  {
             case '<':
                 printf("==============SHIFT\n");
                 shift(&stack, parserData, input_type);
-                print_stack_contents(&stack);
+                if(error != ERR_OK) {
+                    return;
+                }
+                //print_stack_contents(&stack);
                 printf("==============END SHIFT\n");
                 break;
 
@@ -218,11 +221,17 @@ void exp_parsing(parser_t* parserData)  {
                 analysis->end_type = SEM_UNDEF;
                 printf("==============REDUCE\n");
                 num = get_num(&stack, analysis); //get token amount from stack before endmarker
+                if(error != ERR_OK) {
+                    return;
+                }
                 printf("num reduce: %d\n", num);
                 printf("BEFORE REDUCE\n");
                 //print_stack_contents(&stack);
 
                 reduce(&stack, num, analysis);
+                if(error != ERR_OK) {
+                    return;
+                }
                 print_stack_contents(&stack);
 
 
@@ -261,7 +270,7 @@ void exp_parsing(parser_t* parserData)  {
     free(analysis);
 }
 
-/*
+
 int main() {
     error = ERR_OK;
     Stack stack;
@@ -279,4 +288,3 @@ int main() {
 
     printf("exit: %d\n", error);
 }
-*/
