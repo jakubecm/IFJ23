@@ -49,6 +49,8 @@ typedef struct {
     Node *top;
 } Stack;
 
+void analysis_init(analysis_t *data);
+void analysis_free(analysis_t *data);
 /**
  *   @brief Initialize new stack
  *   @param stack - Stack that is being created

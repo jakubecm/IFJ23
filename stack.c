@@ -11,6 +11,18 @@
 #include "error.h"
 #include "stack.h"
 
+void analysis_init(analysis_t *data) {
+    data->tok1 = malloc(sizeof(stack_terminal_t));
+    data->tok2 = malloc(sizeof(stack_terminal_t));
+    data->tok3 = malloc(sizeof(stack_terminal_t));
+}
+
+void analysis_free(analysis_t *data) {
+    free(data->tok1);
+    free(data->tok2);
+    free(data->tok3);
+}
+
 // obecne funkce
 void stack_init(Stack *stack) {
     stack->top = NULL;
