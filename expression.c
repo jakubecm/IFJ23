@@ -36,7 +36,7 @@ static char precedence_tab[TABLE_SIZE][TABLE_SIZE] =
     {   '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', 'X', '>', 'X', 'X', 'X', 'X', 'X', '>' },  // str
     {   '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '>', 'X', '>', 'X', 'X', 'X', 'X', 'X', '>' },  // nil
     {   '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', 'X', '<', '<', '<', '<', '<', 'X' }   // $
-}; //$<E + <(
+};
 
 int precedence(stack_terminal_t* top, token_t* input) {
     //if(iskeyw(input) == true && input->type != K_NIL) {
@@ -151,9 +151,11 @@ void exp_parsing(parser_t* parserData)  {
     Stack stack;
     stack_init(&stack);
     stack_terminal_t *tmp;
-    bool continue_while = true;
+    token_t endToken;
+    bool continue_while = true, end = false;
     sem_data_type_t stack_type, input_type;
     int num = 0;
+
     analysis_t* analysis = malloc(sizeof(analysis_t));
     analysis->tok1 = malloc(sizeof(stack_terminal_t));
     analysis->tok2 = malloc(sizeof(stack_terminal_t));
@@ -196,8 +198,10 @@ void exp_parsing(parser_t* parserData)  {
             parserData->token = get_next_token();
         }
 
-        if((parserData->token.type == TOK_IDENTIFIER || parserData->token.type == TOK_INT || parserData->token.type == TOK_STRING || parserData->token.type == TOK_DOUBLE || parserData->token.type == TOK_EOF) 
-            && (stack_top_token(&stack)->type == TOK_NTERM || tmp->type == TOK_IDENTIFIER || tmp->type == TOK_INT || tmp->type == TOK_STRING || tmp->type == TOK_DOUBLE)) {
+        if((parserData->token.type == TOK_IDENTIFIER || parserData->token.type == TOK_EOF) 
+            && (stack_top_token(&stack)->type == TOK_NTERM || tmp->type == TOK_IDENTIFIER || tmp->type == TOK_INT || tmp->type == TOK_STRING || tmp->type == TOK_DOUBLE || tmp->type == TOK_RBRACKET)) {
+            endToken = parserData->token;
+            end = true;
             parserData->token.type = TOK_DOLLAR;
         }
 
@@ -257,6 +261,10 @@ void exp_parsing(parser_t* parserData)  {
         }
     }
 
+    if(end == true) {
+        parserData->token = endToken;
+    }
+
     //Last token on the top of stack
     if(stack_top_token(&stack)->type == TOK_NTERM) {
         stack_type = stack_top_token(&stack)->data;
@@ -286,5 +294,6 @@ int main() {
     exp_parsing(parserData);
     print_stack_contents(&stack);
 
+    printf("Parser next token: %d", parserData->token.type);
     printf("exit: %d\n", error);
 }
