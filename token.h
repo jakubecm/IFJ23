@@ -115,4 +115,6 @@ void tokdestroy(token_t *token);
  */ 
 bool iskeyw(token_t *token);
 
+bool is_literal(token_type_t token);
+
 #endif

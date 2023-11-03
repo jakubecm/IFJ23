@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-extern error_t error;
+error_t error;
 
 void tokinit(token_t *token, int lenght){
     token->attribute.string = (char*)malloc(lenght * sizeof(char));
@@ -133,4 +133,9 @@ bool iskeyw(token_t *token){
     else{
         return false;
     }
+}
+
+bool is_literal(token_type_t token) {
+    return (token== TOK_INT || token == TOK_DOUBLE || token == TOK_STRING ||
+            token == TOK_IDENTIFIER || token == K_NIL);
 }
