@@ -126,39 +126,6 @@ void reduce(Stack* stack, int num, analysis_t* analysis) {
     } 
 }
 
-/** Helping function for reduce **/
-int get_num(Stack* stack, analysis_t* analysis) {
-    int num = 0;
-    stack_terminal_t *top = stack_top_token(stack);
-    analysis->tok1 = NULL;
-    analysis->tok2 = NULL;
-    analysis->tok3 = NULL;
-
-    while (top != NULL && top->type != TOK_ENDMARKER) {
-        num++;
-        if (num == 1) {
-            analysis->tok1 = top;
-        } else if (num == 2) {
-            analysis->tok2 = top;
-        } else if (num == 3) {
-            analysis->tok3 = top;
-        }
-        stack_pop_token(stack);
-        top = stack_top_token(stack);
-    }
-
-    stack_pop_token(stack); //pop endmarker
-    printf("NUM COUNT %d\n", num);
-    print_stack_contents(stack);
-
-    if(num > 3) {
-        error = ERR_SYN;
-        return -1;
-    }
-
-    return num;
-}
-
 void exp_parsing(parser_t* parserData)  {
     /** Structure declarations **/
     Stack stack;
@@ -221,7 +188,7 @@ void exp_parsing(parser_t* parserData)  {
             case '>':
                 analysis->end_type = SEM_UNDEF;
                 printf("==============REDUCE\n");
-                num = get_num(&stack, analysis); //get token amount from stack before endmarker
+                num = stack_count_after(&stack, analysis); //get token amount from stack before endmarker
                 if(error != ERR_OK) {
                     return;
                 }
@@ -266,6 +233,7 @@ void exp_parsing(parser_t* parserData)  {
     printf("end type: %d\n", stack_type);
     //...
 
+    //stack_free_token(&stack);
     analysis_free(analysis);
     free(analysis);
 }
@@ -273,16 +241,10 @@ void exp_parsing(parser_t* parserData)  {
 
 int main() {
     error = ERR_OK;
-    Stack stack;
-    stack_init(&stack);
-    printf("%p\n", stack.top);
-
-    print_stack_contents(&stack);
     
     parser_t* parserData = malloc(sizeof(parser_t));
     parserData->token = get_next_token();
     exp_parsing(parserData);
-    print_stack_contents(&stack);
 
     printf("Parser next token: %d", parserData->token.type);
     printf("exit: %d\n", error);

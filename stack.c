@@ -11,6 +11,8 @@
 #include "error.h"
 #include "stack.h"
 
+error_t err;
+
 void analysis_init(analysis_t *data) {
     data->tok1 = malloc(sizeof(stack_terminal_t));
     data->tok2 = malloc(sizeof(stack_terminal_t));
@@ -52,8 +54,6 @@ void *stack_top(Stack *s) {
 }
 // konec obecnych funkci
 
-error_t err;
-
 void stack_push_token(Stack* stack, sem_data_type_t data_type, token_type_t token_type) {
     stack_terminal_t* new_token = (stack_terminal_t*) malloc(sizeof(stack_terminal_t));
     if(new_token == NULL) {
@@ -89,9 +89,8 @@ stack_terminal_t* stack_top_terminal(Stack* stack) {
 
 bool stack_push_after(Stack* stack, sem_data_type_t data_type, token_type_t token_type) {
     Node* prev = NULL;
-    Node* continueTok = stack->top;
 
-    while (continueTok != NULL) {
+    for(Node* continueTok = stack->top; continueTok != NULL; continueTok = continueTok->right) {
         if (((stack_terminal_t*)continueTok->data)->type < TOK_ENDMARKER) {
             Node* new_node = (Node*)malloc(sizeof(Node));
             if (!new_node) {
@@ -110,20 +109,48 @@ bool stack_push_after(Stack* stack, sem_data_type_t data_type, token_type_t toke
 
             new_node->data = new_terminal;
 
-            if (prev == NULL) {
-                new_node->right = stack->top;
-                stack->top = new_node;
-            } else {
-                new_node->right = prev->right;
-                prev->right = new_node;
-            }
+            // Check if 'prev' is NULL
+            new_node->right = (prev == NULL) ? stack->top : prev->right;
+            // If 'prev' is NULL, update 'stack->top' to point to the new node; otherwise, update 'prev->right' to point to the new node
+            (prev == NULL) ? (stack->top = new_node) : (prev->right = new_node);
 
             return true;
         }
+
         prev = continueTok;
-        continueTok = continueTok->right;
     }
+
     return false;
+}
+
+int stack_count_after(Stack* stack, analysis_t* analysis) {
+    int num = 0;
+    stack_terminal_t *top = stack_top_token(stack);
+    analysis->tok1 = NULL;
+    analysis->tok2 = NULL;
+    analysis->tok3 = NULL;
+
+    while (top != NULL && top->type != TOK_ENDMARKER) {
+        num++;
+        if (num == 1) {
+            analysis->tok1 = top;
+        } else if (num == 2) {
+            analysis->tok2 = top;
+        } else if (num == 3) {
+            analysis->tok3 = top;
+        }
+        stack_pop_token(stack);
+        top = stack_top_token(stack);
+    }
+
+    stack_pop_token(stack);
+
+    if(num > 3 || num == 0) {
+        error = ERR_SYN;
+        return -1;
+    }
+
+    return num;
 }
 
 stack_terminal_t* stack_pop_token(Stack* stack) {
@@ -141,7 +168,8 @@ void stack_free_token(Stack* stack) {
 
     while(stack->top != NULL) {
         stack_terminal_t* popped_token = stack_pop_token(stack);
-        free(popped_token); 
+        free(popped_token);
+        stack_pop(stack);
     }
 }
 
@@ -156,53 +184,3 @@ void print_stack_contents(Stack *stack) {
     }
     printf("\n");
 }
-/**
-int main() {
-    Stack stack;
-    stack_init(&stack);
-    printf("%p\n", stack.top);
-
-    //$<E + <E * < I 
-    //$< E + <E * E
-    stack_push_token(&stack, SEM_UNDEF, TOK_DOLLAR);
-    stack_push_after(&stack, SEM_UNDEF, TOK_ENDMARKER);
-
-    stack_push_token(&stack, SEM_INT, TOK_NTERM);
-    stack_push_token(&stack, SEM_OPERATOR, TOK_PLUS);
-    stack_push_token(&stack, SEM_INT, TOK_NTERM);
-
-
-    stack_push_after(&stack, SEM_UNDEF, TOK_ENDMARKER);
-    stack_push_token(&stack, SEM_OPERATOR, TOK_MUL);
-
-    stack_push_after(&stack, SEM_UNDEF, TOK_ENDMARKER);
-    stack_push_token(&stack, SEM_INT, TOK_INT);
-
-    print_stack_contents(&stack);
-
-    stack_terminal_t* top;
-    top = stack_top_terminal(&stack);
-    printf("%d\n", top->type);
-    top = stack_top_token(&stack);
-    printf("%d\n", top->type);
-
-    stack_pop_token(&stack);
-    stack_pop_token(&stack);
-
-    stack_push_token(&stack, SEM_INT, TOK_NTERM);
-
-    stack_pop_token(&stack);
-    stack_pop_token(&stack);
-    stack_pop_token(&stack);
-    stack_pop_token(&stack);
-
-    stack_push_token(&stack, SEM_INT, TOK_NTERM);
-
-    printf("Second print ========\n");
-    print_stack_contents(&stack);
-
-    stack_free_token(&stack);
-
-    return 0;
-}
-*/

@@ -73,6 +73,8 @@ void stack_push_token(Stack* stack, sem_data_type_t data_type, token_type_t toke
  */ 
 bool stack_push_after(Stack* stack, sem_data_type_t data_type, token_type_t token_type);
 
+int stack_count_after(Stack* stack, analysis_t* analysis);
+
 /**
  *  @brief Completely frees the stack and resets values like before init
  *  @param stack - Stack that will be freed
@@ -99,6 +101,8 @@ stack_terminal_t* stack_top_terminal(Stack* stack);
  *  @return True if pop was successfull, else false
  */
 stack_terminal_t* stack_pop_token(Stack* stack);
+
+void stack_free_token(Stack* stack);
 
 void print_stack_contents(Stack *stack);
 
