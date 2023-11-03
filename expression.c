@@ -198,8 +198,9 @@ void exp_parsing(parser_t* parserData)  {
             parserData->token = get_next_token();
         }
 
-        if((parserData->token.type == TOK_IDENTIFIER || parserData->token.type == TOK_EOF) 
-            && (stack_top_token(&stack)->type == TOK_NTERM || tmp->type == TOK_IDENTIFIER || tmp->type == TOK_INT || tmp->type == TOK_STRING || tmp->type == TOK_DOUBLE || tmp->type == TOK_RBRACKET)) {
+        if((parserData->token.type == TOK_IDENTIFIER || parserData->token.type == TOK_EOF || parserData->token.type >= 20) 
+            && 
+           (stack_top_token(&stack)->type == TOK_NTERM || tmp->type == TOK_IDENTIFIER || tmp->type == TOK_INT || tmp->type == TOK_STRING || tmp->type == TOK_DOUBLE || tmp->type == TOK_RBRACKET)) {
             endToken = parserData->token;
             end = true;
             parserData->token.type = TOK_DOLLAR;
