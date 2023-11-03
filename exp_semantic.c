@@ -19,6 +19,8 @@ sem_data_type_t tok_type(token_t token) {
         case TOK_MINUS:
         case TOK_MUL:
         case TOK_DIV:
+        case TOK_LBRACKET:
+        case TOK_RBRACKET:
         case TOK_GREATER:
         case TOK_LESS:
         case TOK_EQUAL:
@@ -48,6 +50,8 @@ sem_data_type_t tok_term_type(stack_terminal_t* token) {
         case TOK_MINUS:
         case TOK_MUL:
         case TOK_DIV:
+        case TOK_LBRACKET:
+        case TOK_RBRACKET:
         case TOK_GREATER:
         case TOK_LESS:
         case TOK_EQUAL:
