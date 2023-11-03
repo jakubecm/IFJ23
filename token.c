@@ -139,3 +139,7 @@ bool is_literal(token_type_t token) {
     return (token== TOK_INT || token == TOK_DOUBLE || token == TOK_STRING ||
             token == TOK_IDENTIFIER || token == K_NIL);
 }
+
+bool is_bracket(token_type_t left, token_type_t middle, token_type_t right) {
+    return (left == TOK_LBRACKET && middle == TOK_NTERM && right == TOK_RBRACKET);
+}
