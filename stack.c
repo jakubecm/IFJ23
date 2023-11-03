@@ -144,7 +144,7 @@ void print_stack_contents(Stack *stack) {
     }
     printf("\n");
 }
-
+/**
 int main() {
     Stack stack;
     stack_init(&stack);
@@ -193,3 +193,4 @@ int main() {
 
     return 0;
 }
+*/
