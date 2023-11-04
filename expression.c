@@ -95,11 +95,14 @@ void handle_upcoming(parser_t* parserData, Stack* stack, bool* end, token_t* end
     }
 }
 
+
 /** Helping functions for main of the exp parser **/
 int precedence(stack_terminal_t* top, token_t* input) {
-    //if(iskeyw(input) == true && input->type != K_NIL) {
-    //    input->type = TOK_DOLLAR;
-    //}
+    if(input->type == TOK_IDENTIFIER) {
+        if(iskeyw(input) == true && input->type != K_NIL) {
+            input->type = TOK_DOLLAR;
+        }
+    }
     if(top->type == TOK_MLSTRING) {
         top->type = TOK_STRING;
     }
@@ -288,7 +291,7 @@ void exp_parsing(parser_t* parserData)  {
 
 int main() {
     error = ERR_OK;
-    
+
     parser_t* parserData = malloc(sizeof(parser_t));
     parserData->token = get_next_token();
     exp_parsing(parserData);
