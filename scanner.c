@@ -15,18 +15,23 @@
 
 error_t error;
 
-int myungetc(int inchar){
+void myungetc(int inchar){
     ungetc(inchar,stdin);
 }
 
 
 token_t get_next_token(){  
-    token_t token;    
+    token_t token;
+    mystring_t mstr; 
+    mystring_t str;   
+    mystring_t id;
+    mystring_t number;
     
     int state = START;
     int inchar;
     int preinchar;
     int whitespace = 0;
+    token.attribute.string = NULL;
 
     while(true){
         if(state == COMMENT || state == START){
@@ -271,7 +276,6 @@ token_t get_next_token(){
 
 
         case(NUM):
-            mystring_t number;
             initstr(&number);
             
             do{
@@ -358,7 +362,6 @@ token_t get_next_token(){
             break;
 
         case(ID):
-            mystring_t id;
             initstr(&id);
 
             if(preinchar == '_'){
@@ -368,7 +371,7 @@ token_t get_next_token(){
             do{
                 makestr(&id,inchar);
                 inchar = getchar();
-            }while(inchar == '_' || (inchar >= 'a' && inchar <= 'z')|| (inchar >= 'A' && inchar <= 'Z') || (inchar >= '0' && inchar <= '9') && inchar == EOF);
+            }while(inchar != EOF && ((inchar >= 'a' && inchar <= 'z') || (inchar >= 'A' && inchar <= 'Z') || (inchar >= '0' && inchar <= '9') || inchar == '_'));
             
             myungetc(inchar);
 
@@ -381,7 +384,6 @@ token_t get_next_token(){
 
 
         case(STRING):
-            mystring_t str;
             initstr(&str);
 
             do{
@@ -428,23 +430,21 @@ token_t get_next_token(){
 
             else{
                 error = ERR_LEX;
+                break;
             }
 
 
         case(MSTRING):
-            mystring_t mstr;
             initstr(&mstr);
             inchar = getchar();
             char newline = '\n';
 
             if(inchar == '\n'){
                 do{
-                    //makestr(&mstr,inchar);
                     preinchar = inchar;
                     inchar = getchar();
 
                     if(inchar == '\\'){                       
-                        //myungetc(inchar);
                         if(preinchar != '\\'){
                             makestr(&mstr,preinchar);
                         }
@@ -524,10 +524,13 @@ void backslash(mystring_t *str){
             inchar = getchar();
             if((inchar >= '0' && inchar <= '9') || (inchar >= 'a' && inchar <= 'z') || (inchar >= 'A' && inchar <= 'Z')){
                 do{
+                    if(count > 8){
+                        break;
+                    }
                     makestr(str,inchar); 
                     inchar = getchar();
                     count++;
-                }while(count < 8 && ((inchar >= 'a' && inchar <= 'f') || (inchar >= 'A' && inchar <= 'F') || (inchar >= '0' && inchar <= '9') && inchar != EOF));
+                }while(((inchar >= 'a' && inchar <= 'f') || (inchar >= 'A' && inchar <= 'F') || (inchar >= '0' && inchar <= '9')) && (inchar != EOF));
 
                 if(inchar == '}'){
                     makestr(str,inchar); 

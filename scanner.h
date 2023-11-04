@@ -45,7 +45,7 @@ token_t get_next_token(void);
  * 
  * @param backchar the char we want to return to stdin
 */
-int myungetc(int backchar);
+void myungetc(int backchar);
 
 /**
  * @brief Check if backlash chars is correct.

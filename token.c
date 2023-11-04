@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-error_t error;
+extern error_t error;
 
 void tokinit(token_t *token, int lenght){
     token->attribute.string = (char*)malloc(lenght * sizeof(char));
@@ -30,116 +30,113 @@ void tokdestroy(token_t *token){
 bool iskeyw(token_t *token){
     char inchar;
 
-    if(strcmp(token->attribute.string, "if") == 0){
-        token->type = K_IF;
-        return true;
-    }
-
-    else if(strcmp(token->attribute.string, "else") == 0){
-        token->type = K_ELSE;
-        return true;
-    }
-
-    else if(strcmp(token->attribute.string, "var") == 0){
-        token->type = K_VAR;
-        return true;
-    }
-
-    else if(strcmp(token->attribute.string, "while") == 0){
-        token->type = K_WHILE;
-        return true;
-    }
-
-    else if(strcmp(token->attribute.string, "let") == 0){
-        token->type = K_LET;
-        return true;
-    }
-
-    else if(strcmp(token->attribute.string, "nil") == 0){
-        token->type = K_NIL;
-        return true;
-    }
-
-    else if(strcmp(token->attribute.string, "func") == 0){
-        token->type = K_FUNC;
-        return true;
-    }
-
-    else if(strcmp(token->attribute.string, "Double") == 0){
-        inchar = getchar();
-
-        if(inchar == '?'){
-            token->type = K_DOUBLEQ;
+    if(token->attribute.string != NULL){
+            if(strcmp(token->attribute.string, "if") == 0){
+            token->type = K_IF;
             return true;
         }
 
-        else if(inchar == '!'){
-            token->type = K_DOUBLEE;
+        else if(strcmp(token->attribute.string, "else") == 0){
+            token->type = K_ELSE;
+            return true;
+        }
+
+        else if(strcmp(token->attribute.string, "var") == 0){
+            token->type = K_VAR;
+            return true;
+        }
+
+        else if(strcmp(token->attribute.string, "while") == 0){
+            token->type = K_WHILE;
+            return true;
+        }
+
+        else if(strcmp(token->attribute.string, "let") == 0){
+            token->type = K_LET;
+            return true;
+        }
+
+        else if(strcmp(token->attribute.string, "nil") == 0){
+            token->type = K_NIL;
+            return true;
+        }
+
+        else if(strcmp(token->attribute.string, "func") == 0){
+            token->type = K_FUNC;
+            return true;
+        }
+
+        else if(strcmp(token->attribute.string, "Double") == 0){
+            inchar = getchar();
+
+            if(inchar == '?'){
+                token->type = K_DOUBLEQ;
+                return true;
+            }
+
+            else if(inchar == '!'){
+                token->type = K_DOUBLEE;
+                return true;
+            }
+
+            else{
+                myungetc(inchar);
+                token->type = K_DOUBLE;
+                return true;
+            }
+        }
+
+        else if(strcmp(token->attribute.string, "Int") == 0){
+            inchar = getchar();
+
+            if(inchar == '?'){
+                token->type = K_INTQ;
+                return true;
+            }
+
+            else if(inchar == '!'){
+                token->type = K_INTE;
+                return true;
+            }
+
+            else{
+                myungetc(inchar);
+                token->type = K_INT;
+                return true;
+            }
+        }
+
+        else if(strcmp(token->attribute.string, "String") == 0){
+            inchar = getchar();
+
+            if(inchar == '?'){
+                token->type = K_STRINGQ;
+                return true;
+            }
+
+            else if(inchar == '!'){
+                token->type = K_STRINGE;
+                return true;
+            }
+
+            else{
+                myungetc(inchar);
+                token->type = K_STRING;
+                return true;
+            }
+        }
+
+        else if(strcmp(token->attribute.string, "return") == 0){
+            token->type = K_RETURN;
             return true;
         }
 
         else{
-            myungetc(inchar);
-            token->type = K_DOUBLE;
-            return true;
+            return false;
         }
-    }
-
-    else if(strcmp(token->attribute.string, "Int") == 0){
-        inchar = getchar();
-
-        if(inchar == '?'){
-            token->type = K_INTQ;
-            return true;
-        }
-
-        else if(inchar == '!'){
-            token->type = K_INTE;
-            return true;
-        }
-
-        else{
-            myungetc(inchar);
-            token->type = K_INT;
-            return true;
-        }
-    }
-
-    else if(strcmp(token->attribute.string, "String") == 0){
-        inchar = getchar();
-
-        if(inchar == '?'){
-            token->type = K_STRINGQ;
-            return true;
-        }
-
-        else if(inchar == '!'){
-            token->type = K_STRINGE;
-            return true;
-        }
-
-        else{
-            myungetc(inchar);
-            token->type = K_STRING;
-            return true;
-        }
-    }
-
-    else if(strcmp(token->attribute.string, "return") == 0){
-        token->type = K_RETURN;
-        return true;
     }
 
     else{
         return false;
     }
-}
-
-bool is_literal(token_type_t token) {
-    return (token== TOK_INT || token == TOK_DOUBLE || token == TOK_STRING ||
-            token == TOK_IDENTIFIER || token == K_NIL);
-}
-
-bool is_bracket(token_type_t left, token_type_t middle, token_type_t right) {
-    return (left == TOK_LBRACKET && middle == TOK_NTERM && right == TOK_RBRACKET);
 }
