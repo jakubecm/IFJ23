@@ -72,16 +72,12 @@ stack_terminal_t* stack_top_token(Stack* stack) {
 }
 
 stack_terminal_t* stack_top_terminal(Stack* stack) {
-    Node* currentNode = stack->top;
-
-    while (currentNode != NULL) {
+    for (Node* currentNode = stack->top; currentNode != NULL; currentNode = currentNode->right) {
         stack_terminal_t* token = (stack_terminal_t*)currentNode->data;
 
         if (token != NULL && token->type < TOK_ENDMARKER) {
             return token;
         }
-
-        currentNode = currentNode->right;
     }
 
     return NULL;
@@ -109,9 +105,8 @@ bool stack_push_after(Stack* stack, sem_data_type_t data_type, token_type_t toke
 
             new_node->data = new_terminal;
 
-            // Check if 'prev' is NULL
-            new_node->right = (prev == NULL) ? stack->top : prev->right;
             // If 'prev' is NULL, update 'stack->top' to point to the new node; otherwise, update 'prev->right' to point to the new node
+            new_node->right = (prev == NULL) ? stack->top : prev->right;
             (prev == NULL) ? (stack->top = new_node) : (prev->right = new_node);
 
             return true;

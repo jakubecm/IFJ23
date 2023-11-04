@@ -12,17 +12,22 @@
 #include "parser.h"
 #include "stack.h"
 
-/**
- *  @brief Function for getting the precedence from the table
- *  @param top - Top token from the stack
- *  @param input - Input token from scanner
- */ 
-int precedence(stack_terminal_t* top, token_t* input);
+#ifdef DEBUG
+#define DEBUG_PRINT printf
+#else
+#define DEBUG_PRINT(...)
+#endif
+
+#define CLEANUP_RESOURCES(stack, analysis) do { \
+            /*stack_free_token(&(stack));*/     \
+            analysis_free((analysis));          \
+            free((analysis));                   \
+        } while (0)
+
 
 /**
- *  @brief Function for parsing expressions
- *  @param 
- *  @param
+ *  @brief Main function for parsing expressions
+ *  @param parserData - core parser structure for giving scanner and first token to exp parser.
  */
 void exp_parsing(parser_t* parserData);
 
