@@ -1,82 +1,15 @@
+/**
+ *  @file symtable.c
+ * 
+ * 
+ *  @authors Jakub Ráček (xracek12)
+ */
+
+#include <string.h>
+#include <stdint.h>
 #include "symtable.h"
-#include <stdio.h> // fprintf, stderr
-#include <stdlib.h> // malloc, free
-#include <stdint.h> // uint32_t
 
-size_t htab_bucket_count(htab_t * t) {
-    return t->arr_size;
-}
-
-void htab_clear(htab_t * t) {
-    for (size_t i = 0; i < t->arr_size; i++)    // projdu vsechny buckety v tabulce
-    { 
-        htab_item_t *item = t->arr_ptr[i];        // ziskam prvni prvek v bucketu
-        while (item != NULL)                    // dokud nedojdu na konec bucketu
-        {
-            htab_item_t *next = item->next;
-            htab_erase(t, item->pair.key);      // smazu prvek a posunu se na dalsi
-            item = next;
-        }
-    }
-}
-
-bool htab_erase(htab_t * t, htab_key_t key) {
-    size_t index = htab_hash_function(key) % t->arr_size;
-    htab_item_t *item = t->arr_ptr[index];
-    htab_item_t *prev = NULL; // predchazejici zaznam
-    while (item != NULL) {  // dokud nedojdu na konec bucketu
-        if (strcmp(item->pair.key, key) == 0) // hledam shodu zaznamu a hledaneho klice
-        {
-            if (prev == NULL) {
-                t->arr_ptr[index] = item->next; // pokud jsem vymazal prvni zaznam, tak ho nahradim dalsim
-            } else {
-                prev->next = item->next; // jinak vymazu zaznam a propojim predchozi a nasledujici
-            }
-
-            // uvolnim pamet
-            free((char *)item->pair.key);
-            free(item);
-            t->size--;
-            return true;
-        }
-
-        // jestli jsem nenalezl hledany zaznam, tak posunu ukazatele
-        prev = item;
-        item = item->next;
-    }
-    return false; // neuspel
-}
-
-htab_pair_t * htab_find(htab_t * t, htab_key_t key) {
-    htab_item_t *item = t->arr_ptr[htab_hash_function(key) % t->arr_size]; // najdu prvni zaznam v bucketu
-    
-    while (item != NULL) // dokud nedojdu na konec bucketu
-    {
-        if (!strcmp(item->pair.key, key)) { // hledam shodu zaznamu a hledaneho klice
-            return &(item->pair);
-        }
-        item = item->next; // posunu ukazatel na dalsi zaznam
-    }
-    return NULL;
-}
-
-void htab_for_each(htab_t * t, void (*f)(htab_pair_t *data)) {
-    for (size_t i = 0; i < t->arr_size; i++)    // projdu vsechny buckety v tabulce
-    { 
-        htab_item_t *item = t->arr_ptr[i];        // ziskam prvni prvek v bucketu
-        while (item != NULL)                    // dokud nedojdu na konec bucketu
-        {
-            f(&item->pair);                     // zavolam funkci f na kazdy prvek
-            item = item->next;
-        }
-    }
-}
-
-void htab_free(htab_t * t) {
-    htab_clear(t);
-    free(t->arr_ptr);
-    free(t);
-}
+// pomocné funkce
 
 size_t htab_hash_function(htab_key_t str) {
     uint32_t h = 0; // musí mít 32 bitů
@@ -85,92 +18,107 @@ size_t htab_hash_function(htab_key_t str) {
         h = 65599 * h + *p;
     return h;
 }
-
-htab_t *htab_init(size_t n) {
-    htab_t *table = malloc(sizeof(htab_t));
-    if (table == NULL) {
-        fprintf(stderr, "Error: Memory allocation failed.\n");
-        exit(1);
-    }
-    table->size = 0;
-    table->arr_size = n;
-    table->arr_ptr = malloc(n * sizeof(struct htab_item_t *));
-    if (table->arr_ptr == NULL) {
-        free(table);
-        fprintf(stderr, "Error: Memory allocation failed.\n");
-        exit(1);
-    }
-    for (size_t i = 0; i < n; i++) {
-        table->arr_ptr[i] = NULL;
+symbol_table *symbol_table_init(size_t size) {
+    symbol_table *table = malloc(sizeof(symbol_table));
+    table->size = size;
+    table->table = malloc(sizeof(symbol *) * size);
+    for (size_t i = 0; i < size; i++) {
+        table->table[i] = NULL;
     }
     return table;
 }
 
-htab_pair_t * htab_insert(htab_t *t, htab_key_t key) {
-    // vytvoření nové položky
-    htab_item_t *item;
-    item = malloc(sizeof(struct htab_item_t)); // alokace místa pro položku
-    if (item == NULL) {
-        fprintf(stderr, "Error: Memory allocation failed.\n");
-        exit(1);
+void symbol_table_free(symbol_table *table) {
+    for (size_t i = 0; i < table->size; i++) {
+        symbol *s = table->table[i];
+        while (s != NULL) {
+            symbol *next = s->next;
+            free(s->key);
+            free(s);
+            s = next;
+        }
+    }
+    free(table->table);
+    free(table);
+}
+
+// TODO: co kdyz mam funkci a promennou se stejnym nazvem? mozna staci pridat pred klic nejaky konstantni prefix?
+symbol *symbol_table_lookup(symbol_table *table, htab_key_t key) {
+    size_t hash = hash_function(key) % table->size;
+    symbol *s = table->table[hash];
+    while (s != NULL && strcmp(s->key, key) != 0) {
+        s = s->next;
+    }
+    return s;
+}
+
+int symbol_table_insert(symbol_table *table, htab_key_t key, void *value) {
+    size_t hash = hash_function(key) % table->size;
+    symbol *s = table->table[hash];
+    while (s != NULL && strcmp(s->key, key) != 0) {
+        s = s->next;
+    }
+    if (s != NULL) {
+        return 1; // symbol already exists
     }
 
-    item->pair.key = malloc(strlen(key) * sizeof(char) + 1); // alokace místa pro klíč
-    if (item->pair.key == NULL) {
-        free(item);
-        fprintf(stderr, "Error: Memory allocation failed.\n");
-        exit(1);
+    s = malloc(sizeof(symbol));
+    s->key = strdup(key);
+    s->value = value;
+    s->next = table->table[hash];
+    table->table[hash] = s;
+    return 0;
+}
+
+void symbol_table_remove(symbol_table *table, htab_key_t key) {
+    size_t hash = hash_function(key) % table->size;
+    symbol *prev = NULL;
+    symbol *s = table->table[hash];
+    while (s != NULL && strcmp(s->key, key) != 0) {
+        prev = s;
+        s = s->next;
     }
-    strcpy((char *)item->pair.key, key); // zkopírování klíče
-    item->next = NULL;
+    if (s == NULL) {
+        return; // symbol does not exist
+    }
 
-    size_t index = htab_hash_function(key) % t->arr_size; // výpočet indexu
-
-    // napojení nové položky do seznamu
-    htab_item_t *current = t->arr_ptr[index];
-    if (current == NULL) {
-        t->arr_ptr[index] = item; // pokud je bucket na indexu prázdný, položka se napojuje na začátek
+    if (prev == NULL) {
+        table->table[hash] = s->next;
     } else {
-        while (current->next != NULL) {
-            current = current->next; // hledam poslední prvek bucketu
-        }
-        current->next = item; // napojení na konec bucketu
+        prev->next = s->next;
     }
-
-    t->size++; // zvýšení počtu položek v tabulce
-
-    return &item->pair;
+    free(s->key);
+    free(s);
 }
 
-size_t htab_size(htab_t * t) {
-    return t->size;
-}
-
-void htab_resize(htab_t * t, size_t n) {
-    if (t == NULL || n <= 0) {
-        fprintf(stderr, "Error: Table is NULL.\n");
-        exit(99);
+void symbol_table_resize(symbol_table *table, size_t new_size) {
+    // alokujeme novou tabulku
+    symbol **new_table = malloc(sizeof(symbol *) * new_size);
+    for (size_t i = 0; i < new_size; i++) {
+        new_table[i] = NULL;
     }
 
-    htab_item_t **newArray = malloc(n * sizeof(struct htab_item_t *));
-    if (newArray == NULL) {
-        fprintf(stderr, "Error: Memory allocation failed.\n");
-        exit(99);
-    }
+    // přesouváme prvky ze staré tabulky do nové
+    for (size_t i = 0; i < table->size; i++) {
+        symbol *s = table->table[i];
+        while (s != NULL) {
+            symbol *next = s->next;
 
-    for (size_t i = 0; i < t->arr_size; i++) {
-        htab_item_t *item = t->arr_ptr[i];
-        while (item != NULL) {
-            htab_item_t *next = item->next;
-            size_t index = htab_hash_function(item->pair.key) % n;
-            item->next = newArray[index];
-            newArray[index] = item;
-            item = next;
+            // vypočítáme index nového prvku v nové tabulce
+            size_t hash = hash_function(s->key) % new_size;
+
+            // vložíme prvek do nové tabulky
+            s->next = new_table[hash];
+            new_table[hash] = s;
+
+            s = next;
         }
     }
 
-    htab_clear(t);
-    free(t->arr_ptr);
-    t->arr_ptr = newArray;
-    t->arr_size = n;
+    // uvolníme starou tabulku
+    free(table->table);
+
+    // nastavíme novou velikost tabulky
+    table->size = new_size;
+    table->table = new_table;
 }

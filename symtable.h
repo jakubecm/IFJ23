@@ -1,12 +1,17 @@
-#include <string.h>     // size_t
-#include <stdlib.h>     // size_t
-#include <stdbool.h>    // bool
+/**
+ *  @file symtable.h
+ * 
+ * 
+ *  @authors Jakub Ráček (xracek12)
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
 #include "token.h"
 
 typedef token_type_t variable_type_t;
 typedef token_attribute_t htab_attribute_t;
 typedef const char * htab_key_t;
-
 
 typedef struct htab_var {
     htab_attribute_t        value;
@@ -23,49 +28,65 @@ typedef union htab_value {
     htab_func_t func_id;
 } htab_value_t;
 
-typedef struct htab_entry {
-    char            *name;
-    htab_value_t    value;
-} htab_entry_t; 
+/**
+ * @brief Symbol table entry
+*/
+typedef struct symbol {
+    char *key;
+    htab_value_t *value;
+    struct symbol *next;
+} symbol;
 
-// Dvojice dat v tabulce:
-typedef struct htab_pair {
-    htab_key_t    key;          // klíč
-    htab_entry_t  entry;        // asociovaná hodnota
-} htab_pair_t; 
+/**
+ * @brief Symbol table
+*/
+typedef struct symbol_table {
+    size_t size;
+    symbol **table;
+} symbol_table;
 
-typedef struct htab_item_t {
-    htab_pair_t  pair;
-    htab_item_t *next;
-} htab_item_t;
 
-typedef struct htab {
-    size_t              size;
-    size_t              arr_size;
-    htab_item_t  **arr_ptr;
-} htab_t;               
-
-// Rozptylovací (hash) funkce (stejná pro všechny tabulky v programu)
-// Pokud si v programu definujete stejnou funkci, použije se ta vaše.
+/**
+ * @brief Creates new symbol table
+ * @return Pointer to new symbol table
+*/
 size_t htab_hash_function(htab_key_t str);
 
-// Funkce pro práci s tabulkou:
-htab_t *htab_init(size_t n);              // konstruktor tabulky
-void htab_resize(htab_t * t, size_t n);              // konstruktor tabulky
-size_t htab_size(htab_t * t);             // počet záznamů v tabulce
-size_t htab_bucket_count(htab_t * t);     // velikost pole
 
-htab_pair_t * htab_find(htab_t * t, htab_key_t key);  // hledání
-htab_pair_t * htab_lookup_add(htab_t * t, htab_key_t key);
+/**
+ * @brief Creates new symbol table
+ * @param size Size of the table
+ * @return Pointer to new symbol table
+*/
+symbol_table *symbol_table_init(size_t size);
 
-bool htab_erase(htab_t * t, htab_key_t key);    // ruší zadaný záznam
+/**
+ * @brief Inserts new symbol into the table
+ * @param table Pointer to the symbol table
+*/
+void symbol_table_free(symbol_table *table);
 
-// for_each: projde všechny záznamy a zavolá na ně funkci f
-// Pozor: f nesmí měnit klíč .key ani přidávat/rušit položky
-void htab_for_each(htab_t * t, void (*f)(htab_pair_t *data));
+/**
+ * @brief Inserts new symbol into the table
+ * @param table Pointer to the symbol table
+ * @param key Hash key of the symbol
+*/
+symbol *symbol_table_lookup(symbol_table *table, htab_key_t key);
 
-void htab_clear(htab_t * t);    // ruší všechny záznamy
-void htab_free(htab_t * t);     // destruktor tabulky
+/**
+ * @brief Inserts new symbol into the table
+ * @param table Pointer to the symbol table
+ * @param key Hash key of the symbol
+ * @param value Value of the symbol
+*/
+int symbol_table_insert(symbol_table *table, htab_key_t key, void *value);
 
-// výpočet a tisk statistik délky seznamů (min,max,avg) do stderr:
-void htab_statistics(htab_t * t);
+/**
+ * @brief Removes symbol from the table
+*/
+void symbol_table_remove(symbol_table *table, htab_key_t key);
+
+/**
+ * @brief Resizes the symbol table
+*/
+void symbol_table_resize(symbol_table *table, size_t new_size);
