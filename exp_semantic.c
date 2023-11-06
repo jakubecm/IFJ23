@@ -46,39 +46,6 @@ sem_data_type_t tok_type(token_t token) {
     }
 }
 
-sem_data_type_t tok_term_type(stack_terminal_t* token) { 
-    switch(token->type) {
-        case TOK_NOT:
-        case TOK_PLUS:
-        case TOK_MINUS:
-        case TOK_MUL:
-        case TOK_DIV:
-        case TOK_LBRACKET:
-        case TOK_RBRACKET:
-        case TOK_GREATER:
-        case TOK_LESS:
-        case TOK_EQUAL:
-        case TOK_NOTEQUAL:
-        case TOK_GREATEREQ:
-        case TOK_LESSEQ:
-        case TOK_DQUESTMK:
-            return SEM_OPERATOR;
-        case TOK_INT:
-            return SEM_INT;
-        case TOK_DOUBLE:
-            return SEM_FLOAT;
-        case TOK_STRING:
-        case TOK_MLSTRING:
-            return SEM_STRING;
-        case K_NIL:
-            return SEM_NIL;
-        case TOK_IDENTIFIER:
-            //ADD SEARCH IN SYMTABLE
-        default:
-            return SEM_UNDEF;
-    }
-}
-
 bool is_string(sem_data_type_t data) {
     return (data == SEM_STRING);
 }
@@ -114,9 +81,10 @@ bool check_operator_compatibility(stack_terminal_t* operator, stack_terminal_t* 
         case TOK_DIV:
             return is_number(left->data) && is_number(right->data);
         
+        case TOK_EQUAL:
+        //TODO string and string or int and int or double or double else error
         case TOK_LESS:
         case TOK_GREATER:
-        case TOK_EQUAL:
         case TOK_NOTEQUAL:
         case TOK_GREATEREQ:
         case TOK_LESSEQ:
@@ -162,6 +130,7 @@ int get_result_type(stack_terminal_t* operator, stack_terminal_t* left, stack_te
     if(operator->type == TOK_LESS || operator->type == TOK_GREATER || operator->type == TOK_EQUAL ||
        operator->type == TOK_NOTEQUAL || operator->type == TOK_GREATEREQ || operator->type == TOK_LESSEQ) {
         if(right->data != left->data) {
+            //Separate tok equal since it doesnt change 
             //left, right to float gen
         }
         //printf("to bool\n");

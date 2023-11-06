@@ -98,23 +98,26 @@ void handle_upcoming(parser_t* parserData, Stack* stack, bool* end, token_t* end
 
 /** Helping functions for main of the exp parser **/
 int precedence(stack_terminal_t* top, token_t* input) {
+    token_t tmpInput = *input;
+    stack_terminal_t tmpTop = *top;
+
     if(input->type == TOK_IDENTIFIER) {
         if(iskeyw(input) == true && input->type != K_NIL) {
-            input->type = TOK_DOLLAR;
+            tmpInput.type = TOK_DOLLAR;
         }
     }
     if(top->type == TOK_MLSTRING) {
-        top->type = TOK_STRING;
+        tmpTop.type = TOK_STRING;
     }
     if(input->type == TOK_MLSTRING) {
-        input->type = TOK_STRING;
+        tmpInput.type = TOK_STRING;
     }
 
     if (top->type >= 20 || input->type >= 20) {
-        return '>';
+        return 'X';
     }
 
-    return precedence_tab[top->type][input->type];
+    return precedence_tab[tmpTop.type][tmpInput.type];
 }
 
 void shift(Stack* stack, parser_t* parserData, sem_data_type_t input_type) {
@@ -244,6 +247,8 @@ void exp_parsing(parser_t* parserData)  {
     analysis_t* analysis = malloc(sizeof(analysis_t));
     analysis_init(analysis);
 
+    parserData->token = get_next_token();
+
     /** Variable declarations **/
     stack_terminal_t *tmp;
     token_t endToken; 
@@ -288,14 +293,14 @@ void exp_parsing(parser_t* parserData)  {
     CLEANUP_RESOURCES(stack, analysis);
 }
 
-
+#ifdef DEBUG
 int main() {
     error = ERR_OK;
 
     parser_t* parserData = malloc(sizeof(parser_t));
-    parserData->token = get_next_token();
     exp_parsing(parserData);
 
     DEBUG_PRINT("Parser next token: %d", parserData->token.type);
     DEBUG_PRINT("exit: %d\n", error);
 }
+#endif
