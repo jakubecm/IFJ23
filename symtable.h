@@ -28,12 +28,17 @@ typedef union htab_value {
     htab_func_t func_id;
 } htab_value_t;
 
+typedef struct data {
+    char            *name;
+    htab_value_t    value;
+} data_t; 
+
 /**
  * @brief Symbol table entry
 */
 typedef struct symbol {
     char *key;
-    htab_value_t *value;
+    htab_value_t data;
     struct symbol *next;
 } symbol;
 
