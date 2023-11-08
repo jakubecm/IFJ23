@@ -18,6 +18,7 @@ size_t htab_hash_function(htab_key_t str) {
         h = 65599 * h + *p;
     return h;
 }
+
 symbol_table_t *symbol_table_init(size_t size) {
     symbol_table_t *table = malloc(sizeof(symbol_table_t));
     table->size = size;
@@ -52,7 +53,7 @@ symbol *symbol_table_lookup(symbol_table_t *table, htab_key_t key) {
     return s;
 }
 
-int symbol_table_insert(symbol_table_t *table, htab_key_t key, void *value) {
+int symbol_table_insert(symbol_table_t *table, htab_key_t key, htab_value_t data) {
     size_t hash = hash_function(key) % table->size;
     symbol *s = table->table[hash];
     while (s != NULL && strcmp(s->key, key) != 0) {
@@ -63,11 +64,15 @@ int symbol_table_insert(symbol_table_t *table, htab_key_t key, void *value) {
     }
 
     s = malloc(sizeof(symbol));
-    s->key = strdup(key);
-    s->value = value;
+    s->key = malloc(strlen(key) + 1);
+    if (s->key == NULL) {
+        return 2; // memory allocation failed
+    }
+    strcpy(s->key, key);
+    s->data = data;
     s->next = table->table[hash];
     table->table[hash] = s;
-    return 0;
+    return 0; // success
 }
 
 void symbol_table_remove(symbol_table_t *table, htab_key_t key) {

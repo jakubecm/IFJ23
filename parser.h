@@ -21,6 +21,7 @@ typedef struct
     stack_t *stack;            // Stack instance
     htab_value_t *function;   // Current function
     token_t token;           // Current token
+    token_t next_token;      // Next token
 
 } parser_t;
 

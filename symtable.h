@@ -37,7 +37,7 @@ typedef struct data {
  * @brief Symbol table entry
 */
 typedef struct symbol {
-    char *key;
+    htab_key_t *key;
     htab_value_t data;
     struct symbol *next;
 } symbol;
@@ -78,13 +78,17 @@ void symbol_table_free(symbol_table_t *table);
 */
 symbol *symbol_table_lookup(symbol_table_t *table, htab_key_t key);
 
+data_t symbol_table_lookup_func(symbol_table_t *table, htab_key_t key);
+
+data_t symbol_table_lookup_var(symbol_table_t *table, htab_key_t key);
+
 /**
  * @brief Inserts new symbol into the table
  * @param table Pointer to the symbol table
- * @param key Hash key of the symbol
+ * @param key key of the symbol
  * @param value Value of the symbol
 */
-int symbol_table_insert(symbol_table_t *table, htab_key_t key, void *value);
+int symbol_table_insert(symbol_table_t *table, htab_key_t key, htab_value_t data);
 
 /**
  * @brief Removes symbol from the table
