@@ -349,17 +349,39 @@ token_t get_next_token(){
                 inchar = getchar();
             }
 
-            do{
-                makestr(&number,inchar);
-                inchar = getchar();
-            }while(inchar >= '0' && inchar <= '9');
+            if(inchar >= '0' && inchar <= '9'){
+                do{
+                    makestr(&number,inchar);
+                    inchar = getchar();
+                }while(inchar >= '0' && inchar <= '9');
+            }
+
+            else{
+                error = ERR_LEX;
+            }
+            
       
             myungetc(inchar);
-            token.attribute.decimal = atof(number.string);
-            token.type = TOK_DOUBLE;
-            return token;
 
-            break;
+            double dnum = atof(number.string);
+            int inum;
+
+            inum = (int) dnum;
+
+            if((dnum - inum) == 0){
+                token.attribute.number = inum;
+                token.type = TOK_INT;
+                
+                return token;
+            }
+
+            else{
+                token.attribute.decimal = dnum;
+                token.type = TOK_DOUBLE;
+
+                return token;
+            }
+            
 
         case(ID):
             initstr(&id);
