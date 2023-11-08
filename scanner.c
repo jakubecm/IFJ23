@@ -31,6 +31,7 @@ token_t get_next_token(){
     int inchar;
     int preinchar;
     int whitespace = 0;
+    int blockcomm;
     token.attribute.string = NULL;
 
     while(true){
@@ -198,6 +199,12 @@ token_t get_next_token(){
 
                 else if(inchar == '*'){
                     inchar = getchar();
+
+                    if(inchar == EOF){
+                        error = ERR_LEX;
+                        break;
+                    }
+                    
                     state = MCOMMENT;
                 }
 
@@ -258,21 +265,47 @@ token_t get_next_token(){
 
 
         case(MCOMMENT):
-            //TODO zanorene komentare a neukoncene komentare
-            while(inchar != '*'){
+            blockcomm = 1;
+
+            while(inchar != EOF){
+                if(inchar == '/'){
+                    inchar = getchar();
+
+                    if(inchar == '*'){
+                        blockcomm++;
+                        inchar = getchar();
+                    }
+                }
+
+                if(inchar == '*'){
+                    inchar = getchar();
+                    
+                    if(inchar == '*'){
+                        continue;
+                    }
+
+                    if(inchar == '/'){
+                        blockcomm--;
+
+                        if(blockcomm == 0){
+                            state = START;
+                            break;
+                        }
+                    }
+                }
+
                 inchar = getchar();
             }
 
-            inchar = getchar();
-
-            if(inchar != '/'){
-                state = MCOMMENT;
-            }
-
-            else{
+            if(blockcomm == 0){
                 state = START;
+                break;
             }
-            break;
+            
+            else{
+                error = ERR_LEX;
+                break;
+            }      
 
 
         case(NUM):
@@ -381,7 +414,7 @@ token_t get_next_token(){
 
                 return token;
             }
-            
+
 
         case(ID):
             initstr(&id);
@@ -544,6 +577,7 @@ void backslash(mystring_t *str){
             int count = 0;
             makestr(str,inchar); 
             inchar = getchar();
+            
             if((inchar >= '0' && inchar <= '9') || (inchar >= 'a' && inchar <= 'z') || (inchar >= 'A' && inchar <= 'Z')){
                 do{
                     if(count > 8){
