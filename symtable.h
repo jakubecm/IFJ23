@@ -45,10 +45,10 @@ typedef struct symbol {
 /**
  * @brief Symbol table
 */
-typedef struct symbol_table {
+typedef struct symbol_table_t {
     size_t size;
     symbol **table;
-} symbol_table;
+} symbol_table_t;
 
 
 /**
@@ -63,20 +63,20 @@ size_t htab_hash_function(htab_key_t str);
  * @param size Size of the table
  * @return Pointer to new symbol table
 */
-symbol_table *symbol_table_init(size_t size);
+symbol_table_t *symbol_table_init(size_t size);
 
 /**
  * @brief Inserts new symbol into the table
  * @param table Pointer to the symbol table
 */
-void symbol_table_free(symbol_table *table);
+void symbol_table_free(symbol_table_t *table);
 
 /**
  * @brief Inserts new symbol into the table
  * @param table Pointer to the symbol table
  * @param key Hash key of the symbol
 */
-symbol *symbol_table_lookup(symbol_table *table, htab_key_t key);
+symbol *symbol_table_lookup(symbol_table_t *table, htab_key_t key);
 
 /**
  * @brief Inserts new symbol into the table
@@ -84,14 +84,14 @@ symbol *symbol_table_lookup(symbol_table *table, htab_key_t key);
  * @param key Hash key of the symbol
  * @param value Value of the symbol
 */
-int symbol_table_insert(symbol_table *table, htab_key_t key, void *value);
+int symbol_table_insert(symbol_table_t *table, htab_key_t key, void *value);
 
 /**
  * @brief Removes symbol from the table
 */
-void symbol_table_remove(symbol_table *table, htab_key_t key);
+void symbol_table_remove(symbol_table_t *table, htab_key_t key);
 
 /**
  * @brief Resizes the symbol table
 */
-void symbol_table_resize(symbol_table *table, size_t new_size);
+void symbol_table_resize(symbol_table_t *table, size_t new_size);

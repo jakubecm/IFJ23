@@ -18,8 +18,8 @@ size_t htab_hash_function(htab_key_t str) {
         h = 65599 * h + *p;
     return h;
 }
-symbol_table *symbol_table_init(size_t size) {
-    symbol_table *table = malloc(sizeof(symbol_table));
+symbol_table_t *symbol_table_init(size_t size) {
+    symbol_table_t *table = malloc(sizeof(symbol_table_t));
     table->size = size;
     table->table = malloc(sizeof(symbol *) * size);
     for (size_t i = 0; i < size; i++) {
@@ -28,7 +28,7 @@ symbol_table *symbol_table_init(size_t size) {
     return table;
 }
 
-void symbol_table_free(symbol_table *table) {
+void symbol_table_free(symbol_table_t *table) {
     for (size_t i = 0; i < table->size; i++) {
         symbol *s = table->table[i];
         while (s != NULL) {
@@ -43,7 +43,7 @@ void symbol_table_free(symbol_table *table) {
 }
 
 // TODO: co kdyz mam funkci a promennou se stejnym nazvem? mozna staci pridat pred klic nejaky konstantni prefix?
-symbol *symbol_table_lookup(symbol_table *table, htab_key_t key) {
+symbol *symbol_table_lookup(symbol_table_t *table, htab_key_t key) {
     size_t hash = hash_function(key) % table->size;
     symbol *s = table->table[hash];
     while (s != NULL && strcmp(s->key, key) != 0) {
@@ -52,7 +52,7 @@ symbol *symbol_table_lookup(symbol_table *table, htab_key_t key) {
     return s;
 }
 
-int symbol_table_insert(symbol_table *table, htab_key_t key, void *value) {
+int symbol_table_insert(symbol_table_t *table, htab_key_t key, void *value) {
     size_t hash = hash_function(key) % table->size;
     symbol *s = table->table[hash];
     while (s != NULL && strcmp(s->key, key) != 0) {
@@ -70,7 +70,7 @@ int symbol_table_insert(symbol_table *table, htab_key_t key, void *value) {
     return 0;
 }
 
-void symbol_table_remove(symbol_table *table, htab_key_t key) {
+void symbol_table_remove(symbol_table_t *table, htab_key_t key) {
     size_t hash = hash_function(key) % table->size;
     symbol *prev = NULL;
     symbol *s = table->table[hash];
@@ -91,7 +91,7 @@ void symbol_table_remove(symbol_table *table, htab_key_t key) {
     free(s);
 }
 
-void symbol_table_resize(symbol_table *table, size_t new_size) {
+void symbol_table_resize(symbol_table_t *table, size_t new_size) {
     // alokujeme novou tabulku
     symbol **new_table = malloc(sizeof(symbol *) * new_size);
     for (size_t i = 0; i < new_size; i++) {

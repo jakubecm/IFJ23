@@ -45,7 +45,7 @@ static char precedence_tab[TABLE_SIZE][TABLE_SIZE] =
  * @param stack - stack we are working with
  * @param data_type - token data type to use in stack
  */
-void handle_operand(Stack* stack, sem_data_type_t data_type) {
+void handle_operand(stack_t* stack, sem_data_type_t data_type) {
     stack_push_token(stack, data_type, TOK_NTERM);
 }
 
@@ -54,7 +54,7 @@ void handle_operand(Stack* stack, sem_data_type_t data_type) {
  * @param stack - stack we are working with
  * @param data_type - token data type to use in stack
  */
-void handle_bracket(Stack* stack, sem_data_type_t data_type) {
+void handle_bracket(stack_t* stack, sem_data_type_t data_type) {
     stack_push_token(stack, data_type, TOK_NTERM);
 }
 
@@ -63,7 +63,7 @@ void handle_bracket(Stack* stack, sem_data_type_t data_type) {
  * @param stack - stack we are working with
  * @param end_type - data type received from semantic analysis
  */
-void handle_other(Stack* stack, sem_data_type_t end_type) {
+void handle_other(stack_t* stack, sem_data_type_t end_type) {
     stack_push_token(stack, end_type, TOK_NTERM);
 }
 
@@ -75,7 +75,7 @@ void handle_other(Stack* stack, sem_data_type_t end_type) {
  * @param endToken - temporary variable to save the next token after the expression
  * @param tmp - temporary variable to get the top token of the stack
  */
-void handle_upcoming(parser_t* parserData, Stack* stack, bool* end, token_t* endToken, stack_terminal_t* tmp) {
+void handle_upcoming(parser_t* parserData, stack_t* stack, bool* end, token_t* endToken, stack_terminal_t* tmp) {
     if (parserData->token.type == TOK_ASSIGNMENT) {
         error = ERR_INTERNAL;
         return;
@@ -120,7 +120,7 @@ int precedence(stack_terminal_t* top, token_t* input) {
     return precedence_tab[tmpTop.type][tmpInput.type];
 }
 
-void shift(Stack* stack, parser_t* parserData, sem_data_type_t input_type) {
+void shift(stack_t* stack, parser_t* parserData, sem_data_type_t input_type) {
     if(!stack_push_after(stack, SEM_UNDEF, TOK_ENDMARKER)) {
         error = ERR_INTERNAL;
         return;
@@ -142,7 +142,7 @@ void shift(Stack* stack, parser_t* parserData, sem_data_type_t input_type) {
     parserData->token = get_next_token();
 }
 
-void reduce(Stack* stack, int num, analysis_t* analysis) {
+void reduce(stack_t* stack, int num, analysis_t* analysis) {
     switch(num) {
         case 1:
             if(is_literal(analysis->tok1->type)) { 
@@ -177,7 +177,7 @@ void reduce(Stack* stack, int num, analysis_t* analysis) {
     } 
 }
 
-void prec_analysis(Stack *stack, parser_t* parserData, stack_terminal_t* tmp, analysis_t* analysis) {
+void prec_analysis(stack_t *stack, parser_t* parserData, stack_terminal_t* tmp, analysis_t* analysis) {
     int prec = precedence(tmp, &parserData->token);
     sem_data_type_t input_type = tok_type(parserData->token);
     DEBUG_PRINT("prec: %c\n", prec);
@@ -241,7 +241,7 @@ void prec_analysis(Stack *stack, parser_t* parserData, stack_terminal_t* tmp, an
 /** Main expression parser **/
 void exp_parsing(parser_t* parserData)  {
     /** Structure declarations **/
-    Stack stack;
+    stack_t stack;
     stack_init(&stack);
         
     analysis_t* analysis = malloc(sizeof(analysis_t));

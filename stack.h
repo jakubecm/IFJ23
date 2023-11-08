@@ -45,65 +45,70 @@ typedef struct Node {
     struct Node *right;
 } Node;
 
-typedef struct {
+typedef struct Stack {
     Node *top;
-} Stack;
+} stack_t;
 
 void analysis_init(analysis_t *data);
 void analysis_free(analysis_t *data);
 /**
  *   @brief Initialize new stack
- *   @param stack - Stack that is being created
+ *   @param stack - stack_t that is being created
  *   @return New stack
  */ 
-void stack_init(Stack *stack);
+void stack_init(stack_t *stack);
 
 /**
  *  @brief Pushes token to the stack and sets its attributes
- *  @param stack - Stack to be pushed on 
+ *  @param stack - stack_t to be pushed on 
  *  @param token_type - Token to be pushed (type of it, as: +, -...)
  *  @param data_type - Type of data for the token (as: INT, STRING, UNDEFINED...)
  */ 
-void stack_push_token(Stack* stack, sem_data_type_t data_type, token_type_t token_type);
+void stack_push_token(stack_t* stack, sem_data_type_t data_type, token_type_t token_type);
 
 /**
  *  @brief Pushes token after the top terminal
- *  @param stack - Stack to be pushed on
+ *  @param stack - stack_t to be pushed on
  *  @param token - Token to be pushed after terminal
  */ 
-bool stack_push_after(Stack* stack, sem_data_type_t data_type, token_type_t token_type);
+bool stack_push_after(stack_t* stack, sem_data_type_t data_type, token_type_t token_type);
 
-int stack_count_after(Stack* stack, analysis_t* analysis);
+int stack_count_after(stack_t* stack, analysis_t* analysis);
 
 /**
  *  @brief Completely frees the stack and resets values like before init
- *  @param stack - Stack that will be freed
+ *  @param stack - stack_t that will be freed
  */
-void stack_free(Stack* stack);
+void stack_free(stack_t* stack);
 
 /**
  *  @brief Returns top symbol (token) in the stack
- *  @param stack - Stack to be returned from
+ *  @param stack - stack_t to be returned from
  *  @return Pointer to the token on the top of the stack
  */
-stack_terminal_t* stack_top_token(Stack* stack);
+stack_terminal_t* stack_top_token(stack_t* stack);
 
 /**
  *  @brief Returns top terminal
- *  @param stack - Stack to be returned from
+ *  @param stack - stack_t to be returned from
  *  @return Pointer to the top terminal in the stack
  */ 
-stack_terminal_t* stack_top_terminal(Stack* stack);
+stack_terminal_t* stack_top_terminal(stack_t* stack);
 
 /**
  *  @brief Pops top symbol from stack
- *  @param stack - Stack to be popped from
+ *  @param stack - stack_t to be popped from
  *  @return True if pop was successfull, else false
  */
-stack_terminal_t* stack_pop_token(Stack* stack);
+stack_terminal_t* stack_pop_token(stack_t* stack);
 
-void stack_free_token(Stack* stack);
+void stack_free_token(stack_t* stack);
 
-void print_stack_contents(Stack *stack);
+void print_stack_contents(stack_t *stack);
+
+/**
+ * @brief Pushes symtable to the stack
+*/
+void stack_push_table(stack_t* stack);
 
 #endif // STACK_H

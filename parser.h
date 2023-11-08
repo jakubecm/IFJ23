@@ -12,14 +12,14 @@
 #include "scanner.h"
 #include "symtable.h"
 #include "token.h"
+#include "stack.h"
 #include <stdbool.h>
 
 typedef struct
 {
     scanner_t *scanner;      // Scanner instance
-    htab_t *symtable_global; // Global symtable instance
-    htab_t *symtable_local;  // Local symtable instance
-    htab_pair_t *function;   // Current function
+    stack_t *stack;            // Stack instance
+    htab_value_t *function;   // Current function
     token_t token;           // Current token
 
 } parser_t;
@@ -33,7 +33,7 @@ typedef struct
  * @return Initialized parser structure
  */
 
-parser_t parser_init(parser_t *parser, scanner_t *scanner);
+void parser_init(parser_t *parser, scanner_t *scanner);
 
 /**
  * @brief Initializes parser
