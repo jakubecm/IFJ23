@@ -113,7 +113,7 @@ bool rule_program(parser_t *parser)
 {
     if (is_type(parser, TOK_EOF))
     { // is this ok?
-        // M: Not sure if OK, we dont have an epsilon token iirc, it could work with EOF but might be more readable if we add epsilon token
+        // life update: this is probably ok
         return true;
     }
     return rule_statement(parser) && rule_program(parser);
@@ -483,4 +483,159 @@ bool rule_assignment(parser_t *parser)
     load_token(parser);
 
     exp_parsing(parser); // Again not sure if this is the right way to do it
+
+    if (error != ERR_OK)
+    {
+        return false;
+    }
 }
+
+bool rule_conditional_statement(parser_t *parser)
+{
+
+    load_token(parser);
+
+    return rule_if_statement(parser);
+}
+
+bool rule_if_statement(parser_t *parser)
+{
+
+    if (is_type(parser, K_LET))
+    {
+        return rule_variable_statement(parser);
+    }
+    else
+    {
+        return rule_classical_statement(parser);
+    }
+}
+
+bool rule_classical_statement(parser_t *parser)
+{
+
+    // Parse the expression
+    exp_parsing(parser);
+
+    if (error != ERR_OK)
+    {
+        return false;
+    }
+
+    // Expect and handle the '{' token
+    if (!is_type(parser, TOK_LCURLYBRACKET))
+    {
+        return false;
+    }
+    load_token(parser); // Move past '{'
+
+    // Parse the program within the if block
+    if (!rule_program(parser))
+    {
+        return false;
+    }
+
+    // Expect and handle the '}' token
+    // Note: Not really sure if the token is already loaded here or if i need to load it beforehand, check pls
+    if (!is_type(parser, TOK_RCURLYBRACKET))
+    {
+        return false;
+    }
+    load_token(parser); // Move past '}'
+
+    // Expect and handle the 'else' keyword
+    if (!is_type(parser, K_ELSE))
+    {
+        return false;
+    }
+    load_token(parser); // Move past 'else'
+
+    // Expect and handle the '{' token for the else block
+    if (!is_type(parser, TOK_LCURLYBRACKET))
+    {
+        return false;
+    }
+    load_token(parser); // Move past '{'
+
+    // Parse the program within the else block
+    if (!rule_program(parser))
+    {
+        return false;
+    }
+
+    // Expect and handle the '}' token
+    if (!is_type(parser, TOK_RCURLYBRACKET))
+    {
+        return false;
+    }
+    load_token(parser); // Move past '}'
+
+    return true;
+}
+
+bool rule_variable_statement(parser_t *parser)
+{
+    load_token(parser); // Move past 'let'
+
+    // Expect and handle the identifier
+    if (!is_type(parser, TOK_IDENTIFIER))
+    {
+        return false;
+    }
+
+    char *variable_name = parser->token.attribute.string;
+    // TODO: Check if the variable is in the symtable and is unmodifiable (should be as it is let)
+
+    load_token(parser); // Move past the identifier
+
+    // Expect and handle the '{' token
+    if (!is_type(parser, TOK_LCURLYBRACKET))
+    {
+        return false;
+    }
+    load_token(parser); // Move past '{'
+
+    // Parse the program within the if block
+    if (!rule_program(parser))
+    {
+        return false;
+    }
+
+    // Expect and handle the '}' token
+    if (!is_type(parser, TOK_RCURLYBRACKET))
+    {
+        return false;
+    }
+    load_token(parser); // Move past '}'
+
+    // Expect and handle the 'else' keyword
+    if (!is_type(parser, K_ELSE))
+    {
+        return false;
+    }
+    load_token(parser); // Move past 'else'
+
+    // Expect and handle the '{' token for the else block
+    if (!is_type(parser, TOK_LCURLYBRACKET))
+    {
+        return false;
+    }
+    load_token(parser); // Move past '{'
+
+    // Parse the program within the else block
+    if (!rule_program(parser))
+    {
+        return false;
+    }
+
+    // Expect and handle the '}' token
+    if (!is_type(parser, TOK_RCURLYBRACKET))
+    {
+        return false;
+    }
+    load_token(parser); // Move past '}'
+
+    return true;
+}
+
+bool rule_loop(parser_t *parser){}
