@@ -229,7 +229,7 @@ bool rule_function_return_type(parser_t *parser)
         load_token(parser);
         return rule_type(parser);
     }
-    else if (is_type_next(parser, TOK_LCURLYBRACKET))
+    else if (is_type(parser, TOK_LCURLYBRACKET))
     {
         // No return type specified
         return true; // Successfully parsed an epsilon production
