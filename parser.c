@@ -21,7 +21,7 @@
 
 <nonvoid_function> -> "->" <type>
 
-<parameter_list> -> <parameter> <more_parameters> | ε
+<parameter_list> -> <parameter> <more_parameters>
 
 <more_parameters> -> "," <parameter> <more_parameters> | ε
 
@@ -240,6 +240,170 @@ bool rule_function_return_type(parser_t *parser)
     }
 }
 
+bool rule_parameter_list(parser_t *parser)
+{
+    if (!rule_parameter(parser))
+    {
+        return false;
+    }
+
+    return rule_more_parameters(parser);
+}
+
+bool rule_more_parameters(parser_t *parser)
+{
+    if (is_type(parser, TOK_COMMA))
+    {
+        load_token(parser);
+
+        if (!rule_parameter(parser))
+        {
+            return false;
+        }
+
+        return rule_more_parameters(parser);
+    }
+    else if (is_type(parser, TOK_RBRACKET))
+    {
+        return true; // Successfully parsed an epsilon
+    }
+    else
+    {
+        return false; // Neither comma nor ), not a valid parameter list
+    }
+}
+
+bool rule_parameter(parser_t *parser)
+{
+    if (is_type(parser, TOK_UNDERSCORE))
+    {
+        return rule_no_name_parameter(parser);
+    }
+    else if (is_type_next(parser, TOK_UNDERSCORE))
+    {
+        return rule_no_id_parameter(parser);
+    }
+    else if (is_type(parser, TOK_IDENTIFIER) && is_type_next(parser, TOK_IDENTIFIER))
+    {
+        return rule_all_parameters(parser);
+    }
+    else
+    {
+        return false; // Syntax error: the token does not match any parameter type
+    }
+}
+
+bool rule_no_name_parameter(parser_t *parser)
+{
+    load_token(parser); // _ | identifier
+
+    if (!is_type(parser, TOK_IDENTIFIER))
+    {
+        return false;
+    }
+
+    load_token(parser); // identifier | :
+
+    if (!is_type(parser, TOK_COLON))
+    {
+        return false;
+    }
+
+    load_token(parser); // : | type
+
+    if (!rule_type(parser))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool rule_no_id_parameter(parser_t *parser)
+{
+    load_token(parser); // identifier | _
+
+    if (!is_type(parser, TOK_IDENTIFIER))
+    {
+        return false;
+    }
+
+    load_token(parser); // _ | :
+
+    if (!is_type(parser, TOK_UNDERSCORE))
+    {
+        return false;
+    }
+
+    load_token(parser); // : | type
+
+    if (!is_type(parser, TOK_COLON))
+    {
+        return false;
+    }
+
+    load_token(parser); // : | type
+
+    if (!rule_type(parser))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool rule_all_parameters(parser_t *parser)
+{
+    load_token(parser); // identifier | identifier
+
+    if (!is_type(parser, TOK_IDENTIFIER))
+    {
+        return false;
+    }
+
+    load_token(parser); // identifier | identifier
+
+    if (!is_type(parser, TOK_IDENTIFIER))
+    {
+        return false;
+    }
+
+    load_token(parser); // identifier | :
+
+    if (!is_type(parser, TOK_COLON))
+    {
+        return false;
+    }
+
+    load_token(parser); // : | type
+
+    if (!rule_type(parser))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool rule_type(parser_t *parser)
+{
+    switch (parser->token.type)
+    {
+    case K_DOUBLE:
+    case K_INT:
+    case K_STRING:
+    case K_DOUBLEQ:
+    case K_INTQ:
+    case K_STRINGQ:
+        return true;
+        break;
+
+    default:
+        return false;
+        break;
+    }
+}
+
 bool rule_variable_definition_let(parser_t *parser)
 {
     load_token(parser);
@@ -302,36 +466,21 @@ bool rule_type_def(parser_t *parser)
     return rule_initialization(parser);
 }
 
-bool rule_type(parser_t *parser)
-{
-    switch (parser->token.type)
-    {
-    case K_DOUBLE:
-    case K_INT:
-    case K_STRING:
-    case K_DOUBLEQ:
-    case K_INTQ:
-    case K_STRINGQ:
-        return true;
-        break;
-
-    default:
-        return false;
-        break;
-    }
-}
-
 bool rule_initialization(parser_t *parser)
 {
-    exp_parsing(parser); // Not sure if this is the right way to do it
+    exp_parsing(parser); // Not sure if this is the right way to do it lol
 }
 
-bool rule_assignment(parser_t *parser) {}
+bool rule_assignment(parser_t *parser)
+{
+    load_token(parser);
 
-bool rule_conditional_statement(parser_t *parser) {}
+    if (!is_type(parser, TOK_ASSIGNMENT))
+    {
+        return false;
+    }
 
-bool rule_loop(parser_t *parser) {}
+    load_token(parser);
 
-bool rule_return_statement(parser_t *parser) {}
-
-bool rule_parameter_list(parser_t *parser) {}
+    exp_parsing(parser); // Again not sure if this is the right way to do it
+}
