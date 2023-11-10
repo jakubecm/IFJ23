@@ -17,11 +17,15 @@
 
 typedef struct
 {
-    scanner_t *scanner;      // Scanner instance
-    stack_t *stack;            // Stack instance
-    htab_value_t *function;   // Current function
-    token_t token;           // Current token
-    token_t next_token;      // Next token
+    scanner_t *scanner;     // Scanner instance
+    stack_t *stack;         // Stack instance
+    htab_value_t *function; // Current function
+    token_t token;          // Current token
+    token_t next_token;     // Next token
+
+    // States of parser
+    bool in_function;       // Is parser in function?
+    bool in_loop;           // Is parser in loop?
 
 } parser_t;
 
@@ -37,7 +41,7 @@ typedef struct
 void parser_init(parser_t *parser, scanner_t *scanner);
 
 /**
- * @brief Initializes parser
+ * @brief Runs parser
  */
 void run_parser(parser_t *parser);
 

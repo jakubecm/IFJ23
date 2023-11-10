@@ -1,12 +1,14 @@
 /**
  *  @file parser.c
- * 
- * 
+ *
+ *
  *  @authors Milan Jakubec (xjakub41)
  *  @authors Jakub Ráček (xracek12)
  */
 
 #include "parser.h"
+#include "error.h"
+#include "expression.h"
 
 /** LL - gramatika
 <program> -> <statement> <program> | ε
@@ -74,6 +76,7 @@ void parser_init(parser_t *parser, scanner_t *scanner)
     parser->function = NULL;
 
     parser->token = get_next_token();
+    // Nebude lepsi udelat funkci ktera jen peekne na dalsi token a scanner ho uchova misto tohoto?
     parser->next_token = get_next_token();
 }
 
@@ -82,17 +85,21 @@ void parser_destroy(parser_t *parser)
     stack_free(parser->stack); // TODO: funkci na uvolneni stacku s tabulkama
 }
 
-bool is_type(parser_t *parser, token_type_t type) {
+bool is_type(parser_t *parser, token_type_t type)
+{
     return parser->token.type == type;
 }
 
-bool is_type_next(parser_t *parser, token_type_t type) {
+bool is_type_next(parser_t *parser, token_type_t type)
+{
     return parser->next_token.type == type;
 }
 
-bool load_token(parser_t *parser) {
+bool load_token(parser_t *parser)
+{
     parser->token = parser->next_token;
-    if (is_type(parser, TOK_EOF)) {
+    if (is_type(parser, TOK_EOF))
+    {
         return false;
     }
     parser->next_token = get_next_token();
@@ -100,25 +107,29 @@ bool load_token(parser_t *parser) {
 
 bool rule_program(parser_t *parser)
 {
-    if (is_type(parser, TOK_EOF)) { // je toto ok?
+    if (is_type(parser, TOK_EOF))
+    { // is this ok?
         return true;
     }
 
     return rule_statement(parser) && rule_program(parser);
 }
 
-bool rule_statement(parser_t *parser) {
-    switch (parser->token.type) {
+bool rule_statement(parser_t *parser)
+{
+    switch (parser->token.type)
+    {
     case K_LET:
         return rule_variable_definition_let(parser);
         break;
-    
+
     case K_VAR:
         return rule_variable_definition_var(parser);
         break;
 
     case TOK_IDENTIFIER:
-        if (is_type_next(parser, TOK_LBRACKET)) {
+        if (is_type_next(parser, TOK_LBRACKET))
+        {
             return rule_function_call(parser);
         }
         return rule_assignment(parser);
@@ -139,16 +150,97 @@ bool rule_statement(parser_t *parser) {
     case K_RETURN:
         return rule_return_statement(parser);
         break;
-    
+
     default:
         break;
     }
-    
 }
 
-bool rule_variable_definition_let(parser_t *parser) {}
+bool rule_variable_definition_let(parser_t *parser)
+{
+    load_token(parser);
 
-bool rule_variable_definition_var(parser_t *parser) {}
+    // If next token is not identifier, it is not a valid variable definition
+    if (!is_type(parser, TOK_IDENTIFIER))
+    {
+        return false;
+    }
+
+    char *variable_name = parser->token.attribute.string;
+    // We'll have to add it to the symbol table later
+
+    return rule_definition_types(parser);
+}
+
+bool rule_variable_definition_var(parser_t *parser)
+{
+    load_token(parser);
+
+    // If next token is not identifier, it is not a valid variable definition
+    if (!is_type(parser, TOK_IDENTIFIER))
+    {
+        return false;
+    }
+
+    char *variable_name = parser->token.attribute.string;
+    // We'll have to add it to the symbol table later
+
+    return rule_definition_types(parser);
+}
+
+bool rule_definition_types(parser_t *parser)
+{
+    load_token(parser);
+
+    if (is_type(parser, TOK_COLON))
+    {
+        return rule_type_def(parser);
+    }
+    else if (is_type(parser, TOK_ASSIGNMENT))
+    {
+        return rule_initialization(parser);
+    }
+    else
+    {
+        return false; // If it's not colon or assignment, it's not a valid variable definition
+    }
+}
+
+bool rule_type_def(parser_t *parser)
+{
+    load_token(parser);
+
+    if (!rule_type(parser))
+    {
+        return false;
+    }
+
+    return rule_initialization(parser);
+}
+
+bool rule_type(parser_t *parser)
+{
+    switch (parser->token.type)
+    {
+    case K_DOUBLE:
+    case K_INT:
+    case K_STRING:
+    case K_DOUBLEQ:
+    case K_INTQ:
+    case K_STRINGQ:
+        return true;
+        break;
+
+    default:
+        return false;
+        break;
+    }
+}
+
+bool rule_initialization(parser_t *parser)
+{
+    exp_parsing(parser); // Not sure if this is the right way to do it
+}
 
 bool rule_assignment(parser_t *parser) {}
 
@@ -158,9 +250,11 @@ bool rule_loop(parser_t *parser) {}
 
 bool rule_function_call(parser_t *parser) {}
 
-bool rule_function_definition(parser_t *parser) {
-    if (!is_type_next(parser, TOK_IDENTIFIER)) {  
-        return false;                               
+bool rule_function_definition(parser_t *parser)
+{
+    if (!is_type_next(parser, TOK_IDENTIFIER))
+    {
+        return false;
     }
     load_token(parser); // identifier | (
 
@@ -169,43 +263,50 @@ bool rule_function_definition(parser_t *parser) {
 
     load_token(parser); // ( | param list
 
-    if (!is_type(parser, TOK_LBRACKET)) {
+    if (!is_type(parser, TOK_LBRACKET))
+    {
         return false;
     }
 
     load_token(parser); // param list | )
 
-    if (!rule_parameter_list(parser)) {
+    if (!rule_parameter_list(parser))
+    {
         return false;
     }
 
     load_token(parser); // ) | return type
 
-    if (!is_type(parser, TOK_RBRACKET)) {
+    if (!is_type(parser, TOK_RBRACKET))
+    {
         return false;
     }
 
     load_token(parser); // return type | {
 
-    if (!rule_function_return_type(parser)) {
+    if (!rule_function_return_type(parser))
+    {
         return false;
     }
 
     load_token(parser); // { | program
 
-    if (!is_type(parser, TOK_LCURLYBRACKET)) {
+    if (!is_type(parser, TOK_LCURLYBRACKET))
+    {
         return false;
     }
 
     load_token(parser); // program | }
 
-    if (!rule_program(parser)) {
+    if (!rule_program(parser))
+    {
         return false;
     }
 
     load_token(parser); // } | ???
 
-    if (!is_type(parser, TOK_RCURLYBRACKET)) {
+    if (!is_type(parser, TOK_RCURLYBRACKET))
+    {
         return false;
     }
 
