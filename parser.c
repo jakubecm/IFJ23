@@ -105,13 +105,17 @@ bool load_token(parser_t *parser)
     parser->next_token = get_next_token();
 }
 
+//================= GRAMMAR RULES START HERE ================= //
+
+// Note: pls implement these rules in the order they are in the grammar otherwise we will get lost
+
 bool rule_program(parser_t *parser)
 {
     if (is_type(parser, TOK_EOF))
     { // is this ok?
+        // M: Not sure if OK, we dont have an epsilon token iirc, it could work with EOF but might be more readable if we add epsilon token
         return true;
     }
-
     return rule_statement(parser) && rule_program(parser);
 }
 
@@ -147,12 +151,92 @@ bool rule_statement(parser_t *parser)
         return rule_function_definition(parser);
         break;
 
-    case K_RETURN:
-        return rule_return_statement(parser);
-        break;
-
     default:
         break;
+    }
+}
+
+bool rule_function_definition(parser_t *parser)
+{
+    if (!is_type_next(parser, TOK_IDENTIFIER))
+    {
+        return false;
+    }
+    load_token(parser); // identifier | (
+
+    data_t func;
+    func.name = parser->token.attribute.string;
+
+    load_token(parser); // ( | param list
+
+    if (!is_type(parser, TOK_LBRACKET))
+    {
+        return false;
+    }
+
+    load_token(parser); // param list | )
+
+    if (!rule_parameter_list(parser))
+    {
+        return false;
+    }
+
+    load_token(parser); // ) | return type
+
+    if (!is_type(parser, TOK_RBRACKET))
+    {
+        return false;
+    }
+
+    load_token(parser); // return type | {
+
+    if (!rule_function_return_type(parser))
+    {
+        return false;
+    }
+
+    load_token(parser); // { | program
+
+    if (!is_type(parser, TOK_LCURLYBRACKET))
+    {
+        return false;
+    }
+
+    load_token(parser); // program | }
+
+    if (!rule_program(parser))
+    {
+        return false;
+    }
+
+    load_token(parser); // } | ???
+
+    if (!is_type(parser, TOK_RCURLYBRACKET))
+    {
+        return false;
+    }
+
+    load_token(parser); // ??? | ???
+
+    return true;
+}
+
+bool rule_function_return_type(parser_t *parser)
+{
+    // Check if the return type is specified (i.e., if we have '->')
+    if (is_type(parser, TOK_ARROW))
+    {
+        load_token(parser);
+        return rule_type(parser);
+    }
+    else if (is_type_next(parser, TOK_LCURLYBRACKET))
+    {
+        // No return type specified
+        return true; // Successfully parsed an epsilon production
+    }
+    else
+    {
+        return false; // Neither -> nor {, not a valid function definition
     }
 }
 
@@ -247,73 +331,6 @@ bool rule_assignment(parser_t *parser) {}
 bool rule_conditional_statement(parser_t *parser) {}
 
 bool rule_loop(parser_t *parser) {}
-
-bool rule_function_call(parser_t *parser) {}
-
-bool rule_function_definition(parser_t *parser)
-{
-    if (!is_type_next(parser, TOK_IDENTIFIER))
-    {
-        return false;
-    }
-    load_token(parser); // identifier | (
-
-    data_t func;
-    func.name = parser->token.attribute.string;
-
-    load_token(parser); // ( | param list
-
-    if (!is_type(parser, TOK_LBRACKET))
-    {
-        return false;
-    }
-
-    load_token(parser); // param list | )
-
-    if (!rule_parameter_list(parser))
-    {
-        return false;
-    }
-
-    load_token(parser); // ) | return type
-
-    if (!is_type(parser, TOK_RBRACKET))
-    {
-        return false;
-    }
-
-    load_token(parser); // return type | {
-
-    if (!rule_function_return_type(parser))
-    {
-        return false;
-    }
-
-    load_token(parser); // { | program
-
-    if (!is_type(parser, TOK_LCURLYBRACKET))
-    {
-        return false;
-    }
-
-    load_token(parser); // program | }
-
-    if (!rule_program(parser))
-    {
-        return false;
-    }
-
-    load_token(parser); // } | ???
-
-    if (!is_type(parser, TOK_RCURLYBRACKET))
-    {
-        return false;
-    }
-
-    load_token(parser); // ??? | ???
-
-    return true;
-}
 
 bool rule_return_statement(parser_t *parser) {}
 
