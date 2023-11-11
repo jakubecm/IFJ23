@@ -34,7 +34,7 @@ void symbol_table_free(symbol_table_t *table) {
         symbol *s = table->table[i];
         while (s != NULL) {
             symbol *next = s->next;
-            free(s->key);
+            free((char*)s->key);
             free(s);
             s = next;
         }
@@ -45,7 +45,7 @@ void symbol_table_free(symbol_table_t *table) {
 
 // TODO: co kdyz mam funkci a promennou se stejnym nazvem? mozna staci pridat pred klic nejaky konstantni prefix?
 symbol *symbol_table_lookup(symbol_table_t *table, htab_key_t key) {
-    size_t hash = hash_function(key) % table->size;
+    size_t hash = htab_hash_function(key) % table->size;
     symbol *s = table->table[hash];
     while (s != NULL && strcmp(s->key, key) != 0) {
         s = s->next;
@@ -54,7 +54,7 @@ symbol *symbol_table_lookup(symbol_table_t *table, htab_key_t key) {
 }
 
 int symbol_table_insert(symbol_table_t *table, htab_key_t key, htab_value_t data) {
-    size_t hash = hash_function(key) % table->size;
+    size_t hash = htab_hash_function(key) % table->size;
     symbol *s = table->table[hash];
     while (s != NULL && strcmp(s->key, key) != 0) {
         s = s->next;
@@ -68,7 +68,7 @@ int symbol_table_insert(symbol_table_t *table, htab_key_t key, htab_value_t data
     if (s->key == NULL) {
         return 2; // memory allocation failed
     }
-    strcpy(s->key, key);
+    strcpy((char*)s->key, key);
     s->data = data;
     s->next = table->table[hash];
     table->table[hash] = s;
@@ -76,7 +76,7 @@ int symbol_table_insert(symbol_table_t *table, htab_key_t key, htab_value_t data
 }
 
 void symbol_table_remove(symbol_table_t *table, htab_key_t key) {
-    size_t hash = hash_function(key) % table->size;
+    size_t hash = htab_hash_function(key) % table->size;
     symbol *prev = NULL;
     symbol *s = table->table[hash];
     while (s != NULL && strcmp(s->key, key) != 0) {
@@ -92,7 +92,7 @@ void symbol_table_remove(symbol_table_t *table, htab_key_t key) {
     } else {
         prev->next = s->next;
     }
-    free(s->key);
+    free((char*)s->key);
     free(s);
 }
 
@@ -110,7 +110,7 @@ void symbol_table_resize(symbol_table_t *table, size_t new_size) {
             symbol *next = s->next;
 
             // vypočítáme index nového prvku v nové tabulce
-            size_t hash = hash_function(s->key) % new_size;
+            size_t hash = htab_hash_function(s->key) % new_size;
 
             // vložíme prvek do nové tabulky
             s->next = new_table[hash];

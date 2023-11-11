@@ -37,7 +37,7 @@ typedef struct data {
  * @brief Symbol table entry
 */
 typedef struct symbol {
-    htab_key_t *key;
+    htab_key_t key;
     htab_value_t data;
     struct symbol *next;
 } symbol;

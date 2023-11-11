@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c11
 DEBUG_FLAGS = -DDEBUG -g
-SOURCES = expression.c stack.c exp_semantic.c token.c scanner.c str.c symtable.c
+SOURCES = expression.c stack.c exp_semantic.c token.c scanner.c str.c symtable.c parser.c main.c
 OBJECTS = $(SOURCES:.c=.o)
 
 .PHONY: all debug exp clean
