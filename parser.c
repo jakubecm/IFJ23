@@ -462,14 +462,30 @@ bool rule_definition_types(parser_t *parser)
 
 bool rule_type_def(parser_t *parser)
 {
-    load_token(parser);
+    load_token(parser); // Consume the colon
 
-    if (!rule_type(parser))
+    if (rule_type(parser))
     {
-        return false;
+        return rule_type_def_follow(parser);
     }
+    else
+    {
+        return false; // If it's not a type, it's not a valid variable definition
+    }
+}
 
-    return rule_initialization(parser);
+bool rule_type_def_follow(parser_t *parser)
+{
+    load_token(parser); // Consume the type
+
+    if (is_type(parser, TOK_ASSIGNMENT))
+    {
+        return rule_initialization(parser);
+    }
+    else
+    {
+        return true; // If it's not assignment, it's an epsilon production
+    }
 }
 
 bool rule_initialization(parser_t *parser)
