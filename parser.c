@@ -21,7 +21,7 @@
 
 <nonvoid_function> -> "->" <type>
 
-<parameter_list> -> <parameter> <more_parameters>
+<parameter_list> -> <parameter> <more_parameters> | ε
 
 <more_parameters> -> "," <parameter> <more_parameters> | ε
 
@@ -174,7 +174,10 @@ bool rule_function_definition(parser_t *parser)
         return false;
     }
 
-    load_token(parser); // param list | )
+    // TODO: We need to think about the situation, when param list is empty and so
+    // the next loaded token below is TOK_RBRACKET
+
+    load_token(parser); // param list | ) // This will not always happen
 
     if (!rule_parameter_list(parser))
     {
@@ -638,4 +641,40 @@ bool rule_variable_statement(parser_t *parser)
     return true;
 }
 
-bool rule_loop(parser_t *parser){}
+bool rule_loop(parser_t *parser)
+{
+    load_token(parser); // Move past 'while'
+
+    // Parse the expression
+    exp_parsing(parser);
+
+    if (error != ERR_OK)
+    {
+        return false;
+    }
+
+    // Expect and handle the '{' token
+    if (!is_type(parser, TOK_LCURLYBRACKET))
+    {
+        return false;
+    }
+    load_token(parser); // Move past '{'
+
+    // Parse the program within the loop block
+    if (!rule_program(parser))
+    {
+        return false;
+    }
+
+    // Expect and handle the '}' token
+    if (!is_type(parser, TOK_RCURLYBRACKET))
+    {
+        return false;
+    }
+    load_token(parser); // Move past '}'
+
+    return true;
+}
+
+// TODO: function call, arguments, more arguments
+// To discuss: return statement and returned experssion, needs reviewing, working on it
