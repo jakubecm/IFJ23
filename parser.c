@@ -286,17 +286,35 @@ bool rule_parameter(parser_t *parser)
     {
         return rule_no_name_parameter(parser);
     }
-    else if (is_type_next(parser, TOK_UNDERSCORE))
+    else if (is_type(parser, TOK_IDENTIFIER))
+    {
+        return rule_identifier_parameter(parser);
+    }
+    else
+    {
+        return false; // Neither _ nor identifier, not a valid parameter
+    }
+}
+
+bool rule_identifier_parameter(parser_t *parser)
+{
+    load_token(parser); // identifier | rest of identifier parameter
+    return rule_rest_of_identifier_parameter(parser);
+}
+
+bool rule_rest_of_identifier_parameter(parser_t *parser)
+{
+    if (is_type(parser, TOK_UNDERSCORE))
     {
         return rule_no_id_parameter(parser);
     }
-    else if (is_type(parser, TOK_IDENTIFIER) && is_type_next(parser, TOK_IDENTIFIER))
+    else if (is_type(parser, TOK_IDENTIFIER))
     {
         return rule_all_parameters(parser);
     }
     else
     {
-        return false; // Syntax error: the token does not match any parameter type
+        return false; // Neither _ nor id, not a valid parameter
     }
 }
 
@@ -328,20 +346,6 @@ bool rule_no_name_parameter(parser_t *parser)
 
 bool rule_no_id_parameter(parser_t *parser)
 {
-    load_token(parser); // identifier | _
-
-    if (!is_type(parser, TOK_IDENTIFIER))
-    {
-        return false;
-    }
-
-    load_token(parser); // _ | :
-
-    if (!is_type(parser, TOK_UNDERSCORE))
-    {
-        return false;
-    }
-
     load_token(parser); // : | type
 
     if (!is_type(parser, TOK_COLON))
@@ -361,13 +365,6 @@ bool rule_no_id_parameter(parser_t *parser)
 
 bool rule_all_parameters(parser_t *parser)
 {
-    load_token(parser); // identifier | identifier
-
-    if (!is_type(parser, TOK_IDENTIFIER))
-    {
-        return false;
-    }
-
     load_token(parser); // identifier | identifier
 
     if (!is_type(parser, TOK_IDENTIFIER))
