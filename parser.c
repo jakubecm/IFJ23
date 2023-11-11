@@ -45,11 +45,13 @@
 
 <definition_types> -> <type_def> | <initialization>
 
-<type_def> -> ":" <type> <initialization>
+<type_def> -> ":" <type> <type_def_follow>
 
-<initialization> -> "=" <expression> | ε
+<type_def_follow> -> <initialization> | ε
 
-<assignment> -> <identifier> "=" <expression>
+<initialization> -> "=" <expression>
+
+<assignment> -> <identifier> "=" <expression>   TODO: Repair so assignment can derive to exp or a function call
 
 <conditional_statement> -> if <if_statement>
 
