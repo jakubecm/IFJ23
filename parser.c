@@ -695,5 +695,67 @@ bool rule_loop(parser_t *parser)
     return true;
 }
 
-// TODO: function call, arguments, more arguments
+bool rule_function_call(parser_t *parser)
+{
+    load_token(parser); // Move past the identifier, now we are at '(' and we know it
+    load_token(parser); // Move past '('
+
+    if (rule_arguments(parser))
+    {
+        load_token(parser); // Move past ')'
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool rule_arguments(parser_t *parser)
+{
+    if (is_type(parser, TOK_RBRACKET))
+    {
+        return true; // Successfully parsed an epsilon
+    }
+
+    exp_parsing(parser);
+
+    if (error != ERR_OK)
+    {
+        return false;
+    }
+    else
+    {
+        return rule_more_arguments(parser);
+    }
+}
+
+bool rule_more_arguments(parser_t *parser)
+{
+    load_token(parser); // Move past the expression
+
+    if (is_type(parser, TOK_RBRACKET))
+    {
+        return true; // Successfully parsed an epsilon
+    }
+    else if (is_type(parser, TOK_COMMA))
+    {
+        load_token(parser); // Move past ','
+        exp_parsing(parser);
+
+        if (error != ERR_OK)
+        {
+            return false;
+        }
+        else
+        {
+            return rule_more_arguments(parser);
+        }
+    }
+    else
+    {
+        return false; // Neither comma nor ), not a valid argument list
+    }
+}
+
 // To discuss: return statement and returned experssion, needs reviewing, working on it
