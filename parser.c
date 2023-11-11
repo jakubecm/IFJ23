@@ -25,13 +25,17 @@
 
 <more_parameters> -> "," <parameter> <more_parameters> | ε
 
-<parameter> -> <no_name_parameter> | <no_id_parameter> | <all_parameters>
+<parameter> -> <no_name_parameter> | <identifier_parameters>
 
 <no_name_parameter> -> "_" <identifier> ":" <type>
 
-<no_id_parameter> -> <identifier> "_" ":" <type>
+<identifier_parameter> -> <identifier> <rest_of_identifier_parameter>
 
-<all_parameters> -> <identifier> <identifier> ":" <type>
+<rest_of_identifier_parameter> -> <no_id_parameter> | <all_parameters>
+
+<no_id_parameter> -> "_" ":" <type>
+
+<all_parameters> -> <identifier> ":" <type>
 
 <type> -> "Double" | "Int" | "String" | "Double?" | "Int?" | "String?"
 
