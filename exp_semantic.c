@@ -10,7 +10,7 @@
 #include "exp_semantic.h"
 #include "error.h"
 
-error_t error;
+extern error_t error;
 
 sem_data_type_t tok_type(token_t token) { 
     switch(token.type) {

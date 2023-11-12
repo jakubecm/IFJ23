@@ -10,7 +10,6 @@
 #include <stdlib.h>
 #include "error.h"
 #include "stack.h"
-#include "symtable.h"
 
 error_t err;
 
@@ -29,6 +28,10 @@ void analysis_free(analysis_t *data) {
 // obecne funkce
 void stack_init(stack_t *stack) {
     stack->top = NULL;
+}
+
+void stack_free(stack_t* stack) {
+    free(stack);
 }
 
 void stack_push(stack_t *s, void *data) {
@@ -181,12 +184,24 @@ void print_stack_contents(stack_t *stack) {
     printf("\n");
 }
 
+// --------------------------------- Symtable functions ---------------------------------
+
 void stack_push_table(stack_t* stack) {
     symbol_table_t* table = symbol_table_init(97);
     stack_push(stack, table);
 }
 
 void stack_pop_table(stack_t* stack) {
+    symbol_table_t* table = stack_top(stack);
+    symbol_table_free(table);
+    stack_pop(stack);
+}
+
+symbol_table_t* stack_top_table(stack_t* stack) {
+    return stack_top(stack);
+}
+
+void stack_destroy_table(stack_t* stack) {
     symbol_table_t* table = stack_top(stack);
     symbol_table_free(table);
     stack_pop(stack);

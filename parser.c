@@ -9,7 +9,6 @@
 #include "parser.h"
 #include "error.h"
 #include "expression.h"
-#include "stack.h"
 
 /** LL - gramatika
 <program> -> <statement> <program> | ε
@@ -121,7 +120,8 @@ void parser_init(parser_t *parser, scanner_t *scanner) {
 }
 
 void parser_destroy(parser_t *parser) {
-    stack_free(parser->stack);  // TODO: funkci na uvolneni stacku s tabulkama
+    stack_destroy_table(parser->stack);
+    stack_free(parser->stack);
 }
 
 bool is_type(parser_t *parser, token_type_t type) { return parser->token.type == type; }

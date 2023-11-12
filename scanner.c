@@ -13,7 +13,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 
-error_t error;
+extern error_t error;
 
 void myungetc(int inchar){
     ungetc(inchar,stdin);

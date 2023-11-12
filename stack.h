@@ -10,7 +10,7 @@
 #define STACK_H
 
 #include <stdbool.h>
-#include "token.h"
+#include "symtable.h"
 
 typedef enum sem_data_type {
     SEM_OPERATOR,
@@ -110,5 +110,20 @@ void print_stack_contents(stack_t *stack);
  * @brief Pushes symtable to the stack
 */
 void stack_push_table(stack_t* stack);
+
+/**
+ * @brief Pops symtable from the stack
+*/
+void stack_pop_table(stack_t* stack);
+
+/**
+ * @brief Returns top symtable from the stack
+*/
+symbol_table_t* stack_top_table(stack_t* stack);
+
+/**
+ * @brief Destroy the symtable stack
+*/
+void stack_destroy_table(stack_t* stack);
 
 #endif // STACK_H

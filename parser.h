@@ -10,8 +10,6 @@
 #define PARSER_H
 
 #include "scanner.h"
-#include "symtable.h"
-#include "token.h"
 #include "stack.h"
 #include <stdbool.h>
 
