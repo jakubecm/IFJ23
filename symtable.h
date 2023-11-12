@@ -13,6 +13,11 @@ typedef token_type_t variable_type_t;
 typedef token_attribute_t htab_attribute_t;
 typedef const char * htab_key_t;
 
+typedef enum symbol_type {
+    VAR,
+    FUNC
+} symbol_type_t;
+
 typedef struct htab_var {
     htab_attribute_t        value;
     variable_type_t         type;
@@ -31,6 +36,7 @@ typedef union htab_value {
 typedef struct data {
     char            *name;
     htab_value_t    value;
+    symbol_type_t   type;
 } data_t; 
 
 /**
@@ -38,7 +44,7 @@ typedef struct data {
 */
 typedef struct symbol {
     htab_key_t key;
-    htab_value_t data;
+    data_t data;
     struct symbol *next;
 } symbol;
 
@@ -74,12 +80,24 @@ void symbol_table_free(symbol_table_t *table);
 /**
  * @brief Inserts new symbol into the table
  * @param table Pointer to the symbol table
- * @param key Hash key of the symbol
+ * @param key key of the symbol
 */
 symbol *symbol_table_lookup(symbol_table_t *table, htab_key_t key);
 
+/**
+ * @brief Search for a function with the given key.
+ * Check for type property of returned struct to determine if the function was found
+ * @param table Pointer to the symbol table
+ * @param key key of the symbol
+*/
 data_t symbol_table_lookup_func(symbol_table_t *table, htab_key_t key);
 
+/**
+ * @brief Search for a variable with the given key.
+ * Check for type property of returned struct to determine if the variable was found
+ * @param table Pointer to the symbol table
+ * @param key key of the symbol
+*/
 data_t symbol_table_lookup_var(symbol_table_t *table, htab_key_t key);
 
 /**
@@ -88,7 +106,7 @@ data_t symbol_table_lookup_var(symbol_table_t *table, htab_key_t key);
  * @param key key of the symbol
  * @param value Value of the symbol
 */
-int symbol_table_insert(symbol_table_t *table, htab_key_t key, htab_value_t data);
+int symbol_table_insert(symbol_table_t *table, htab_key_t key, data_t data);
 
 /**
  * @brief Removes symbol from the table

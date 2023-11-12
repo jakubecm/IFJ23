@@ -43,20 +43,10 @@ void symbol_table_free(symbol_table_t *table) {
     free(table);
 }
 
-// TODO: co kdyz mam funkci a promennou se stejnym nazvem? mozna staci pridat pred klic nejaky konstantni prefix?
-symbol *symbol_table_lookup(symbol_table_t *table, htab_key_t key) {
+int symbol_table_insert(symbol_table_t *table, htab_key_t key, data_t data) {
     size_t hash = htab_hash_function(key) % table->size;
     symbol *s = table->table[hash];
-    while (s != NULL && strcmp(s->key, key) != 0) {
-        s = s->next;
-    }
-    return s;
-}
-
-int symbol_table_insert(symbol_table_t *table, htab_key_t key, htab_value_t data) {
-    size_t hash = htab_hash_function(key) % table->size;
-    symbol *s = table->table[hash];
-    while (s != NULL && strcmp(s->key, key) != 0) {
+    while (s != NULL && s->data.type != data.type && strcmp(s->key, key) != 0) {
         s = s->next;
     }
     if (s != NULL) {
@@ -126,4 +116,34 @@ void symbol_table_resize(symbol_table_t *table, size_t new_size) {
     // nastavíme novou velikost tabulky
     table->size = new_size;
     table->table = new_table;
+}
+
+data_t symbol_table_lookup_var(symbol_table_t *table, htab_key_t key) {
+    size_t hash = htab_hash_function(key) % table->size;
+    symbol *s = table->table[hash];
+    while (s != NULL && s->data.type != VAR && strcmp(s->key, key) != 0) {
+        s = s->next;
+    }
+
+    if (s == NULL) {
+        data_t data;
+        data.type = -1;
+        return data;
+    }
+    return s->data;
+}
+
+data_t symbol_table_lookup_func(symbol_table_t *table, htab_key_t key) {
+    size_t hash = htab_hash_function(key) % table->size;
+    symbol *s = table->table[hash];
+    while (s != NULL && s->data.type != FUNC && strcmp(s->key, key) != 0) {
+        s = s->next;
+    }
+    
+    if (s == NULL) {
+        data_t data;
+        data.type = -1;
+        return data;
+    }
+    return s->data;
 }
