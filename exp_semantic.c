@@ -43,7 +43,7 @@ sem_data_type_t tok_type(parser_t* parserData) {
         case TOK_IDENTIFIER:
 
             tmpData = stack_lookup_var(parserData->stack, parserData->token.attribute.string);
-            if(tmpData.type == VAR) {
+            if(tmpData.type == VAR || tmpData.type == LET) {
                 switch(tmpData.value.var_id.type) {
                     case TOK_INT:
                         return SEM_INT;
