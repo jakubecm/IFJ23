@@ -15,7 +15,8 @@ typedef const char * htab_key_t;
 
 typedef enum symbol_type {
     VAR,
-    FUNC
+    FUNC,
+    NOT_FOUND = -1
 } symbol_type_t;
 
 typedef struct htab_var {

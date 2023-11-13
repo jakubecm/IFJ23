@@ -179,10 +179,9 @@ void reduce(stack_t* stack, int num, analysis_t* analysis) {
 
 void prec_analysis(stack_t *stack, parser_t* parserData, stack_terminal_t* tmp, analysis_t* analysis) {
     int prec = precedence(tmp, &parserData->token);
-    sem_data_type_t input_type = tok_type(parserData->token);
+    sem_data_type_t input_type = tok_type(parserData);
     DEBUG_PRINT("prec: %c\n", prec);
     DEBUG_PRINT("input data: %d\n", input_type);
-
     switch(prec) {
         case '<':
             DEBUG_PRINT("==============SHIFT\n");
