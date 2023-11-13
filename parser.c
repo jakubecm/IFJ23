@@ -11,27 +11,21 @@
 #include "error.h"
 #include "expression.h"
 
-/** LL - gramatika
-<program> -> <statement> <program> | ε
+/** ================== LL GRAMMAR ==================
 
-<statement> -> <variable_definition_let> | <variable_definition_var> | <assignment> | <conditional_statement> | <loop> |
-<function_call> | <function_definition>
+<program> -> <statement> <program> | <function_definition> <program> | ε
+
+<statement_list> -> <statement> <statement_list> | ε
+
+<statement> -> <variable_definition_let> | <variable_definition_var> | <assignment> | <conditional_statement> | <loop> | <function_call> | <return_statement>
 
 <function_definition> -> "func" <identifier> "(" <parameter_list> ")" <function_return_type_and_body>
 
-<function_return_type_and_body> -> "{" <void_function_body> "}" | <nonvoid_function> "{" <nonvoid_function_body> "}"
+<function_return_type_and_body> -> "{" <void_function_body> "}" | "->" <type> "{" <nonvoid_function_body> "}"
 
-<nonvoid_function> -> "->" <type>
+<nonvoid_function_body> -> <statement_list> | ε
 
-<nonvoid_function_body> -> <statement_nonvoid_function> <nonvoid_function_body> | ε
-
-<void_function_body> -> <statement_void_function> <void_function_body> | ε
-
-<statement_nonvoid_function> -> <variable_definition_let> | <variable_definition_var> | <assignment> |
-<conditional_statement> | <loop> | <function_call> | <return_statement>
-
-<statement_void_function> -> <variable_definition_let> | <variable_definition_var> | <assignment> |
-<conditional_statement> | <loop> | <function_call> | <empty_return_statement>
+<void_function_body> -> <statement_list> | ε
 
 <parameter_list> -> <parameter> <more_parameters> | ε
 
@@ -39,15 +33,11 @@
 
 <parameter> -> <no_name_parameter> | <identifier_parameters>
 
-<no_name_parameter> -> "_" <all_parameters>
+<no_name_parameter> -> "_" <identifier> ":" <type>
 
 <identifier_parameter> -> <identifier> <rest_of_identifier_parameter>
 
-<rest_of_identifier_parameter> -> <no_id_parameter> | <all_parameters>
-
-<no_id_parameter> -> "_" ":" <type>
-
-<all_parameters> -> <identifier> ":" <type>
+<rest_of_identifier_parameter> -> "_" ":" <type> |  <identifier> ":" <type>
 
 <type> -> "Double" | "Int" | "String" | "Double?" | "Int?" | "String?"
 
@@ -63,18 +53,20 @@
 
 <initialization> -> "=" <expression>
 
-<assignment> -> <identifier> "=" <expression> | <identifier> "=" <function_call>
+<assignment> -> <identifier> "=" <assignment_type>
+
+<assignment_type> -> <function_call> | <expression>
 
 <conditional_statement> -> if <if_statement>
 
 <if_statement> -> <classical_statement> | <variable_statement>
 
-<classical_statement> -> <expression> "{" <program> "}" "else" "{" <program> "}"
+<classical_statement> -> <expression> "{" <statement_list>  "}" "else" "{" <statement_list> "}"
 
-<variable_statement> -> let <identifier> "{" <program> "}" "else" "{" <program> "}" (pozn. identifier zastupuje drive
+<variable_statement> -> let <identifier> "{" <statement_list> "}" "else" "{" <statement_list> "}" (pozn. identifier zastupuje drive
 definovanou nemodifikovatelnou promennou)
 
-<loop> -> "while" <expression> "{" <program> "}"
+<loop> -> "while" <expression> "{" <statement_list> "}"
 
 <function_call> -> <identifier> "(" <arguments> ")"
 
@@ -84,22 +76,27 @@ definovanou nemodifikovatelnou promennou)
 
 <return_statement> -> "return" <returned_expression>
 
-<returned_expression> -> <expression>
+<returned_expression> -> <expression> | ε
 
-<empty_return_statement> -> "return"
-*/
+================== LL GRAMMAR END ================== */
 
+//================= FUNCTION DECLARATIONS START HERE ================= //
 bool rule_program(parser_t *parser);
+bool rule_statement_list(parser_t *parser);
 bool rule_statement(parser_t *parser);
 bool rule_function_definition(parser_t *parser);
-bool rule_function_return_type(parser_t *parser);
-bool nonvoid_function(parser_t *parser);
+bool rule_function_return_type_and_body(parser_t *parser);
+bool rule_nonvoid_function(parser_t *parser);
+bool rule_nonvoid_function_body(parser_t *parser);
+bool rule_void_function_body(parser_t *parser);
+bool rule_statement_nonvoid_function(parser_t *parser);
+bool rule_statement_void_function(parser_t *parser);
 bool rule_parameter_list(parser_t *parser);
 bool rule_more_parameters(parser_t *parser);
 bool rule_parameter(parser_t *parser);
+bool rule_no_name_parameter(parser_t *parser);
 bool rule_identifier_parameter(parser_t *parser);
 bool rule_rest_of_identifier_parameter(parser_t *parser);
-bool rule_no_name_parameter(parser_t *parser);
 bool rule_no_id_parameter(parser_t *parser);
 bool rule_all_parameters(parser_t *parser);
 bool rule_type(parser_t *parser);
@@ -110,6 +107,7 @@ bool rule_type_def(parser_t *parser);
 bool rule_type_def_follow(parser_t *parser);
 bool rule_initialization(parser_t *parser);
 bool rule_assignment(parser_t *parser);
+bool rule_assignment_type(parser_t *parser);
 bool rule_conditional_statement(parser_t *parser);
 bool rule_if_statement(parser_t *parser);
 bool rule_classical_statement(parser_t *parser);
@@ -120,8 +118,13 @@ bool rule_arguments(parser_t *parser);
 bool rule_more_arguments(parser_t *parser);
 bool rule_return_statement(parser_t *parser);
 bool rule_returned_expression(parser_t *parser);
+bool rule_empty_return_statement(parser_t *parser);
+//================= FUNCTION DECLARATIONS END HERE ================= //
 
-void parser_init(parser_t *parser, scanner_t *scanner) {
+//================= PARSER FUNCTIONS ================= //
+
+void parser_init(parser_t *parser, scanner_t *scanner)
+{
     parser->scanner = scanner;
     parser->stack = malloc(sizeof(stack_t));
     stack_init(parser->stack);
@@ -132,7 +135,8 @@ void parser_init(parser_t *parser, scanner_t *scanner) {
     parser->next_token = get_next_token();
 }
 
-void parser_destroy(parser_t *parser) {
+void parser_destroy(parser_t *parser)
+{
     stack_destroy_table(parser->stack);
     stack_free(parser->stack);
 }
@@ -141,273 +145,282 @@ bool is_type(parser_t *parser, token_type_t type) { return parser->token.type ==
 
 bool is_type_next(parser_t *parser, token_type_t type) { return parser->next_token.type == type; }
 
-void load_token(parser_t *parser) {
+void load_token(parser_t *parser)
+{
     parser->token = parser->next_token;
     parser->next_token = get_next_token();
 }
 
+//================= PARSER FUNCTIONS END HERE ================= //
+//-------------------------------------------------------------//
 //================= GRAMMAR RULES START HERE ================= //
 
-// Note: pls implement these rules in the order they are in the grammar otherwise we will get lost
+// <program> -> <statement> <program> | <function_definition> <program> | ε
 
-bool rule_program(parser_t *parser) {
-    if (is_type(parser, TOK_EOF)) {  // is this ok?
-        // life update: this is probably ok
+bool rule_program(parser_t *parser){
+    if (is_type(parser, TOK_EOF)){
         return true;
     }
-    return rule_statement(parser) && rule_program(parser);
+    else if (rule_statement(parser)){
+        if (rule_program(parser)){
+            return true;
+        }
+    }
+    else if (rule_function_definition(parser)){
+        if (rule_program(parser)){
+            return true;
+        }
+    }
+
+    return false;
 }
 
-bool rule_statement(parser_t *parser) {
-    switch (parser->token.type) {
+// <statement_list> -> <statement> <statement_list> | ε
+// Note: statement list is only used in condtional statements and loops, thats why there is a check for RCURLYBRACKET
+
+bool rule_statement_list(parser_t *parser){
+    if (rule_statement(parser)){
+
+        if (rule_statement_list(parser)){
+            return true;
+        }
+    }
+    else if (is_type(parser, TOK_RCURLYBRACKET)){
+        return true;
+    }
+
+    return false;
+}
+
+// <statement> -> <variable_definition_let> | <variable_definition_var> | <assignment> | <conditional_statement> | <loop> | <function_call> | <return_statement>
+
+bool rule_statement(parser_t *parser){
+    switch(parser->token.type){
         case K_LET:
             return rule_variable_definition_let(parser);
-            break;
-
         case K_VAR:
             return rule_variable_definition_var(parser);
-            break;
-
         case TOK_IDENTIFIER:
-            if (is_type_next(parser, TOK_LBRACKET)) {
+            if(is_type_next(parser, TOK_LBRACKET)){
                 return rule_function_call(parser);
             }
-            return rule_assignment(parser);
-            break;
-
+            else{
+                return rule_assignment(parser);
+            }
         case K_IF:
             return rule_conditional_statement(parser);
-            break;
-
         case K_WHILE:
             return rule_loop(parser);
-            break;
-
-        case K_FUNC:
-            return rule_function_definition(parser);
-            break;
-
+        case K_RETURN:
+            return rule_return_statement(parser);
         default:
             return false;
-            break;
     }
 }
 
-bool rule_function_definition(parser_t *parser) {
-    if (!is_type_next(parser, TOK_IDENTIFIER)) {
+// <function_definition> -> "func" <identifier> "(" <parameter_list> ")" <function_return_type_and_body>
+
+bool rule_function_definition(parser_t *parser){
+    if (!is_type(parser, K_FUNC)){
         return false;
     }
-    load_token(parser);  // identifier | (
-
-    // data_t func;
-    // func.name = parser->token.attribute.string;
-
-    load_token(parser);  // ( | param list
-
-    if (!is_type(parser, TOK_LBRACKET)) {
+    load_token(parser);
+    if (!is_type(parser, TOK_IDENTIFIER)){
         return false;
     }
-
-    load_token(parser);  // param list OR )
-
-    if (!rule_parameter_list(parser)) {
+    load_token(parser);
+    if (!is_type(parser, TOK_LBRACKET)){
         return false;
     }
-
-    if (!is_type(parser, TOK_RBRACKET)) {
+    load_token(parser);
+    if (!rule_parameter_list(parser)){
         return false;
     }
-
-    load_token(parser);  // return type | {
-
-    if (!rule_function_return_type_and_body(parser)) {
+    if (!is_type(parser, TOK_RBRACKET)){
+        return false;
+    }
+    load_token(parser);
+    if (!rule_function_return_type_and_body(parser)){
         return false;
     }
 
     return true;
 }
 
-bool rule_function_return_type_and_body(parser_t *parser) {
-    // TODO: Re-implement with updated grammar
-}
+// <function_return_type_and_body> -> "{" <void_function_body> "}" | "->" <type> "{" <nonvoid_function_body> "}"
 
-bool nonvoid_function(parser_t *parser) {
-    if (!is_type(parser, TOK_ARROW)) {
+bool rule_function_return_type_and_body(parser_t *parser){
+    if (!is_type(parser, TOK_LCURLYBRACKET)){
         return false;
     }
-
     load_token(parser);
-    return rule_type(parser);
-}
-
-bool nonvoid_function_body(parser_t *parser) {
-    if (!rule_statement_nonvoid_function(parser)) {
-        return false;
-    }
-
-    return rule_nonvoid_function_body(parser);
-}
-
-bool void_function_body(parser_t *parser) {
-    if (!rule_statement_void_function(parser)) {
-        return false;
-    }
-
-    return rule_void_function_body(parser);
-}
-
-bool rule_statement_nonvoid_function(parser_t *parser) {
-    switch (parser->token.type) {
-        case K_LET:
-            return rule_variable_definition_let(parser);
-            break;
-
-        case K_VAR:
-            return rule_variable_definition_var(parser);
-            break;
-
-        case TOK_IDENTIFIER:
-            if (is_type_next(parser, TOK_LBRACKET)) {
-                return rule_function_call(parser);
-            }
-            return rule_assignment(parser);
-            break;
-
-        case K_IF:
-            return rule_conditional_statement(parser);
-            break;
-
-        case K_WHILE:
-            return rule_loop(parser);
-            break;
-
-        case K_RETURN:
-            return rule_return_statement(parser);
-            break;
-
-        default:
+    if (rule_void_function_body(parser)){
+        if (!is_type(parser, TOK_RCURLYBRACKET)){
             return false;
-            break;
+        }
+        load_token(parser);
+        return true;
     }
-}
-
-bool rule_statement_void_function(parser_t *parser) {
-    switch (parser->token.type) {
-        case K_LET:
-            return rule_variable_definition_let(parser);
-            break;
-
-        case K_VAR:
-            return rule_variable_definition_var(parser);
-            break;
-
-        case TOK_IDENTIFIER:
-            if (is_type_next(parser, TOK_LBRACKET)) {
-                return rule_function_call(parser);
-            }
-            return rule_assignment(parser);
-            break;
-
-        case K_IF:
-            return rule_conditional_statement(parser);
-            break;
-
-        case K_WHILE:
-            return rule_loop(parser);
-            break;
-
-        case K_RETURN:
-            return rule_empty_return_statement(parser);
-            break;
-
-        default:
+    else if (is_type(parser, TOK_ARROW)){
+        load_token(parser);
+        if (!rule_type(parser)){
             return false;
-            break;
+        }
+        load_token(parser);
+        if (!is_type(parser, TOK_LCURLYBRACKET)){
+            return false;
+        }
+        load_token(parser);
+        if (!rule_nonvoid_function_body(parser)){
+            return false;
+        }
+        if (!is_type(parser, TOK_RCURLYBRACKET)){
+            return false;
+        }
+        load_token(parser);
+        return true;
     }
 }
 
-bool rule_parameter_list(parser_t *parser) {
-    if (is_type(parser, TOK_RBRACKET)) {
-        return true;  // function has no params
+// <nonvoid_function_body> -> <statement_list> | ε
+
+bool rule_nonvoid_function_body(parser_t *parser){
+    if (rule_statement_list(parser)){
+        return true;
+    }
+    else if (is_type(parser, TOK_RCURLYBRACKET)){
+        return true;
     }
 
-    return rule_parameter(parser) && rule_more_parameters(parser);
+    return false;
 }
 
-bool rule_more_parameters(parser_t *parser) {
-    if (is_type(parser, TOK_RBRACKET)) {
-        return true;  // no more params
+// <void_function_body> -> <statement_list> | ε
+
+bool rule_void_function_body(parser_t *parser){
+    if (rule_statement_list(parser)){
+        return true;
+    }
+    else if (is_type(parser, TOK_RCURLYBRACKET)){
+        return true;
     }
 
-    if (is_type(parser, TOK_COMMA)) {
-        load_token(parser);  // identifier OR _ | identifier OR _
+    return false;
+}
 
-        return rule_parameter(parser) && rule_more_parameters(parser);
+// <parameter_list> -> <parameter> <more_parameters> | ε
+
+bool rule_parameter_list(parser_t *parser){
+    if (rule_parameter(parser)){
+        if (rule_more_parameters(parser)){
+            return true;
+        }
     }
-    return false;  // Neither comma nor ), not a valid parameter list
-}
-
-bool rule_parameter(parser_t *parser) {
-    if (is_type(parser, TOK_UNDERSCORE)) {
-        return rule_no_name_parameter(parser);
-    } else if (is_type(parser, TOK_IDENTIFIER)) {
-        return rule_identifier_parameter(parser);
-    } else {
-        return false;  // Neither _ nor identifier, not a valid parameter
+    else if (is_type(parser, TOK_RBRACKET)){
+        return true;
     }
+
+    return false;
 }
 
-bool rule_identifier_parameter(parser_t *parser) {
-    load_token(parser);  // rest of identifier parameter | :
+// <more_parameters> -> "," <parameter> <more_parameters> | ε
 
-    return rule_rest_of_identifier_parameter(parser);
-}
-
-bool rule_rest_of_identifier_parameter(parser_t *parser) {
-    if (is_type(parser, TOK_UNDERSCORE)) {
-        return rule_no_id_parameter(parser);
-    } else if (is_type(parser, TOK_IDENTIFIER)) {
-        return rule_all_parameters(parser);
-    } else {
-        return false;  // Neither _ nor id, not a valid parameter
+bool rule_more_parameters(parser_t *parser){
+    if (!is_type(parser, TOK_COMMA)){
+        return false;
     }
-}
-
-bool rule_no_name_parameter(parser_t *parser) {
-    load_token(parser);  // identifier | :
-
-    if (!is_type(parser, TOK_IDENTIFIER)) {
-        return false;  // for named parametres we check this in rule_rest_of_identifier_parameter
+    load_token(parser);
+    if (!rule_parameter(parser)){
+        return false;
     }
-    return rule_all_parameters(parser);
+    if (!rule_more_parameters(parser)){
+        return false;
+    }
+    return true;
 }
 
-bool rule_no_id_parameter(parser_t *parser) {
-    load_token(parser);  // : | type
+// <parameter> -> <no_name_parameter> | <identifier_parameters>
 
-    if (!is_type(parser, TOK_COLON)) {
+bool rule_parameter(parser_t *parser){
+    if (rule_no_name_parameter(parser)){
+        return true;
+    }
+    else if (rule_identifier_parameter(parser)){
+        return true;
+    }
+
+    return false;
+}
+
+// <no_name_parameter> -> "_" <identifier> ":" <type>
+
+bool rule_no_name_parameter(parser_t *parser){
+    if (!is_type(parser, TOK_UNDERSCORE)){
+        return false;
+    }
+    load_token(parser);
+    if (!is_type(parser, TOK_IDENTIFIER)){
+        return false;
+    }
+    load_token(parser);
+    if (!is_type(parser, TOK_COLON)){
+        return false;
+    }
+    load_token(parser);
+    if (!rule_type(parser)){
         return false;
     }
 
-    load_token(parser);  // type | ???
-
-    return rule_type(parser);
+    return true;
 }
 
-bool rule_all_parameters(parser_t *parser) {
-    load_token(parser);  // : | type
+// <identifier_parameter> -> <identifier> <rest_of_identifier_parameter>
 
-    if (!is_type(parser, TOK_COLON)) {
-        return false;
+bool rule_identifier_parameter(parser_t *parser){
+    if (is_type(parser, TOK_IDENTIFIER)){
+        load_token(parser);
+        if (rule_rest_of_identifier_parameter(parser)){
+            return true;
+        }
     }
 
-    load_token(parser);  // type | ???
-
-    return rule_type(parser);
+    return false;
 }
 
-bool rule_type(parser_t *parser) {
-    switch (parser->token.type) {
+// <rest_of_identifier_parameter> -> "_" ":" <type> |  <identifier> ":" <type>
+
+bool rule_rest_of_identifier_parameter(parser_t *parser){
+    
+    if (is_type(parser, TOK_UNDERSCORE)){
+        load_token(parser);
+        if (!is_type(parser, TOK_COLON)){
+            return false;
+        }
+        load_token(parser);
+        if (!rule_type(parser)){
+            return false;
+        }
+        return true;
+    }
+    else if (is_type(parser, TOK_IDENTIFIER)){
+        load_token(parser);
+        if (!is_type(parser, TOK_COLON)){
+            return false;
+        }
+        if (!rule_type(parser)){
+            return false;
+        }
+        return true;
+    }
+
+    return false;
+        
+}
+
+// <type> -> "Double" | "Int" | "String" | "Double?" | "Int?" | "String?"
+
+bool rule_type(parser_t *parser){
+    switch(parser->token.type){
         case K_DOUBLE:
         case K_INT:
         case K_STRING:
@@ -415,318 +428,345 @@ bool rule_type(parser_t *parser) {
         case K_INTQ:
         case K_STRINGQ:
             return true;
-            break;
-
         default:
             return false;
-            break;
     }
 }
 
-bool rule_variable_definition_let(parser_t *parser) {
-    load_token(parser);
+// <variable_definition_let> -> "let" <identifier> <definition_types> (pozn. let je NEMODIFIKOVATELNA promenna)
 
-    // If next token is not identifier, it is not a valid variable definition
-    if (!is_type(parser, TOK_IDENTIFIER)) {
+bool rule_variable_definition_let(parser_t *parser){
+    if (!is_type(parser, K_LET)){
         return false;
     }
-
-    // char *variable_name = parser->token.attribute.string;
-    //  We'll have to add it to the symbol table later
-
-    return rule_definition_types(parser);
-}
-
-bool rule_variable_definition_var(parser_t *parser) {
     load_token(parser);
-
-    // If next token is not identifier, it is not a valid variable definition
-    if (!is_type(parser, TOK_IDENTIFIER)) {
+    if (!is_type(parser, TOK_IDENTIFIER)){
         return false;
     }
-
-    // char *variable_name = parser->token.attribute.string;
-    //  We'll have to add it to the symbol table later
-
-    return rule_definition_types(parser);
-}
-
-bool rule_definition_types(parser_t *parser) {
     load_token(parser);
-
-    if (is_type(parser, TOK_COLON)) {
-        return rule_type_def(parser);
-    } else if (is_type(parser, TOK_ASSIGNMENT)) {
-        return rule_initialization(parser);
-    } else {
-        return false;  // If it's not colon or assignment, it's not a valid variable definition
-    }
-}
-
-bool rule_type_def(parser_t *parser) {
-    load_token(parser);  // Consume the colon
-
-    if (rule_type(parser)) {
-        return rule_type_def_follow(parser);
-    } else {
-        return false;  // If it's not a type, it's not a valid variable definition
-    }
-}
-
-bool rule_type_def_follow(parser_t *parser) {
-    load_token(parser);  // Consume the type
-
-    if (is_type(parser, TOK_ASSIGNMENT)) {
-        return rule_initialization(parser);
-    } else {
-        return true;  // If it's not assignment, it's an epsilon production
-    }
-}
-
-bool rule_initialization(parser_t *parser) {
-    return true;
-    // return (exp_parsing(parser) != -1) ? true : false;  // Not sure if this is the right way to do it lol
-}
-
-bool rule_assignment(parser_t *parser) {
-    load_token(parser);
-
-    if (!is_type(parser, TOK_ASSIGNMENT)) {
-        return false;
-    }
-
-    load_token(parser);
-
-    exp_parsing(parser);  // Again not sure if this is the right way to do it
-
-    if (error != ERR_OK) {
+    if (!rule_definition_types(parser)){
         return false;
     }
 
     return true;
 }
 
-bool rule_conditional_statement(parser_t *parser) {
+// <variable_definition_var> -> "var" <identifier> <definition_types>
+
+bool rule_variable_definition_var(parser_t *parser){
+    if (!is_type(parser, K_VAR)){
+        return false;
+    }
     load_token(parser);
-
-    return rule_if_statement(parser);
-}
-
-bool rule_if_statement(parser_t *parser) {
-    if (is_type(parser, K_LET)) {
-        return rule_variable_statement(parser);
-    } else {
-        return rule_classical_statement(parser);
-    }
-}
-
-bool rule_classical_statement(parser_t *parser) {
-    // Parse the expression
-    exp_parsing(parser);
-
-    if (error != ERR_OK) {
+    if (!is_type(parser, TOK_IDENTIFIER)){
         return false;
     }
-
-    // Expect and handle the '{' token
-    if (!is_type(parser, TOK_LCURLYBRACKET)) {
+    load_token(parser);
+    if (!rule_definition_types(parser)){
         return false;
     }
-    load_token(parser);  // Move past '{'
-
-    // Parse the program within the if block
-    if (!rule_program(parser)) {
-        return false;
-    }
-
-    // Expect and handle the '}' token
-    // Note: Not really sure if the token is already loaded here or if i need to load it beforehand, check pls
-    if (!is_type(parser, TOK_RCURLYBRACKET)) {
-        return false;
-    }
-    load_token(parser);  // Move past '}'
-
-    // Expect and handle the 'else' keyword
-    if (!is_type(parser, K_ELSE)) {
-        return false;
-    }
-    load_token(parser);  // Move past 'else'
-
-    // Expect and handle the '{' token for the else block
-    if (!is_type(parser, TOK_LCURLYBRACKET)) {
-        return false;
-    }
-    load_token(parser);  // Move past '{'
-
-    // Parse the program within the else block
-    if (!rule_program(parser)) {
-        return false;
-    }
-
-    // Expect and handle the '}' token
-    if (!is_type(parser, TOK_RCURLYBRACKET)) {
-        return false;
-    }
-    load_token(parser);  // Move past '}'
 
     return true;
 }
 
-bool rule_variable_statement(parser_t *parser) {
-    load_token(parser);  // Move past 'let'
+// <definition_types> -> <type_def> | <initialization>
 
-    // Expect and handle the identifier
-    if (!is_type(parser, TOK_IDENTIFIER)) {
-        return false;
-    }
-
-    // char *variable_name = parser->token.attribute.string;
-    //  TODO: Check if the variable is in the symtable and is unmodifiable (should be as it is let)
-
-    load_token(parser);  // Move past the identifier
-
-    // Expect and handle the '{' token
-    if (!is_type(parser, TOK_LCURLYBRACKET)) {
-        return false;
-    }
-    load_token(parser);  // Move past '{'
-
-    // Parse the program within the if block
-    if (!rule_program(parser)) {
-        return false;
-    }
-
-    // Expect and handle the '}' token
-    if (!is_type(parser, TOK_RCURLYBRACKET)) {
-        return false;
-    }
-    load_token(parser);  // Move past '}'
-
-    // Expect and handle the 'else' keyword
-    if (!is_type(parser, K_ELSE)) {
-        return false;
-    }
-    load_token(parser);  // Move past 'else'
-
-    // Expect and handle the '{' token for the else block
-    if (!is_type(parser, TOK_LCURLYBRACKET)) {
-        return false;
-    }
-    load_token(parser);  // Move past '{'
-
-    // Parse the program within the else block
-    if (!rule_program(parser)) {
-        return false;
-    }
-
-    // Expect and handle the '}' token
-    if (!is_type(parser, TOK_RCURLYBRACKET)) {
-        return false;
-    }
-    load_token(parser);  // Move past '}'
-
-    return true;
-}
-
-bool rule_loop(parser_t *parser) {
-    load_token(parser);  // Move past 'while'
-
-    // Parse the expression
-    exp_parsing(parser);
-
-    if (error != ERR_OK) {
-        return false;
-    }
-
-    // Expect and handle the '{' token
-    if (!is_type(parser, TOK_LCURLYBRACKET)) {
-        return false;
-    }
-    load_token(parser);  // Move past '{'
-
-    // Parse the program within the loop block
-    if (!rule_program(parser)) {
-        return false;
-    }
-
-    // Expect and handle the '}' token
-    if (!is_type(parser, TOK_RCURLYBRACKET)) {
-        return false;
-    }
-    load_token(parser);  // Move past '}'
-
-    return true;
-}
-
-bool rule_function_call(parser_t *parser) {
-    load_token(parser);  // Move past the identifier, now we are at '(' and we know it
-    load_token(parser);  // Move past '('
-
-    if (rule_arguments(parser)) {
-        load_token(parser);  // Move past ')'
+bool rule_definition_types(parser_t *parser){
+    if (rule_type_def(parser)){
         return true;
-    } else {
-        return false;
     }
+    else if (rule_initialization(parser)){
+        return true;
+    }
+
+    return false;
 }
 
-bool rule_arguments(parser_t *parser) {
-    if (is_type(parser, TOK_RBRACKET)) {
-        return true;  // Successfully parsed an epsilon
-    }
+// <type_def> -> ":" <type> <type_def_follow>
 
-    exp_parsing(parser);
-
-    if (error != ERR_OK) {
+bool rule_type_def(parser_t *parser){
+    if (!is_type(parser, TOK_COLON)){
         return false;
-    } else {
-        return rule_more_arguments(parser);
     }
+    load_token(parser);
+    if (!rule_type(parser)){
+        return false;
+    }
+    load_token(parser);
+    if (!rule_type_def_follow(parser)){
+        return false;
+    }
+
+    return true;
 }
 
-bool rule_more_arguments(parser_t *parser) {
-    load_token(parser);  // Move past the expression
+// <type_def_follow> -> <initialization> | ε
+// TODO: Check correctness here, this might not be correct, I am not sure how to check for ε
 
-    if (is_type(parser, TOK_RBRACKET)) {
-        return true;  // Successfully parsed an epsilon
-    } else if (is_type(parser, TOK_COMMA)) {
-        load_token(parser);  // Move past ','
+bool rule_type_def_follow(parser_t *parser){
+    if (rule_initialization(parser)){
+        return true;
+    }
+    else return true;
+}
+
+// <initialization> -> "=" <expression>
+
+bool rule_initialization(parser_t *parser){
+
+    if (is_type(parser, TOK_ASSIGNMENT)){
+        load_token(parser);
+        
         exp_parsing(parser);
-
-        if (error != ERR_OK) {
+        if (error != ERR_OK){
             return false;
-        } else {
-            return rule_more_arguments(parser);
         }
-    } else {
-        return false;  // Neither comma nor ), not a valid argument list
+        return true;
     }
+
+    return false;
 }
 
-bool rule_return_statement(parser_t *parser) {
-    if (!is_type(parser, K_RETURN)) {
+// <assignment> -> <identifier> "=" <assignment_type>
+
+bool rule_assignment(parser_t *parser){
+    if (!is_type(parser, TOK_IDENTIFIER)){
+        return false;
+    }
+    load_token(parser);
+    if (!is_type(parser, TOK_ASSIGNMENT)){
+        return false;
+    }
+    load_token(parser);
+    if (!rule_assignment_type(parser)){
         return false;
     }
 
-    load_token(parser);  // Move past 'return'
-
-    return rule_returned_expression(parser);
+    return true;
 }
 
-bool rule_returned_expression(parser_t *parser) {
-    exp_parsing(parser);
+// <assignment_type> -> <function_call> | <expression>
 
-    if (error != ERR_OK) {
-        return false;
-    } else {
+bool rule_assignment_type(parser_t *parser){
+    if(is_type(parser, TOK_IDENTIFIER) && is_type_next(parser, TOK_LBRACKET)){
+        return rule_function_call(parser);
+    }
+    else{
+        exp_parsing(parser);
+        if (error != ERR_OK){
+            return false;
+        }
         return true;
     }
 }
 
-bool rule_empty_return_statement(parser_t *parser) {
-    if (!is_type(parser, K_RETURN)) {
+// <conditional_statement> -> if <if_statement>
+
+bool rule_conditional_statement(parser_t *parser){
+    if (!is_type(parser, K_IF)){
         return false;
     }
+    load_token(parser);
+    if (!rule_if_statement(parser)){
+        return false;
+    }
+
     return true;
 }
-// To discuss: return statement and returned experssion, needs reviewing, working on it
+
+// <if_statement> -> <classical_statement> | <variable_statement>
+
+bool rule_if_statement(parser_t *parser){
+    if (rule_classical_statement(parser)){
+        return true;
+    }
+    else if (rule_variable_statement(parser)){
+        return true;
+    }
+
+    return false;
+}
+
+// <classical_statement> -> <expression> "{" <statement_list>  "}" "else" "{" <statement_list> "}"
+
+bool rule_classical_statement(parser_t *parser){
+
+    exp_parsing(parser);
+    if (error != ERR_OK){
+        return false;
+    }
+    if (!is_type(parser, TOK_LCURLYBRACKET)){
+        return false;
+    }
+    load_token(parser);
+    if (!rule_statement_list(parser)){
+        return false;
+    }
+    if (!is_type(parser, TOK_RCURLYBRACKET)){
+        return false;
+    }
+    load_token(parser);
+    if (!is_type(parser, K_ELSE)){
+        return false;
+    }
+    load_token(parser);
+    if (!is_type(parser, TOK_LCURLYBRACKET)){
+        return false;
+    }
+    load_token(parser);
+    if (!rule_statement_list(parser)){
+        return false;
+    }
+    if (!is_type(parser, TOK_RCURLYBRACKET)){
+        return false;
+    }
+}
+
+// <variable_statement> -> let <identifier> "{" <statement_list> "}" "else" "{" <statement_list> "}" (pozn. identifier zastupuje drive def. nemodifikovatelnou promennou)
+
+bool rule_variable_statement(parser_t *parser){
+    if (!is_type(parser, K_LET)){
+        return false;
+    }
+    load_token(parser);
+    if (!is_type(parser, TOK_IDENTIFIER)){
+        return false;
+    }
+    load_token(parser); // Somewhere around here we will check if the variable is defined
+    if (!is_type(parser, TOK_LCURLYBRACKET)){
+        return false;
+    }
+    load_token(parser);
+    if (!rule_statement_list(parser)){
+        return false;
+    }
+    if (!is_type(parser, TOK_RCURLYBRACKET)){
+        return false;
+    }
+    load_token(parser);
+    if (!is_type(parser, K_ELSE)){
+        return false;
+    }
+    load_token(parser);
+    if (!is_type(parser, TOK_LCURLYBRACKET)){
+        return false;
+    }
+    load_token(parser);
+    if (!rule_statement_list(parser)){
+        return false;
+    }
+    if (!is_type(parser, TOK_RCURLYBRACKET)){
+        return false;
+    }
+    load_token(parser);
+
+    return true;
+}
+
+// <loop> -> "while" <expression> "{" <statement_list> "}"
+
+bool rule_loop(parser_t *parser){
+    if (!is_type(parser, K_WHILE)){
+        return false;
+    }
+    load_token(parser);
+    
+    exp_parsing(parser);
+
+    if (error != ERR_OK){
+        return false;
+    }
+
+    if (!is_type(parser, TOK_LCURLYBRACKET)){
+        return false;
+    }
+    load_token(parser);
+    if (!rule_statement_list(parser)){
+        return false;
+    }
+    if (!is_type(parser, TOK_RCURLYBRACKET)){
+        return false;
+    }
+    load_token(parser);
+
+    return true;
+}
+
+// <function_call> -> <identifier> "(" <arguments> ")"
+
+bool rule_function_call(parser_t *parser){
+    if (!is_type(parser, TOK_IDENTIFIER)){
+        return false;
+    }
+    load_token(parser);
+    if (!is_type(parser, TOK_LBRACKET)){
+        return false;
+    }
+    load_token(parser);
+    if (!rule_arguments(parser)){
+        return false;
+    }
+    if (!is_type(parser, TOK_RBRACKET)){
+        return false;
+    }
+    load_token(parser);
+
+    return true;
+}
+
+// <arguments> -> <expression> <more_arguments> | ε
+
+bool rule_arguments(parser_t *parser){
+
+    if(is_type(parser, TOK_RBRACKET)){
+        return true;
+    }
+
+    exp_parsing(parser);
+    if (error != ERR_OK){
+        return false;
+    }
+
+    if (!rule_more_arguments(parser)){
+        return false;
+    }
+
+    return true;
+}
+
+// <more_arguments> -> "," <expression> <more_arguments> | ε
+
+bool rule_more_arguments(parser_t *parser){
+    if(is_type(parser, TOK_RBRACKET)){
+        return true;
+    }
+    else if (is_type(parser, TOK_COMMA)){
+        load_token(parser);
+        exp_parsing(parser);
+        if (error != ERR_OK){
+            return false;
+        }
+        if (!rule_more_arguments(parser)){
+            return false;
+        }
+    }
+
+    return true;
+}
+
+// <return_statement> -> "return" <returned_expression>
+
+bool rule_return_statement(parser_t *parser){
+    if (!is_type(parser, K_RETURN)){
+        return false;
+    }
+    load_token(parser);
+    if (!rule_returned_expression(parser)){
+        return false;
+    }
+
+    return true;
+}
+
+
+//================= GRAMMAR RULES END HERE ================= //
