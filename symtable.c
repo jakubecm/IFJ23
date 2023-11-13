@@ -127,7 +127,7 @@ data_t symbol_table_lookup_var(symbol_table_t *table, htab_key_t key) {
 
     if (s == NULL) {
         data_t data;
-        data.type = -1;
+        data.type = NOT_FOUND;
         return data;
     }
     return s->data;
@@ -142,7 +142,7 @@ data_t symbol_table_lookup_func(symbol_table_t *table, htab_key_t key) {
     
     if (s == NULL) {
         data_t data;
-        data.type = -1;
+        data.type = NOT_FOUND;
         return data;
     }
     return s->data;
