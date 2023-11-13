@@ -162,14 +162,10 @@ bool rule_program(parser_t *parser){
         return true;
     }
     else if (rule_statement(parser)){
-        if (rule_program(parser)){
-            return true;
-        }
+        return rule_program(parser);
     }
     else if (rule_function_definition(parser)){
-        if (rule_program(parser)){
-            return true;
-        }
+        return rule_program(parser);
     }
 
     return false;
@@ -180,10 +176,7 @@ bool rule_program(parser_t *parser){
 
 bool rule_statement_list(parser_t *parser){
     if (rule_statement(parser)){
-
-        if (rule_statement_list(parser)){
-            return true;
-        }
+        return rule_statement_list(parser);
     }
     else if (is_type(parser, TOK_RCURLYBRACKET)){
         return true;
@@ -240,11 +233,8 @@ bool rule_function_definition(parser_t *parser){
         return false;
     }
     load_token(parser);
-    if (!rule_function_return_type_and_body(parser)){
-        return false;
-    }
 
-    return true;
+    return rule_function_return_type_and_body(parser);
 }
 
 // <function_return_type_and_body> -> "{" <void_function_body> "}" | "->" <type> "{" <nonvoid_function_body> "}"
@@ -311,21 +301,19 @@ bool rule_void_function_body(parser_t *parser){
 // <parameter_list> -> <parameter> <more_parameters> | ε
 
 bool rule_parameter_list(parser_t *parser){
-    if (rule_parameter(parser)){
-        if (rule_more_parameters(parser)){
-            return true;
-        }
-    }
-    else if (is_type(parser, TOK_RBRACKET)){
+    if (is_type(parser, TOK_RBRACKET)){
         return true;
     }
-
-    return false;
+    return rule_parameter(parser) && rule_more_parameters(parser);
 }
 
 // <more_parameters> -> "," <parameter> <more_parameters> | ε
 
 bool rule_more_parameters(parser_t *parser){
+    if (is_type(parser, TOK_RBRACKET)){
+        return true;
+    }
+
     if (!is_type(parser, TOK_COMMA)){
         return false;
     }
@@ -345,11 +333,7 @@ bool rule_parameter(parser_t *parser){
     if (rule_no_name_parameter(parser)){
         return true;
     }
-    else if (rule_identifier_parameter(parser)){
-        return true;
-    }
-
-    return false;
+    return rule_identifier_parameter(parser);
 }
 
 // <no_name_parameter> -> "_" <identifier> ":" <type>
@@ -377,40 +361,32 @@ bool rule_no_name_parameter(parser_t *parser){
 // <identifier_parameter> -> <identifier> <rest_of_identifier_parameter>
 
 bool rule_identifier_parameter(parser_t *parser){
-    if (is_type(parser, TOK_IDENTIFIER)){
-        load_token(parser);
-        if (rule_rest_of_identifier_parameter(parser)){
-            return true;
-        }
+    if (!is_type(parser, TOK_IDENTIFIER)){
+        return false;
     }
 
-    return false;
+    load_token(parser);
+    return rule_rest_of_identifier_parameter(parser);
 }
 
 // <rest_of_identifier_parameter> -> "_" ":" <type> |  <identifier> ":" <type>
 
 bool rule_rest_of_identifier_parameter(parser_t *parser){
-    
     if (is_type(parser, TOK_UNDERSCORE)){
         load_token(parser);
         if (!is_type(parser, TOK_COLON)){
             return false;
         }
         load_token(parser);
-        if (!rule_type(parser)){
-            return false;
-        }
-        return true;
+        return rule_type(parser);
     }
     else if (is_type(parser, TOK_IDENTIFIER)){
         load_token(parser);
         if (!is_type(parser, TOK_COLON)){
             return false;
         }
-        if (!rule_type(parser)){
-            return false;
-        }
-        return true;
+        load_token(parser);
+        return rule_type(parser);
     }
 
     return false;
@@ -444,11 +420,7 @@ bool rule_variable_definition_let(parser_t *parser){
         return false;
     }
     load_token(parser);
-    if (!rule_definition_types(parser)){
-        return false;
-    }
-
-    return true;
+    return rule_definition_types(parser);
 }
 
 // <variable_definition_var> -> "var" <identifier> <definition_types>
@@ -462,11 +434,7 @@ bool rule_variable_definition_var(parser_t *parser){
         return false;
     }
     load_token(parser);
-    if (!rule_definition_types(parser)){
-        return false;
-    }
-
-    return true;
+    return rule_definition_types(parser);
 }
 
 // <definition_types> -> <type_def> | <initialization>
@@ -475,11 +443,8 @@ bool rule_definition_types(parser_t *parser){
     if (rule_type_def(parser)){
         return true;
     }
-    else if (rule_initialization(parser)){
-        return true;
-    }
 
-    return false;
+    return rule_initialization(parser);
 }
 
 // <type_def> -> ":" <type> <type_def_follow>
@@ -501,30 +466,31 @@ bool rule_type_def(parser_t *parser){
 }
 
 // <type_def_follow> -> <initialization> | ε
-// TODO: Check correctness here, this might not be correct, I am not sure how to check for ε
+// TODO: Check correctness here, this might not be correct, I am not sure how to check for ε // test this, hopefully it just works :D
 
 bool rule_type_def_follow(parser_t *parser){
-    if (rule_initialization(parser)){
+    if (!is_type(parser, TOK_ASSIGNMENT)) {
         return true;
     }
-    else return true;
+
+    return rule_initialization(parser);
 }
 
 // <initialization> -> "=" <expression>
 
 bool rule_initialization(parser_t *parser){
 
-    if (is_type(parser, TOK_ASSIGNMENT)){
-        load_token(parser);
-        
-        exp_parsing(parser);
-        if (error != ERR_OK){
-            return false;
-        }
-        return true;
+    if (!is_type(parser, TOK_ASSIGNMENT)){
+        return false;
     }
 
-    return false;
+    load_token(parser);
+
+    exp_parsing(parser);
+    if (error != ERR_OK) {
+        return false;
+    }
+    return true;
 }
 
 // <assignment> -> <identifier> "=" <assignment_type>
@@ -538,11 +504,7 @@ bool rule_assignment(parser_t *parser){
         return false;
     }
     load_token(parser);
-    if (!rule_assignment_type(parser)){
-        return false;
-    }
-
-    return true;
+    return rule_assignment_type(parser);
 }
 
 // <assignment_type> -> <function_call> | <expression>
@@ -567,11 +529,7 @@ bool rule_conditional_statement(parser_t *parser){
         return false;
     }
     load_token(parser);
-    if (!rule_if_statement(parser)){
-        return false;
-    }
-
-    return true;
+    return rule_if_statement(parser);
 }
 
 // <if_statement> -> <classical_statement> | <variable_statement>
@@ -580,11 +538,7 @@ bool rule_if_statement(parser_t *parser){
     if (rule_classical_statement(parser)){
         return true;
     }
-    else if (rule_variable_statement(parser)){
-        return true;
-    }
-
-    return false;
+    return rule_variable_statement(parser);
 }
 
 // <classical_statement> -> <expression> "{" <statement_list>  "}" "else" "{" <statement_list> "}"
@@ -672,7 +626,6 @@ bool rule_loop(parser_t *parser){
     load_token(parser);
     
     exp_parsing(parser);
-
     if (error != ERR_OK){
         return false;
     }
@@ -717,7 +670,6 @@ bool rule_function_call(parser_t *parser){
 // <arguments> -> <expression> <more_arguments> | ε
 
 bool rule_arguments(parser_t *parser){
-
     if(is_type(parser, TOK_RBRACKET)){
         return true;
     }
@@ -727,11 +679,7 @@ bool rule_arguments(parser_t *parser){
         return false;
     }
 
-    if (!rule_more_arguments(parser)){
-        return false;
-    }
-
-    return true;
+    return rule_more_arguments(parser);
 }
 
 // <more_arguments> -> "," <expression> <more_arguments> | ε
@@ -740,18 +688,16 @@ bool rule_more_arguments(parser_t *parser){
     if(is_type(parser, TOK_RBRACKET)){
         return true;
     }
-    else if (is_type(parser, TOK_COMMA)){
-        load_token(parser);
-        exp_parsing(parser);
-        if (error != ERR_OK){
-            return false;
-        }
-        if (!rule_more_arguments(parser)){
-            return false;
-        }
-    }
 
-    return true;
+    if (!is_type(parser, TOK_COMMA)){
+        return false;
+    }
+    load_token(parser);
+    exp_parsing(parser);
+    if (error != ERR_OK) {
+        return false;
+    }
+    return rule_more_arguments(parser);
 }
 
 // <return_statement> -> "return" <returned_expression>
@@ -760,12 +706,9 @@ bool rule_return_statement(parser_t *parser){
     if (!is_type(parser, K_RETURN)){
         return false;
     }
-    load_token(parser);
-    if (!rule_returned_expression(parser)){
-        return false;
-    }
 
-    return true;
+    load_token(parser);
+    return rule_returned_expression(parser);
 }
 
 

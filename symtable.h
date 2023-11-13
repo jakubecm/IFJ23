@@ -24,9 +24,15 @@ typedef struct htab_var {
     variable_type_t         type;
 } htab_var_t;
 
+typedef struct htab_func_param {
+    htab_var_t parameter;
+    char *call_name; // name of the parameter in the function call
+    char *def_name; // name of the parameter in the function definition
+} htab_func_param_t;
+
 typedef struct htab_func {
-    htab_var_t *parameters;
-    htab_var_t *return_values;
+    htab_func_param_t *parameters;
+    variable_type_t return_type;
 } htab_func_t;
 
 typedef union htab_value {
