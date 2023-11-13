@@ -12,8 +12,10 @@
 
 extern error_t error;
 
-sem_data_type_t tok_type(token_t token) { 
-    switch(token.type) {
+sem_data_type_t tok_type(parser_t* parserData) { 
+    data_t tmpData;
+
+    switch(parserData->token.type) {
         case TOK_NOT:
         case TOK_PLUS:
         case TOK_MINUS:
@@ -39,8 +41,25 @@ sem_data_type_t tok_type(token_t token) {
         case K_NIL:
             return SEM_NIL;
         case TOK_IDENTIFIER:
-            //ADD SEARCH IN SYMTABLE
-            return SEM_STRING;
+
+            tmpData = stack_lookup_var(parserData->stack, parserData->token.attribute.string);
+            if(tmpData.type == VAR) {
+                switch(tmpData.value.var_id.type) {
+                    case TOK_INT:
+                        return SEM_INT;
+                    case TOK_STRING:
+                    case TOK_MLSTRING:
+                        return SEM_STRING;
+                    case TOK_DOUBLE:
+                        return SEM_FLOAT;
+                    case TOK_BOOL:
+                        return SEM_BOOL;
+                    default:
+                        return SEM_UNDEF;
+                }
+            }
+            return SEM_UNDEF;
+
         default:
             return SEM_UNDEF;
     }

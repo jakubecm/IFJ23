@@ -13,7 +13,7 @@
 
 struct analysis;
 
-sem_data_type_t tok_type(token_t token);
+sem_data_type_t tok_type(parser_t* parserData);
 sem_data_type_t tok_term_type(stack_terminal_t* token);
 
 /**
