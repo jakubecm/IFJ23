@@ -14,16 +14,18 @@ typedef token_attribute_t htab_attribute_t;
 typedef const char * htab_key_t;
 
 typedef enum variable_type {
-    K_DOUBLE,  // double
-    K_DOUBLEQ, // double?
-    K_DOUBLEE, // double!
-    K_INT,     // Int
-    K_INTQ,    // Int?
-    K_INTE,    // Int!
-    K_STRING,  // String
-    K_STRINGQ, // String?
-    K_STRINGE, // String!
-    K_UNKNOWN  // Type not provided yet
+    EXP_ERR  = -1, // Error    
+    VAL_BOOL,    // Bool
+    VAL_DOUBLE,  // double
+    VAL_DOUBLEQ, // double?
+    VAL_DOUBLEE, // double!
+    VAL_INT,     // Int
+    VAL_INTQ,    // Int?
+    VAL_INTE,    // Int!
+    VAL_STRING,  // String
+    VAL_STRINGQ, // String?
+    VAL_STRINGE, // String!
+    VAL_UNKNOWN  // Type not provided yet
 } variable_type_t;
 
 typedef enum symbol_type {

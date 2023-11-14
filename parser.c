@@ -465,7 +465,7 @@ bool rule_definition_types(parser_t *parser, data_t *data){
     }
 
     // No type was provided - add a placeholder type
-    data->value.var_id.type = K_UNKNOWN;
+    data->value.var_id.type = VAL_UNKNOWN;
     return rule_initialization(parser, data);
 }
 
@@ -508,43 +508,39 @@ bool rule_initialization(parser_t *parser, data_t *data){
 
     load_token(parser);
 
-    exp_parsing(parser);
-    if (error != ERR_OK) {
+    variable_type_t type = exp_parsing(parser);
+    if (type != EXP_ERR) {
         return false;
     }
 
-    if (data->value.var_id.type != parser->token.attribute.string){
-        error = ERR_SEM_TYPE;
-        return false;
-    }
-    switch (parser->token.type) {
-    case K_INT:
-        if (data->value.var_id.type != K_INT && data->value.var_id.type != K_INTQ && data->value.var_id.type != K_INTE && data->value.var_id.type != K_UNKNOWN){
+    switch (type) {
+    case VAL_INT:
+        if (data->value.var_id.type != VAL_INT && data->value.var_id.type != VAL_INTQ && data->value.var_id.type != VAL_UNKNOWN){
             error = ERR_SEM_TYPE;
             return false;
         }
-        if (data->value.var_id.type == K_UNKNOWN){
-            data->value.var_id.type = K_INT;
+        if (data->value.var_id.type == VAL_UNKNOWN){
+            data->value.var_id.type = VAL_INT;
         }
         data->value.var_id.value.number = parser->token.attribute.number;
         break;
-    case K_DOUBLE:
-        if (data->value.var_id.type != K_DOUBLE && data->value.var_id.type != K_DOUBLEQ && data->value.var_id.type != K_DOUBLEE && data->value.var_id.type != K_UNKNOWN){
+    case VAL_DOUBLE:
+        if (data->value.var_id.type != VAL_DOUBLE && data->value.var_id.type != VAL_DOUBLEQ && data->value.var_id.type != VAL_UNKNOWN){
             error = ERR_SEM_TYPE;
             return false;
         }
-        if (data->value.var_id.type == K_UNKNOWN){
-            data->value.var_id.type = K_DOUBLE;
+        if (data->value.var_id.type == VAL_UNKNOWN){
+            data->value.var_id.type = VAL_DOUBLE;
         }
         data->value.var_id.value.decimal = parser->token.attribute.decimal;
         break;
-    case K_STRING:
-        if (data->value.var_id.type != K_STRING && data->value.var_id.type != K_STRINGQ && data->value.var_id.type != K_STRINGE && data->value.var_id.type != K_UNKNOWN){
+    case VAL_STRING:
+        if (data->value.var_id.type != VAL_STRING && data->value.var_id.type != VAL_STRINGQ && data->value.var_id.type != VAL_UNKNOWN){
             error = ERR_SEM_TYPE;
             return false;
         }
-        if (data->value.var_id.type == K_UNKNOWN){
-            data->value.var_id.type = K_STRING;
+        if (data->value.var_id.type == VAL_UNKNOWN){
+            data->value.var_id.type = VAL_STRING;
         }
         data->value.var_id.value.string = parser->token.attribute.string;
         break;   
