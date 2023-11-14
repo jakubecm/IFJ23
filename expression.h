@@ -29,6 +29,6 @@
  *  @brief Main function for parsing expressions
  *  @param parserData - core parser structure for giving scanner and first token to exp parser.
  */
-void exp_parsing(parser_t* parserData);
+variable_type_t exp_parsing(parser_t* parserData);
 
 #endif

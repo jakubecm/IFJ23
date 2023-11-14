@@ -237,8 +237,24 @@ void prec_analysis(stack_t *stack, parser_t* parserData, stack_terminal_t* tmp, 
             return;
         }
 }
+
+variable_type_t convert_type(sem_data_type_t type) {
+    switch(type) {
+        case SEM_INT:
+            return VAL_INT;
+        case SEM_FLOAT:
+            return VAL_DOUBLE;
+        case SEM_STRING:
+            return VAL_STRING;
+        case SEM_BOOL:
+            return VAL_BOOL;
+        default:
+            return VAL_UNKNOWN;
+    }
+}
+
 /** Main expression parser **/
-void exp_parsing(parser_t* parserData)  {
+variable_type_t exp_parsing(parser_t* parserData)  {
     /** Structure declarations **/
     stack_t stack;
     stack_init(&stack);
@@ -246,13 +262,12 @@ void exp_parsing(parser_t* parserData)  {
     analysis_t* analysis = malloc(sizeof(analysis_t));
     analysis_init(analysis);
 
-    parserData->token = get_next_token();
-
     /** Variable declarations **/
     stack_terminal_t *tmp;
     token_t endToken; 
     bool continue_while = true, end = false;
     sem_data_type_t stack_type;
+    variable_type_t return_type;
     DEBUG_PRINT("data token: %d\n", parserData->token.type);
 
     /** Exp parser start **/
@@ -266,13 +281,13 @@ void exp_parsing(parser_t* parserData)  {
         handle_upcoming(parserData, &stack, &end, &endToken, tmp);
         if(error != ERR_OK) {
             CLEANUP_RESOURCES(stack, analysis);
-            return;
+            return EXP_ERR;
         }
 
         prec_analysis(&stack, parserData, tmp, analysis);
         if(error != ERR_OK) {
             CLEANUP_RESOURCES(stack, analysis);
-            return;
+            return EXP_ERR;
         }
 
         if(parserData->token.type == TOK_DOLLAR && stack_top_terminal(&stack)->type == TOK_DOLLAR) {
@@ -287,9 +302,10 @@ void exp_parsing(parser_t* parserData)  {
     //Last token on the top of stack
     stack_type = stack_top_token(&stack)->data;
     DEBUG_PRINT("end type: %d\n", stack_type);
-    //...
 
+    return_type = convert_type(stack_type);
     CLEANUP_RESOURCES(stack, analysis);
+    return return_type;
 }
 
 #ifdef DEBUG
