@@ -45,14 +45,13 @@ sem_data_type_t tok_type(parser_t* parserData) {
             tmpData = stack_lookup_var(parserData->stack, parserData->token.attribute.string);
             if(tmpData.type == VAR || tmpData.type == LET) {
                 switch(tmpData.value.var_id.type) {
-                    case TOK_INT:
+                    case VAL_INT:
                         return SEM_INT;
-                    case TOK_STRING:
-                    case TOK_MLSTRING:
+                    case VAL_STRING:
                         return SEM_STRING;
-                    case TOK_DOUBLE:
+                    case VAL_DOUBLE:
                         return SEM_FLOAT;
-                    case TOK_BOOL:
+                    case VAL_BOOL:
                         return SEM_BOOL;
                     default:
                         return SEM_UNDEF;
