@@ -100,10 +100,13 @@ bool check_operator_compatibility(stack_terminal_t* operator, stack_terminal_t* 
             return is_number(left->data) && is_number(right->data);
         
         case TOK_EQUAL:
-        //TODO string and string or int and int or double or double else error
+        case TOK_NOTEQUAL:
+            return (is_string(left->data) && is_string(right->data)) ||
+                   (is_float(left->data) && is_float(right->data))   ||
+                   (is_int(left->data) && is_int(right->data));
+                   
         case TOK_LESS:
         case TOK_GREATER:
-        case TOK_NOTEQUAL:
         case TOK_GREATEREQ:
         case TOK_LESSEQ:
             return is_number(left->data) && is_number(right->data);
@@ -145,13 +148,18 @@ int get_result_type(stack_terminal_t* operator, stack_terminal_t* left, stack_te
         }
     }
 
-    if(operator->type == TOK_LESS || operator->type == TOK_GREATER || operator->type == TOK_EQUAL ||
-       operator->type == TOK_NOTEQUAL || operator->type == TOK_GREATEREQ || operator->type == TOK_LESSEQ) {
+    if(operator->type == TOK_EQUAL || operator->type == TOK_NOTEQUAL) {
+        //Since these two operators accept just the same data type from both variables,
+        //there is no need for additional check.
+        return SEM_BOOL;
+    }
+
+    if(operator->type == TOK_LESS || operator->type == TOK_GREATER || operator->type == TOK_GREATEREQ || 
+       operator->type == TOK_LESSEQ) {
         if(right->data != left->data) {
-            //Separate tok equal since it doesnt change 
             //left, right to float gen
         }
-        //printf("to bool\n");
+
         return SEM_BOOL;
     }
 
@@ -176,10 +184,9 @@ int get_result_type(stack_terminal_t* operator, stack_terminal_t* left, stack_te
 bool sem_analysis(analysis_t* analysis) {
     if (!check_operator_compatibility(analysis->tok2, analysis->tok1, analysis->tok3)) {
         error = ERR_SEM_TYPE;
-        //printf("here\n");
         return false;
     }
-    //printf("here 1\n");
+
     analysis->end_type = get_result_type(analysis->tok2, analysis->tok1, analysis->tok3);
     if(analysis->end_type == SEM_UNDEF) {
         error = ERR_SEM_TYPE;
@@ -188,37 +195,3 @@ bool sem_analysis(analysis_t* analysis) {
 
     return true;
 }
-
-/**
-int main() {
-    stack_terminal_t* tok1 = malloc(sizeof(stack_terminal_t)); // Allocate memory for tok1
-    stack_terminal_t* tok2 = malloc(sizeof(stack_terminal_t)); // Allocate memory for tok2
-    stack_terminal_t* tok3 = malloc(sizeof(stack_terminal_t)); // Allocate memory for tok3
-
-    tok2->type = TOK_DQUESTMK;
-    tok1->type = K_NIL;
-    tok3->type = K_NIL;
-    tok1->data = tok_term_type(tok1);
-    tok2->data = tok_term_type(tok2);
-    tok3->data = tok_term_type(tok3);
-
-    analysis_t analysis;
-    analysis.tok1 = tok1;
-    analysis.tok2 = tok2;
-    analysis.tok3 = tok3;
-    analysis.end_type = SEM_UNDEF;
-
-    printf("%d %d %d\n", analysis.tok1->type, analysis.tok2->type, analysis.tok3->type);
-
-    sem_analysis(&analysis);
-    printf("END TYPE: %d\n", analysis.end_type);
-    printf("%d\n", error);
-
-
-    free(tok1); // Free the allocated memory when done
-    free(tok2);
-    free(tok3);
-
-    return 0;
-}
-*/
