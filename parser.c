@@ -102,10 +102,10 @@ bool rule_all_parameters(parser_t *parser);
 bool rule_type(parser_t *parser);
 bool rule_variable_definition_let(parser_t *parser);
 bool rule_variable_definition_var(parser_t *parser);
-bool rule_definition_types(parser_t *parser);
-bool rule_type_def(parser_t *parser);
-bool rule_type_def_follow(parser_t *parser);
-bool rule_initialization(parser_t *parser);
+bool rule_definition_types(parser_t *parser, data_t *data);
+bool rule_type_def(parser_t *parser, data_t *data);
+bool rule_type_def_follow(parser_t *parser, data_t *data);
+bool rule_initialization(parser_t *parser, data_t *data);
 bool rule_assignment(parser_t *parser);
 bool rule_assignment_type(parser_t *parser);
 bool rule_conditional_statement(parser_t *parser);
@@ -419,8 +419,18 @@ bool rule_variable_definition_let(parser_t *parser){
     if (!is_type(parser, TOK_IDENTIFIER)){
         return false;
     }
+
+    data_t data = symbol_table_lookup_var(stack_top_table(parser->stack), parser->token.attribute.string);
+    if (data.type != NOT_FOUND){
+        error = ERR_SEM_FUNCTION;
+        return false;   // Attempt at defining an already existing variable withing the current context
+    }
+
+    data.type = LET;
+    data.name = parser->token.attribute.string;
+
     load_token(parser);
-    return rule_definition_types(parser);
+    return rule_definition_types(parser, &data);
 }
 
 // <variable_definition_var> -> "var" <identifier> <definition_types>
@@ -433,23 +443,35 @@ bool rule_variable_definition_var(parser_t *parser){
     if (!is_type(parser, TOK_IDENTIFIER)){
         return false;
     }
+
+    data_t data = symbol_table_lookup_var(stack_top_table(parser->stack), parser->token.attribute.string);
+    if (data.type != NOT_FOUND){
+        error = ERR_SEM_FUNCTION;
+        return false;   // Attempt at defining an already existing variable withing the current context
+    }
+
+    data.type = VAR;
+    data.name = parser->token.attribute.string;
+
     load_token(parser);
-    return rule_definition_types(parser);
+    return rule_definition_types(parser, &data);
 }
 
 // <definition_types> -> <type_def> | <initialization>
 
-bool rule_definition_types(parser_t *parser){
-    if (rule_type_def(parser)){
+bool rule_definition_types(parser_t *parser, data_t *data){
+    if (rule_type_def(parser, data)){
         return true;
     }
 
-    return rule_initialization(parser);
+    // No type was provided - add a placeholder type
+    data->value.var_id.type = K_UNKNOWN;
+    return rule_initialization(parser, data);
 }
 
 // <type_def> -> ":" <type> <type_def_follow>
 
-bool rule_type_def(parser_t *parser){
+bool rule_type_def(parser_t *parser, data_t *data){
     if (!is_type(parser, TOK_COLON)){
         return false;
     }
@@ -457,28 +479,28 @@ bool rule_type_def(parser_t *parser){
     if (!rule_type(parser)){
         return false;
     }
-    load_token(parser);
-    if (!rule_type_def_follow(parser)){
-        return false;
-    }
 
-    return true;
+    // loaded token is the type of the variable
+    data->value.var_id.type = parser->token.attribute.string;
+
+    load_token(parser);
+    return rule_type_def_follow(parser, data);
 }
 
 // <type_def_follow> -> <initialization> | ε
 // TODO: Check correctness here, this might not be correct, I am not sure how to check for ε // test this, hopefully it just works :D
 
-bool rule_type_def_follow(parser_t *parser){
+bool rule_type_def_follow(parser_t *parser, data_t *data){
     if (!is_type(parser, TOK_ASSIGNMENT)) {
         return true;
     }
 
-    return rule_initialization(parser);
+    return rule_initialization(parser, data);
 }
 
 // <initialization> -> "=" <expression>
 
-bool rule_initialization(parser_t *parser){
+bool rule_initialization(parser_t *parser, data_t *data){
 
     if (!is_type(parser, TOK_ASSIGNMENT)){
         return false;
@@ -490,6 +512,46 @@ bool rule_initialization(parser_t *parser){
     if (error != ERR_OK) {
         return false;
     }
+
+    if (data->value.var_id.type != parser->token.attribute.string){
+        error = ERR_SEM_TYPE;
+        return false;
+    }
+    switch (parser->token.type) {
+    case K_INT:
+        if (data->value.var_id.type != K_INT && data->value.var_id.type != K_INTQ && data->value.var_id.type != K_INTE && data->value.var_id.type != K_UNKNOWN){
+            error = ERR_SEM_TYPE;
+            return false;
+        }
+        if (data->value.var_id.type == K_UNKNOWN){
+            data->value.var_id.type = K_INT;
+        }
+        data->value.var_id.value.number = parser->token.attribute.number;
+        break;
+    case K_DOUBLE:
+        if (data->value.var_id.type != K_DOUBLE && data->value.var_id.type != K_DOUBLEQ && data->value.var_id.type != K_DOUBLEE && data->value.var_id.type != K_UNKNOWN){
+            error = ERR_SEM_TYPE;
+            return false;
+        }
+        if (data->value.var_id.type == K_UNKNOWN){
+            data->value.var_id.type = K_DOUBLE;
+        }
+        data->value.var_id.value.decimal = parser->token.attribute.decimal;
+        break;
+    case K_STRING:
+        if (data->value.var_id.type != K_STRING && data->value.var_id.type != K_STRINGQ && data->value.var_id.type != K_STRINGE && data->value.var_id.type != K_UNKNOWN){
+            error = ERR_SEM_TYPE;
+            return false;
+        }
+        if (data->value.var_id.type == K_UNKNOWN){
+            data->value.var_id.type = K_STRING;
+        }
+        data->value.var_id.value.string = parser->token.attribute.string;
+        break;   
+    default:
+        break;
+    }
+
     return true;
 }
 
