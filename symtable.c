@@ -53,6 +53,9 @@ int symbol_table_insert(symbol_table_t *table, htab_key_t key, data_t data) {
         return 1; // symbol already exists
     }
 
+    if (table->size == table->capacity) {
+        symbol_table_resize(table, table->capacity * 2);
+    }
     s = malloc(sizeof(symbol));
     s->key = malloc(strlen(key) + 1);
     if (s->key == NULL) {
@@ -114,7 +117,7 @@ void symbol_table_resize(symbol_table_t *table, size_t new_size) {
     free(table->table);
 
     // nastavíme novou velikost tabulky
-    table->size = new_size;
+    table->capacity = new_size;
     table->table = new_table;
 }
 
@@ -146,4 +149,41 @@ data_t symbol_table_lookup_func(symbol_table_t *table, htab_key_t key) {
         return data;
     }
     return s->data;
+}
+
+//-----------------------DYNAMIC ARRAY-----------------------
+
+
+
+void vector_init(vector_t *arr, int capacity) {
+    arr = (vector_t *)malloc(sizeof(vector_t));
+    arr->data = (htab_func_param_t *)malloc(capacity * sizeof(htab_func_param_t));
+    arr->size = 0;
+    arr->capacity = capacity;
+    return arr;
+}
+
+void vector_push(vector_t *arr, htab_func_param_t value) {
+    if (arr->size == arr->capacity) {
+        arr->capacity *= 2;
+        arr->data = (htab_func_param_t *)realloc(arr->data, arr->capacity * sizeof(htab_func_param_t));
+    }
+    arr->data[arr->size++] = value;
+}
+
+void vector_destroy(vector_t *arr) {
+    free(arr->data);
+    arr->data = NULL;
+    arr->size = arr->capacity = 0;
+}
+
+htab_attribute_t *vector_top(vector_t *arr) {
+    return &arr->data[arr->size - 1];
+}
+
+void vector_print(vector_t *arr) {
+    for (int i = 0; i < arr->size; i++) {
+        
+    }
+    printf("\n");
 }

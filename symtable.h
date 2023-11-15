@@ -18,13 +18,11 @@ typedef enum variable_type {
     VAL_BOOL,    // Bool
     VAL_DOUBLE,  // double
     VAL_DOUBLEQ, // double?
-    VAL_DOUBLEE, // double!
     VAL_INT,     // Int
     VAL_INTQ,    // Int?
-    VAL_INTE,    // Int!
     VAL_STRING,  // String
     VAL_STRINGQ, // String?
-    VAL_STRINGE, // String!
+    VAL_NIL,     // Nil
     VAL_UNKNOWN  // Type not provided yet
 } variable_type_t;
 
@@ -34,6 +32,12 @@ typedef enum symbol_type {
     FUNC,
     NOT_FOUND = -1
 } symbol_type_t;
+
+typedef struct vector {
+    htab_func_param_t *data;
+    int size;
+    int capacity;
+} vector_t;
 
 typedef struct htab_var {
     htab_attribute_t        value;
@@ -47,8 +51,9 @@ typedef struct htab_func_param {
 } htab_func_param_t;
 
 typedef struct htab_func {
-    htab_func_param_t *parameters;
+    vector_t *parameters;
     variable_type_t return_type;
+    bool defined;
 } htab_func_t;
 
 typedef union htab_value {
@@ -75,6 +80,7 @@ typedef struct symbol {
  * @brief Symbol table
 */
 typedef struct symbol_table_t {
+    size_t capacity;
     size_t size;
     symbol **table;
 } symbol_table_t;
@@ -140,3 +146,11 @@ void symbol_table_remove(symbol_table_t *table, htab_key_t key);
  * @brief Resizes the symbol table
 */
 void symbol_table_resize(symbol_table_t *table, size_t new_size);
+
+void vector_init(vector_t *arr, int capacity);
+
+void vector_push(vector_t *arr, htab_func_param_t value);
+
+htab_func_param_t *vector_top(vector_t *arr);
+
+void vector_destroy(vector_t *arr);
