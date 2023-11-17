@@ -46,13 +46,18 @@ sem_data_type_t tok_type(parser_t* parserData) {
             if(tmpData.type == VAR || tmpData.type == LET) {
                 switch(tmpData.value.var_id.type) {
                     case VAL_INT:
+                    case VAL_INTQ:
                         return SEM_INT;
                     case VAL_STRING:
+                    case VAL_STRINGQ:
                         return SEM_STRING;
                     case VAL_DOUBLE:
+                    case VAL_DOUBLEQ:
                         return SEM_FLOAT;
                     case VAL_BOOL:
                         return SEM_BOOL;
+                    case VAL_NIL:
+                        return SEM_NIL;
                     default:
                         return SEM_UNDEF;
                 }
@@ -112,7 +117,9 @@ bool check_operator_compatibility(stack_terminal_t* operator, stack_terminal_t* 
             return is_number(left->data) && is_number(right->data);
 
         case TOK_DQUESTMK:
-            return true;
+            return ((is_string(left->data) || is_nil(left->data)) && (is_string(right->data) || is_nil(right->data))) ||
+                   ((is_int(left->data) || is_nil(left->data)) && (is_int(right->data) || is_nil(right->data))) ||
+                   ((is_float(left->data) || is_nil(left->data)) && (is_float(right->data) || is_nil(right->data)));
 
         default:
             error = ERR_SEM_TYPE;
