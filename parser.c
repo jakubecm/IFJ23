@@ -85,7 +85,7 @@ bool rule_program(parser_t *parser);
 bool rule_statement_list(parser_t *parser);
 bool rule_statement(parser_t *parser);
 bool rule_function_definition(parser_t *parser);
-bool rule_function_return_type_and_body(parser_t *parser);
+bool rule_function_return_type_and_body(parser_t *parser, data_t *data);
 bool rule_nonvoid_function(parser_t *parser);
 bool rule_nonvoid_function_body(parser_t *parser);
 bool rule_void_function_body(parser_t *parser);
@@ -151,6 +151,30 @@ void load_token(parser_t *parser)
     parser->next_token = get_next_token();
 }
 
+variable_type_t str_to_type(char *str){
+    if (strcmp(str, "Double") == 0){
+        return VAL_DOUBLE;
+    }
+    else if (strcmp(str, "Int") == 0){
+        return VAL_INT;
+    }
+    else if (strcmp(str, "String") == 0){
+        return VAL_STRING;
+    }
+    else if (strcmp(str, "Double?") == 0){
+        return VAL_DOUBLEQ;
+    }
+    else if (strcmp(str, "Int?") == 0){
+        return VAL_INTQ;
+    }
+    else if (strcmp(str, "String?") == 0){
+        return VAL_STRINGQ;
+    }
+    else{
+        return VAL_UNKNOWN;
+    }
+}
+
 //================= PARSER FUNCTIONS END HERE ================= //
 //-------------------------------------------------------------//
 //================= GRAMMAR RULES START HERE ================= //
@@ -178,7 +202,7 @@ bool rule_statement_list(parser_t *parser){
     if (rule_statement(parser)){
         return rule_statement_list(parser);
     }
-    else if (is_type(parser, TOK_RCURLYBRACKET)){
+    else if (is_type(parser, TOK_RCURLYBRACKET) && parser->in_function){
         return true;
     }
 
@@ -221,10 +245,10 @@ bool rule_function_definition(parser_t *parser){
     if (!is_type(parser, TOK_IDENTIFIER)){
         return false;
     }
-    data_t func = symbol_table_lookup_func(stack_top_table(parser->stack), parser->token.attribute.string);
-    if (func.type != NOT_FOUND || func.value.func_id.defined){
+    data_t func = symbol_table_lookup_generic(stack_top_table(parser->stack), parser->token.attribute.string);
+    if (func.type != NOT_FOUND || (func.type == FUNC && !func.value.func_id.defined)){
         error = ERR_SEM_FUNCTION;
-        return false;   // Attempt at defining an already existing function
+        return false;   // Attempt at defining an already existing function or global variable
     }
     func.type = FUNC;
     func.name = parser->token.attribute.string;
@@ -233,6 +257,7 @@ bool rule_function_definition(parser_t *parser){
         return false;
     }
     load_token(parser);
+    vector_init(func.value.func_id.parameters, 5);
     if (!rule_parameter_list(parser, &func)){
         return false;
     }
@@ -241,25 +266,15 @@ bool rule_function_definition(parser_t *parser){
     }
     load_token(parser);
 
-    return rule_function_return_type_and_body(parser);
+    return rule_function_return_type_and_body(parser, &func);
 }
 
 // <function_return_type_and_body> -> "{" <void_function_body> "}" | "->" <type> "{" <nonvoid_function_body> "}"
 
-bool rule_function_return_type_and_body(parser_t *parser){
-    if (!is_type(parser, TOK_LCURLYBRACKET)){
-        return false;
-    }
-    load_token(parser);
-    if (rule_void_function_body(parser)){
-        if (!is_type(parser, TOK_RCURLYBRACKET)){
-            return false;
-        }
+bool rule_function_return_type_and_body(parser_t *parser, data_t *data){
+    if (is_type(parser, TOK_ARROW)){
         load_token(parser);
-        return true;
-    }
-    else if (is_type(parser, TOK_ARROW)){
-        load_token(parser);
+        data->value.func_id.return_type = str_to_type(parser->token.attribute.string);
         if (!rule_type(parser)){
             return false;
         }
@@ -277,15 +292,33 @@ bool rule_function_return_type_and_body(parser_t *parser){
         load_token(parser);
         return true;
     }
+
+    data->value.func_id.return_type = VAL_VOID;
+    if (!is_type(parser, TOK_LCURLYBRACKET)){
+        return false;
+    }
+    load_token(parser);
+
+    if (!rule_void_function_body(parser)) {
+        return false;
+    }
+
+    if (!is_type(parser, TOK_RCURLYBRACKET)) {
+        return false;
+    }
+    load_token(parser);
+    return true;
 }
 
 // <nonvoid_function_body> -> <statement_list> | ε
 
 bool rule_nonvoid_function_body(parser_t *parser){
+    parser->in_function = true;
     if (rule_statement_list(parser)){
         return true;
     }
     else if (is_type(parser, TOK_RCURLYBRACKET)){
+        parser->in_function = false;
         return true;
     }
 
@@ -295,10 +328,12 @@ bool rule_nonvoid_function_body(parser_t *parser){
 // <void_function_body> -> <statement_list> | ε
 
 bool rule_void_function_body(parser_t *parser){
+    parser->in_function = true;
     if (rule_statement_list(parser)){
         return true;
     }
     else if (is_type(parser, TOK_RCURLYBRACKET)){
+        parser->in_function = false;
         return true;
     }
 
@@ -337,7 +372,7 @@ bool rule_more_parameters(parser_t *parser, data_t *data){
 // <parameter> -> <no_name_parameter> | <identifier_parameters>
 
 bool rule_parameter(parser_t *parser, data_t *data){
-    vector_push(data->value.func_id.parameters, (htab_func_param_t){});
+    vector_push(data->value.func_id.parameters, (htab_func_param_t){}); // Add a new parameter to the vector
     if (rule_no_name_parameter(parser, data)){
         return true;
     }
@@ -350,22 +385,20 @@ bool rule_no_name_parameter(parser_t *parser, data_t *data){
     if (!is_type(parser, TOK_UNDERSCORE)){
         return false;
     }
-    vector_top(data->value.func_id.parameters)->call_name = NULL;
+    vector_top(data->value.func_id.parameters)->call_name = NULL; // _
+
     load_token(parser);
     if (!is_type(parser, TOK_IDENTIFIER)){
         return false;
     }
-    vector_top(data->value.func_id.parameters)->def_name = parser->token.attribute.string;
+    vector_top(data->value.func_id.parameters)->def_name = parser->token.attribute.string; // identifier
     load_token(parser);
     if (!is_type(parser, TOK_COLON)){
         return false;
     }
     load_token(parser);
-    if (!rule_type(parser)){
-        return false;
-    }
-
-    return true;
+    vector_top(data->value.func_id.parameters)->parameter.type = str_to_type(parser->token.attribute.string); // type
+    return rule_type(parser);
 }
 
 // <identifier_parameter> -> <identifier> <rest_of_identifier_parameter>
@@ -389,6 +422,7 @@ bool rule_rest_of_identifier_parameter(parser_t *parser, data_t *data){
             return false;
         }
         load_token(parser);
+        vector_top(data->value.func_id.parameters)->parameter.type = str_to_type(parser->token.attribute.string);
         return rule_type(parser);
     }
     else if (is_type(parser, TOK_IDENTIFIER)){
@@ -398,6 +432,7 @@ bool rule_rest_of_identifier_parameter(parser_t *parser, data_t *data){
             return false;
         }
         load_token(parser);
+        vector_top(data->value.func_id.parameters)->parameter.type = str_to_type(parser->token.attribute.string);
         return rule_type(parser);
     }
 

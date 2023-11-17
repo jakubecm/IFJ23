@@ -3,6 +3,7 @@
  *
  *
  *  @authors Milan Jakubec (xjakub41)
+ *  @authors Jakub Ráček (xracek12)
  *  @brief Semantic and syntax analysis header file
  */
 
@@ -12,8 +13,13 @@
 #include "scanner.h"
 #include "stack.h"
 #include <stdbool.h>
-
-typedef struct
+typedef enum parser_state {
+    IN_LOOP,     // Inside loop
+    IN_PARAMLIST, // Inside parameter list
+    IN_FUNCDEF,   // Inside function definition
+    IN_FUNCALL,   // Inside function call
+} parser_state_t;
+typedef struct parser
 {
     scanner_t *scanner;     // Scanner instance
     stack_t *stack;         // Stack instance
@@ -22,8 +28,8 @@ typedef struct
     token_t next_token;     // Next token
 
     // States of parser
-    bool in_function;       // Is parser in function?
-    bool in_loop;           // Is parser in loop?
+    bool in_function;
+    parser_state_t state;
 
 } parser_t;
 
