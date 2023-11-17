@@ -114,7 +114,7 @@ bool rule_classical_statement(parser_t *parser);
 bool rule_variable_statement(parser_t *parser);
 bool rule_loop(parser_t *parser);
 bool rule_function_call(parser_t *parser);
-bool rule_arguments(parser_t *parser);
+bool rule_arguments(parser_t *parser, data_t *data);
 bool rule_more_arguments(parser_t *parser);
 bool rule_return_statement(parser_t *parser);
 bool rule_returned_expression(parser_t *parser);
@@ -172,6 +172,22 @@ variable_type_t str_to_type(char *str){
     }
     else{
         return VAL_UNKNOWN;
+    }
+}
+
+bool is_expression(parser_t *parser) {
+    switch (parser->token.type) {
+        case TOK_IDENTIFIER:
+        case TOK_INT:
+        case TOK_DOUBLE:
+        case TOK_STRING:
+        case K_NIL:
+        case TOK_LBRACKET:
+        case TOK_MINUS:
+        case TOK_PLUS:
+            return true;
+        default:
+            return false;
     }
 }
 
@@ -238,6 +254,9 @@ bool rule_statement(parser_t *parser){
 // <function_definition> -> "func" <identifier> "(" <parameter_list> ")" <function_return_type_and_body>
 
 bool rule_function_definition(parser_t *parser){
+    if (parser->in_function) {
+        return false;   // Attempt at defining a function within a function
+    }
     if (!is_type(parser, K_FUNC)){
         return false;
     }
@@ -467,10 +486,10 @@ bool rule_variable_definition_let(parser_t *parser){
         return false;
     }
 
-    data_t data = symbol_table_lookup_var(stack_top_table(parser->stack), parser->token.attribute.string);
+    data_t data = symbol_table_lookup_generic(stack_top_table(parser->stack), parser->token.attribute.string);
     if (data.type != NOT_FOUND){
         error = ERR_SEM_FUNCTION;
-        return false;   // Attempt at defining an already existing variable within the current context
+        return false;   // Attempt at defining an already existing variable or function within the current context
     }
 
     data.type = LET;
@@ -491,10 +510,10 @@ bool rule_variable_definition_var(parser_t *parser){
         return false;
     }
 
-    data_t data = symbol_table_lookup_var(stack_top_table(parser->stack), parser->token.attribute.string);
+    data_t data = symbol_table_lookup_generic(stack_top_table(parser->stack), parser->token.attribute.string);
     if (data.type != NOT_FOUND){
         error = ERR_SEM_FUNCTION;
-        return false;   // Attempt at defining an already existing variable withing the current context
+        return false;   // Attempt at defining an already existing variable or function withing the current context
     }
 
     data.type = VAR;
@@ -751,17 +770,22 @@ bool rule_loop(parser_t *parser){
 }
 
 // <function_call> -> <identifier> "(" <arguments> ")"
-
+// TODO: fix da rules
 bool rule_function_call(parser_t *parser){
     if (!is_type(parser, TOK_IDENTIFIER)){
         return false;
+    }
+    data_t data = symbol_table_lookup_generic(stack_top_table(parser->stack), parser->token.attribute.string);
+    if (data.type == VAR){
+        error = ERR_SEM_FUNCTION;
+        return false;   // Attempt at calling a function, that exists as a variable in the current context
     }
     load_token(parser);
     if (!is_type(parser, TOK_LBRACKET)){
         return false;
     }
     load_token(parser);
-    if (!rule_arguments(parser)){
+    if (!rule_arguments(parser, &data)){
         return false;
     }
     if (!is_type(parser, TOK_RBRACKET)){
@@ -774,13 +798,13 @@ bool rule_function_call(parser_t *parser){
 
 // <arguments> -> <expression> <more_arguments> | ε
 
-bool rule_arguments(parser_t *parser){
+bool rule_arguments(parser_t *parser, data_t *data){
     if(is_type(parser, TOK_RBRACKET)){
         return true;
     }
 
-    exp_parsing(parser);
-    if (error != ERR_OK){
+    variable_type_t expr = exp_parsing(parser);
+    if (expr == EXP_ERR){
         return false;
     }
 
@@ -814,6 +838,18 @@ bool rule_return_statement(parser_t *parser){
 
     load_token(parser);
     return rule_returned_expression(parser);
+}
+
+// <returned_expression> -> <expression> | ε
+// TODO: poresit return ve void
+bool rule_returned_expression(parser_t *parser){
+    if (is_expression(parser)){
+        exp_parsing(parser);
+        if (error != ERR_OK){
+            return false;
+        }
+    }
+    return true;
 }
 
 

@@ -13,12 +13,7 @@
 #include "scanner.h"
 #include "stack.h"
 #include <stdbool.h>
-typedef enum parser_state {
-    IN_LOOP,     // Inside loop
-    IN_PARAMLIST, // Inside parameter list
-    IN_FUNCDEF,   // Inside function definition
-    IN_FUNCALL,   // Inside function call
-} parser_state_t;
+
 typedef struct parser
 {
     scanner_t *scanner;     // Scanner instance
@@ -29,8 +24,6 @@ typedef struct parser
 
     // States of parser
     bool in_function;
-    parser_state_t state;
-
 } parser_t;
 
 #endif // PARSER_H
