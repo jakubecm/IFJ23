@@ -91,12 +91,12 @@ bool rule_nonvoid_function_body(parser_t *parser);
 bool rule_void_function_body(parser_t *parser);
 bool rule_statement_nonvoid_function(parser_t *parser);
 bool rule_statement_void_function(parser_t *parser);
-bool rule_parameter_list(parser_t *parser);
-bool rule_more_parameters(parser_t *parser);
-bool rule_parameter(parser_t *parser);
-bool rule_no_name_parameter(parser_t *parser);
-bool rule_identifier_parameter(parser_t *parser);
-bool rule_rest_of_identifier_parameter(parser_t *parser);
+bool rule_parameter_list(parser_t *parser, data_t *data);
+bool rule_more_parameters(parser_t *parser, data_t *data);
+bool rule_parameter(parser_t *parser, data_t *data);
+bool rule_no_name_parameter(parser_t *parser, data_t *data);
+bool rule_identifier_parameter(parser_t *parser, data_t *data);
+bool rule_rest_of_identifier_parameter(parser_t *parser, data_t *data);
 bool rule_no_id_parameter(parser_t *parser);
 bool rule_all_parameters(parser_t *parser);
 bool rule_type(parser_t *parser);
@@ -221,12 +221,19 @@ bool rule_function_definition(parser_t *parser){
     if (!is_type(parser, TOK_IDENTIFIER)){
         return false;
     }
+    data_t func = symbol_table_lookup_func(stack_top_table(parser->stack), parser->token.attribute.string);
+    if (func.type != NOT_FOUND || func.value.func_id.defined){
+        error = ERR_SEM_FUNCTION;
+        return false;   // Attempt at defining an already existing function
+    }
+    func.type = FUNC;
+    func.name = parser->token.attribute.string;
     load_token(parser);
     if (!is_type(parser, TOK_LBRACKET)){
         return false;
     }
     load_token(parser);
-    if (!rule_parameter_list(parser)){
+    if (!rule_parameter_list(parser, &func)){
         return false;
     }
     if (!is_type(parser, TOK_RBRACKET)){
@@ -300,16 +307,16 @@ bool rule_void_function_body(parser_t *parser){
 
 // <parameter_list> -> <parameter> <more_parameters> | ε
 
-bool rule_parameter_list(parser_t *parser){
+bool rule_parameter_list(parser_t *parser, data_t *data){
     if (is_type(parser, TOK_RBRACKET)){
         return true;
     }
-    return rule_parameter(parser) && rule_more_parameters(parser);
+    return rule_parameter(parser, data) && rule_more_parameters(parser, data);
 }
 
 // <more_parameters> -> "," <parameter> <more_parameters> | ε
 
-bool rule_more_parameters(parser_t *parser){
+bool rule_more_parameters(parser_t *parser, data_t *data){
     if (is_type(parser, TOK_RBRACKET)){
         return true;
     }
@@ -318,10 +325,10 @@ bool rule_more_parameters(parser_t *parser){
         return false;
     }
     load_token(parser);
-    if (!rule_parameter(parser)){
+    if (!rule_parameter(parser, data)){
         return false;
     }
-    if (!rule_more_parameters(parser)){
+    if (!rule_more_parameters(parser, data)){
         return false;
     }
     return true;
@@ -329,23 +336,26 @@ bool rule_more_parameters(parser_t *parser){
 
 // <parameter> -> <no_name_parameter> | <identifier_parameters>
 
-bool rule_parameter(parser_t *parser){
-    if (rule_no_name_parameter(parser)){
+bool rule_parameter(parser_t *parser, data_t *data){
+    vector_push(data->value.func_id.parameters, (htab_func_param_t){});
+    if (rule_no_name_parameter(parser, data)){
         return true;
     }
-    return rule_identifier_parameter(parser);
+    return rule_identifier_parameter(parser, data);
 }
 
 // <no_name_parameter> -> "_" <identifier> ":" <type>
 
-bool rule_no_name_parameter(parser_t *parser){
+bool rule_no_name_parameter(parser_t *parser, data_t *data){
     if (!is_type(parser, TOK_UNDERSCORE)){
         return false;
     }
+    vector_top(data->value.func_id.parameters)->call_name = NULL;
     load_token(parser);
     if (!is_type(parser, TOK_IDENTIFIER)){
         return false;
     }
+    vector_top(data->value.func_id.parameters)->def_name = parser->token.attribute.string;
     load_token(parser);
     if (!is_type(parser, TOK_COLON)){
         return false;
@@ -360,19 +370,20 @@ bool rule_no_name_parameter(parser_t *parser){
 
 // <identifier_parameter> -> <identifier> <rest_of_identifier_parameter>
 
-bool rule_identifier_parameter(parser_t *parser){
+bool rule_identifier_parameter(parser_t *parser, data_t *data){
     if (!is_type(parser, TOK_IDENTIFIER)){
         return false;
     }
-
+    vector_top(data->value.func_id.parameters)->call_name = parser->token.attribute.string;
     load_token(parser);
-    return rule_rest_of_identifier_parameter(parser);
+    return rule_rest_of_identifier_parameter(parser, data);
 }
 
 // <rest_of_identifier_parameter> -> "_" ":" <type> |  <identifier> ":" <type>
 
-bool rule_rest_of_identifier_parameter(parser_t *parser){
+bool rule_rest_of_identifier_parameter(parser_t *parser, data_t *data){
     if (is_type(parser, TOK_UNDERSCORE)){
+        vector_top(data->value.func_id.parameters)->def_name = NULL;
         load_token(parser);
         if (!is_type(parser, TOK_COLON)){
             return false;
@@ -381,6 +392,7 @@ bool rule_rest_of_identifier_parameter(parser_t *parser){
         return rule_type(parser);
     }
     else if (is_type(parser, TOK_IDENTIFIER)){
+        vector_top(data->value.func_id.parameters)->def_name = parser->token.attribute.string;
         load_token(parser);
         if (!is_type(parser, TOK_COLON)){
             return false;
@@ -423,7 +435,7 @@ bool rule_variable_definition_let(parser_t *parser){
     data_t data = symbol_table_lookup_var(stack_top_table(parser->stack), parser->token.attribute.string);
     if (data.type != NOT_FOUND){
         error = ERR_SEM_FUNCTION;
-        return false;   // Attempt at defining an already existing variable withing the current context
+        return false;   // Attempt at defining an already existing variable within the current context
     }
 
     data.type = LET;
@@ -551,7 +563,7 @@ bool rule_initialization(parser_t *parser, data_t *data){
     return true;
 }
 
-// <assignment> -> <identifier> "=" <assignment_type>
+// <assignment> -> <> "=" <assignment_type>
 
 bool rule_assignment(parser_t *parser){
     if (!is_type(parser, TOK_IDENTIFIER)){
