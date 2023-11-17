@@ -128,8 +128,6 @@ void parser_init(parser_t *parser, scanner_t *scanner)
     parser->scanner = scanner;
     parser->stack = malloc(sizeof(stack_t));
     stack_init(parser->stack);
-    stack_push_table(parser->stack); // init the global symtable
-    // push integrated functions to global symtable
     parser->function = NULL;
 
     parser->token = get_next_token();
@@ -223,19 +221,19 @@ bool rule_function_definition(parser_t *parser){
     if (!is_type(parser, TOK_IDENTIFIER)){
         return false;
     }
-    data_t *func = symbol_table_lookup_func(stack_top_table(parser->stack), parser->token.attribute.string);
-    if (func->type != NOT_FOUND || func->value.func_id.defined){
+    data_t func = symbol_table_lookup_func(stack_top_table(parser->stack), parser->token.attribute.string);
+    if (func.type != NOT_FOUND || func.value.func_id.defined){
         error = ERR_SEM_FUNCTION;
         return false;   // Attempt at defining an already existing function
     }
-    func->type = FUNC;
-    func->name = parser->token.attribute.string;
+    func.type = FUNC;
+    func.name = parser->token.attribute.string;
     load_token(parser);
     if (!is_type(parser, TOK_LBRACKET)){
         return false;
     }
     load_token(parser);
-    if (!rule_parameter_list(parser, func)){
+    if (!rule_parameter_list(parser, &func)){
         return false;
     }
     if (!is_type(parser, TOK_RBRACKET)){
@@ -434,17 +432,17 @@ bool rule_variable_definition_let(parser_t *parser){
         return false;
     }
 
-    data_t *data = symbol_table_lookup_var(stack_top_table(parser->stack), parser->token.attribute.string);
-    if (data->type != NOT_FOUND){
+    data_t data = symbol_table_lookup_var(stack_top_table(parser->stack), parser->token.attribute.string);
+    if (data.type != NOT_FOUND){
         error = ERR_SEM_FUNCTION;
         return false;   // Attempt at defining an already existing variable within the current context
     }
 
-    data->type = LET;
-    data->name = parser->token.attribute.string;
+    data.type = LET;
+    data.name = parser->token.attribute.string;
 
     load_token(parser);
-    return rule_definition_types(parser, data);
+    return rule_definition_types(parser, &data);
 }
 
 // <variable_definition_var> -> "var" <identifier> <definition_types>
@@ -458,17 +456,17 @@ bool rule_variable_definition_var(parser_t *parser){
         return false;
     }
 
-    data_t *data = symbol_table_lookup_var(stack_top_table(parser->stack), parser->token.attribute.string);
-    if (data->type != NOT_FOUND){
+    data_t data = symbol_table_lookup_var(stack_top_table(parser->stack), parser->token.attribute.string);
+    if (data.type != NOT_FOUND){
         error = ERR_SEM_FUNCTION;
         return false;   // Attempt at defining an already existing variable withing the current context
     }
 
-    data->type = VAR;
-    data->name = parser->token.attribute.string;
+    data.type = VAR;
+    data.name = parser->token.attribute.string;
 
     load_token(parser);
-    return rule_definition_types(parser, data);
+    return rule_definition_types(parser, &data);
 }
 
 // <definition_types> -> <type_def> | <initialization>
@@ -723,7 +721,6 @@ bool rule_function_call(parser_t *parser){
     if (!is_type(parser, TOK_IDENTIFIER)){
         return false;
     }
-    //data_t func = symbol_table_lookup_func
     load_token(parser);
     if (!is_type(parser, TOK_LBRACKET)){
         return false;

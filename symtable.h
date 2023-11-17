@@ -111,7 +111,7 @@ void symbol_table_free(symbol_table_t *table);
  * @param table Pointer to the symbol table
  * @param key key of the symbol
 */
-data_t *symbol_table_lookup_generic(symbol_table_t *table, htab_key_t key);
+symbol *symbol_table_lookup(symbol_table_t *table, htab_key_t key);
 
 /**
  * @brief Search for a function with the given key.
@@ -119,7 +119,7 @@ data_t *symbol_table_lookup_generic(symbol_table_t *table, htab_key_t key);
  * @param table Pointer to the symbol table
  * @param key key of the symbol
 */
-data_t *symbol_table_lookup_func(symbol_table_t *table, htab_key_t key);
+data_t symbol_table_lookup_func(symbol_table_t *table, htab_key_t key);
 
 /**
  * @brief Search for a variable with the given key.
@@ -127,7 +127,7 @@ data_t *symbol_table_lookup_func(symbol_table_t *table, htab_key_t key);
  * @param table Pointer to the symbol table
  * @param key key of the symbol
 */
-data_t *symbol_table_lookup_var(symbol_table_t *table, htab_key_t key);
+data_t symbol_table_lookup_var(symbol_table_t *table, htab_key_t key);
 
 /**
  * @brief Inserts new symbol into the table

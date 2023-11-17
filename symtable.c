@@ -121,22 +121,7 @@ void symbol_table_resize(symbol_table_t *table, size_t new_size) {
     table->table = new_table;
 }
 
-data_t *symbol_table_lookup_generic(symbol_table_t *table, htab_key_t key) {
-    size_t hash = htab_hash_function(key) % table->size;
-    symbol *s = table->table[hash];
-    while (s != NULL && strcmp(s->key, key) != 0) {
-        s = s->next;
-    }
-
-    if (s == NULL) {
-        data_t *data = malloc(sizeof(data_t));  // i love memory leaks
-        data->type = NOT_FOUND;
-        return data;
-    }
-    return (&s->data);
-}
-
-data_t *symbol_table_lookup_var(symbol_table_t *table, htab_key_t key) {
+data_t symbol_table_lookup_var(symbol_table_t *table, htab_key_t key) {
     size_t hash = htab_hash_function(key) % table->size;
     symbol *s = table->table[hash];
     while (s != NULL && s->data.type != VAR && strcmp(s->key, key) != 0) {
@@ -144,14 +129,14 @@ data_t *symbol_table_lookup_var(symbol_table_t *table, htab_key_t key) {
     }
 
     if (s == NULL) {
-        data_t *data = malloc(sizeof(data_t));  // i love memory leaks
-        data->type = NOT_FOUND;
+        data_t data;
+        data.type = NOT_FOUND;
         return data;
     }
-    return (&s->data);
+    return s->data;
 }
 
-data_t *symbol_table_lookup_func(symbol_table_t *table, htab_key_t key) {
+data_t symbol_table_lookup_func(symbol_table_t *table, htab_key_t key) {
     size_t hash = htab_hash_function(key) % table->size;
     symbol *s = table->table[hash];
     while (s != NULL && s->data.type != FUNC && strcmp(s->key, key) != 0) {
@@ -159,11 +144,11 @@ data_t *symbol_table_lookup_func(symbol_table_t *table, htab_key_t key) {
     }
     
     if (s == NULL) {
-        data_t *data = malloc(sizeof(data_t));
-        data->type = NOT_FOUND;
+        data_t data;
+        data.type = NOT_FOUND;
         return data;
     }
-    return (&s->data);
+    return s->data;
 }
 
 //-----------------------DYNAMIC ARRAY-----------------------
@@ -192,7 +177,7 @@ void vector_destroy(vector_t *arr) {
     arr->size = arr->capacity = 0;
 }
 
-htab_func_param_t *vector_top(vector_t *arr) {
+htab_attribute_t *vector_top(vector_t *arr) {
     return &arr->data[arr->size - 1];
 }
 
