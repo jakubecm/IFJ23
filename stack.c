@@ -13,19 +13,8 @@
 
 error_t err;
 
-void analysis_init(analysis_t *data) {
-    data->tok1 = malloc(sizeof(stack_terminal_t));
-    data->tok2 = malloc(sizeof(stack_terminal_t));
-    data->tok3 = malloc(sizeof(stack_terminal_t));
-}
+// ---------------------------------- Basic functions -----------------------------------
 
-void analysis_free(analysis_t *data) {
-    free(data->tok1);
-    free(data->tok2);
-    free(data->tok3);
-}
-
-// obecne funkce
 void stack_init(stack_t *stack) {
     stack->top = NULL;
 }
@@ -56,7 +45,22 @@ bool stack_pop(stack_t *s) {
 void *stack_top(stack_t *s) {
     return s->top;
 }
-// konec obecnych funkci
+
+// -------------------------------- Exp semantic functions -------------------------------
+
+void analysis_init(analysis_t *data) {
+    data->tok1 = malloc(sizeof(stack_terminal_t));
+    data->tok2 = malloc(sizeof(stack_terminal_t));
+    data->tok3 = malloc(sizeof(stack_terminal_t));
+}
+
+void analysis_free(analysis_t *data) {
+    free(data->tok1);
+    free(data->tok2);
+    free(data->tok3);
+}
+
+// -------------------------------- Exp parser functions --------------------------------
 
 void stack_push_token(stack_t* stack, sem_data_type_t data_type, token_type_t token_type) {
     stack_terminal_t* new_token = (stack_terminal_t*) malloc(sizeof(stack_terminal_t));
@@ -76,8 +80,10 @@ stack_terminal_t* stack_top_token(stack_t* stack) {
 }
 
 stack_terminal_t* stack_top_terminal(stack_t* stack) {
+    stack_terminal_t* token;
+
     for (Node* currentNode = stack->top; currentNode != NULL; currentNode = currentNode->right) {
-        stack_terminal_t* token = (stack_terminal_t*)currentNode->data;
+        token = (stack_terminal_t*)currentNode->data;
 
         if (token != NULL && token->type < TOK_ENDMARKER) {
             return token;
@@ -88,38 +94,29 @@ stack_terminal_t* stack_top_terminal(stack_t* stack) {
 }
 
 bool stack_push_after(stack_t* stack, sem_data_type_t data_type, token_type_t token_type) {
-    Node* prev = NULL;
-
-    for(Node* continueTok = stack->top; continueTok != NULL; continueTok = continueTok->right) {
-        if (((stack_terminal_t*)continueTok->data)->type < TOK_ENDMARKER) {
-            Node* new_node = (Node*)malloc(sizeof(Node));
-            if (!new_node) {
-                return false;
-            }
-
-            stack_terminal_t* new_terminal = (stack_terminal_t*)malloc(sizeof(stack_terminal_t));
-            if (!new_terminal) {
-                free(new_node);
-                return false;
-            }
-
-            new_terminal->data = data_type;
-            new_terminal->type = token_type;
-            new_terminal->right = NULL;
-
-            new_node->data = new_terminal;
-
-            // If 'prev' is NULL, update 'stack->top' to point to the new node; otherwise, update 'prev->right' to point to the new node
-            new_node->right = (prev == NULL) ? stack->top : prev->right;
-            (prev == NULL) ? (stack->top = new_node) : (prev->right = new_node);
-
-            return true;
-        }
-
-        prev = continueTok;
+    Node **ptr = &stack->top;
+    while (*ptr && ((stack_terminal_t*)(*ptr)->data)->type >= TOK_ENDMARKER) {
+        ptr = &(*ptr)->right;
     }
 
-    return false;
+    Node* newNode = malloc(sizeof(Node));
+    stack_terminal_t* newTerminal = malloc(sizeof(stack_terminal_t));
+    if (!newNode || !newTerminal) {
+        free(newNode);
+        free(newTerminal);
+        return false;
+    }
+
+    *newTerminal = (stack_terminal_t){.data = data_type, 
+                                      .type = token_type, 
+                                      .right = NULL};
+
+    *newNode = (Node){.data = newTerminal, 
+                      .right = *ptr};
+                      
+    *ptr = newNode;
+
+    return true;
 }
 
 int stack_count_after(stack_t* stack, analysis_t* analysis) {
@@ -162,13 +159,20 @@ stack_terminal_t* stack_pop_token(stack_t* stack) {
 }
 
 void stack_free_token(stack_t* stack) {
-    if (stack == NULL)
+    if (stack == NULL) {
         return;
+    }
 
-    while(stack->top != NULL) {
+    while (stack->top != NULL) {
         stack_terminal_t* popped_token = stack_pop_token(stack);
+
         free(popped_token);
-        stack_pop(stack);
+
+        Node* topNode = stack->top;
+        if (topNode != NULL) {
+            stack->top = topNode->right;
+            free(topNode);
+        }
     }
 }
 
