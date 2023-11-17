@@ -34,12 +34,6 @@ typedef enum symbol_type {
     NOT_FOUND = -1
 } symbol_type_t;
 
-typedef struct vector {
-    htab_func_param_t *data;
-    int size;
-    int capacity;
-} vector_t;
-
 typedef struct htab_var {
     htab_attribute_t        value;
     variable_type_t         type;
@@ -50,6 +44,12 @@ typedef struct htab_func_param {
     char *call_name; // name of the parameter in the function call
     char *def_name; // name of the parameter in the function definition
 } htab_func_param_t;
+
+typedef struct vector {
+    struct htab_func_param_t *data;
+    int size;
+    int capacity;
+} vector_t;
 
 typedef struct htab_func {
     vector_t *parameters;

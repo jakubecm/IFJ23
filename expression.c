@@ -156,6 +156,12 @@ void reduce(stack_t* stack, int num, analysis_t* analysis) {
 
         case 2:
             if(analysis->tok2->type == TOK_NTERM && analysis->tok1->type == TOK_NOT) {
+                //Semantic check for IDENTIFIER_POSTFIX! cannot be nil
+                if(analysis->tok2->data == SEM_NIL) {
+                    error = ERR_SEM_TYPE;
+                    return;
+                }
+                
                 stack_push_token(stack, analysis->tok2->data, TOK_NTERM);
 
             }
