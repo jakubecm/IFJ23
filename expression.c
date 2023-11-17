@@ -304,6 +304,7 @@ variable_type_t exp_parsing(parser_t* parserData)  {
     DEBUG_PRINT("end type: %d\n", stack_type);
 
     return_type = convert_type(stack_type);
+    DEBUG_PRINT("Converted: %d\n", return_type);
     CLEANUP_RESOURCES(stack, analysis);
     return return_type;
 }
@@ -313,9 +314,11 @@ int main() {
     error = ERR_OK;
 
     parser_t* parserData = malloc(sizeof(parser_t));
-    exp_parsing(parserData);
+    parserData->token = get_next_token();
+    variable_type_t test = exp_parsing(parserData);
 
-    DEBUG_PRINT("Parser next token: %d", parserData->token.type);
+    DEBUG_PRINT("Variable for core: %d\n", test);
+    DEBUG_PRINT("Parser next token: %d\n", parserData->token.type);
     DEBUG_PRINT("exit: %d\n", error);
 }
 #endif

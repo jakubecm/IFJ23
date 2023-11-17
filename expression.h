@@ -19,7 +19,7 @@
 #endif
 
 #define CLEANUP_RESOURCES(stack, analysis) do { \
-            /*stack_free_token(&(stack));*/     \
+            stack_free_token(&(stack));         \
             analysis_free((analysis));          \
             free((analysis));                   \
         } while (0)
