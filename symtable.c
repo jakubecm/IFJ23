@@ -177,7 +177,7 @@ void vector_destroy(vector_t *arr) {
     arr->size = arr->capacity = 0;
 }
 
-htab_attribute_t *vector_top(vector_t *arr) {
+htab_func_param_t *vector_top(vector_t *arr) {
     return &arr->data[arr->size - 1];
 }
 
