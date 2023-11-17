@@ -23,7 +23,8 @@ typedef enum variable_type {
     VAL_STRING,  // String
     VAL_STRINGQ, // String?
     VAL_NIL,     // Nil
-    VAL_UNKNOWN  // Type not provided yet
+    VAL_UNKNOWN,  // Type not provided yet
+    VAL_VOID     // Void
 } variable_type_t;
 
 typedef enum symbol_type {
@@ -111,7 +112,7 @@ void symbol_table_free(symbol_table_t *table);
  * @param table Pointer to the symbol table
  * @param key key of the symbol
 */
-symbol *symbol_table_lookup(symbol_table_t *table, htab_key_t key);
+data_t symbol_table_lookup_generic(symbol_table_t *table, htab_key_t key);
 
 /**
  * @brief Search for a function with the given key.
