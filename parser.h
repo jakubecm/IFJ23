@@ -26,6 +26,10 @@ typedef struct parser
     bool in_function;
     bool func_is_void;
     bool returned;
+    bool returned_conditional;
+    bool in_cycle;
+    bool in_if;
+    bool in_else;
 } parser_t;
 
 #endif // PARSER_H

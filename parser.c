@@ -218,14 +218,11 @@ bool rule_program(parser_t *parser){
 // Note: statement list is only used in condtional statements and loops, thats why there is a check for RCURLYBRACKET
 
 bool rule_statement_list(parser_t *parser){
-    if (rule_statement(parser)){
-        return rule_statement_list(parser);
-    }
-    else if (is_type(parser, TOK_RCURLYBRACKET) && parser->in_function){
+    if (is_type(parser, TOK_RCURLYBRACKET) && parser->in_function){
         return true;
     }
 
-    return false;
+    return rule_statement(parser) && rule_statement_list(parser);
 }
 
 // <statement> -> <variable_definition_let> | <variable_definition_var> | <assignment> | <conditional_statement> | <loop> | <function_call> | <return_statement>
@@ -313,6 +310,10 @@ bool rule_function_return_type_and_body(parser_t *parser, data_t *data){
         if (!is_type(parser, TOK_RCURLYBRACKET)){
             return false;
         }
+
+        parser->in_function = false;
+        parser->returned = false;
+        parser->returned_conditional = false;
         load_token(parser);
         return true;
     }
@@ -331,6 +332,10 @@ bool rule_function_return_type_and_body(parser_t *parser, data_t *data){
     if (!is_type(parser, TOK_RCURLYBRACKET)) {
         return false;
     }
+
+    parser->in_function = false;
+    parser->returned = false;
+    parser->returned_conditional = false;
     load_token(parser);
     return true;
 }
@@ -665,10 +670,10 @@ bool rule_conditional_statement(parser_t *parser){
 // <if_statement> -> <classical_statement> | <variable_statement>
 
 bool rule_if_statement(parser_t *parser){
-    if (rule_classical_statement(parser)){
-        return true;
+    if (is_type(parser, K_LET)){
+        return rule_variable_statement(parser);
     }
-    return rule_variable_statement(parser);
+    return rule_classical_statement(parser);
 }
 
 // <classical_statement> -> <expression> "{" <statement_list>  "}" "else" "{" <statement_list> "}"
@@ -682,6 +687,7 @@ bool rule_classical_statement(parser_t *parser){
     if (!is_type(parser, TOK_LCURLYBRACKET)){
         return false;
     }
+    parser->in_if = true;
     load_token(parser);
     if (!rule_statement_list(parser)){
         return false;
@@ -689,6 +695,7 @@ bool rule_classical_statement(parser_t *parser){
     if (!is_type(parser, TOK_RCURLYBRACKET)){
         return false;
     }
+    parser->in_if = false;
     load_token(parser);
     if (!is_type(parser, K_ELSE)){
         return false;
@@ -697,6 +704,7 @@ bool rule_classical_statement(parser_t *parser){
     if (!is_type(parser, TOK_LCURLYBRACKET)){
         return false;
     }
+    parser->in_else = true;
     load_token(parser);
     if (!rule_statement_list(parser)){
         return false;
@@ -704,6 +712,9 @@ bool rule_classical_statement(parser_t *parser){
     if (!is_type(parser, TOK_RCURLYBRACKET)){
         return false;
     }
+    parser->in_else = false;
+    load_token(parser);
+    return true;
 }
 
 // <variable_statement> -> let <identifier> "{" <statement_list> "}" "else" "{" <statement_list> "}" (pozn. identifier zastupuje drive def. nemodifikovatelnou promennou)
@@ -720,6 +731,7 @@ bool rule_variable_statement(parser_t *parser){
     if (!is_type(parser, TOK_LCURLYBRACKET)){
         return false;
     }
+    parser->in_if = true;
     load_token(parser);
     if (!rule_statement_list(parser)){
         return false;
@@ -727,6 +739,7 @@ bool rule_variable_statement(parser_t *parser){
     if (!is_type(parser, TOK_RCURLYBRACKET)){
         return false;
     }
+    parser->in_if = false;
     load_token(parser);
     if (!is_type(parser, K_ELSE)){
         return false;
@@ -735,6 +748,7 @@ bool rule_variable_statement(parser_t *parser){
     if (!is_type(parser, TOK_LCURLYBRACKET)){
         return false;
     }
+    parser->in_else = true;
     load_token(parser);
     if (!rule_statement_list(parser)){
         return false;
@@ -742,8 +756,8 @@ bool rule_variable_statement(parser_t *parser){
     if (!is_type(parser, TOK_RCURLYBRACKET)){
         return false;
     }
+    parser->in_else = false;
     load_token(parser);
-
     return true;
 }
 
@@ -763,6 +777,8 @@ bool rule_loop(parser_t *parser){
     if (!is_type(parser, TOK_LCURLYBRACKET)){
         return false;
     }
+
+    parser->in_cycle = true;
     load_token(parser);
     if (!rule_statement_list(parser)){
         return false;
@@ -770,8 +786,9 @@ bool rule_loop(parser_t *parser){
     if (!is_type(parser, TOK_RCURLYBRACKET)){
         return false;
     }
-    load_token(parser);
 
+    parser->in_cycle = false;
+    load_token(parser);
     return true;
 }
 
@@ -841,6 +858,27 @@ bool rule_return_statement(parser_t *parser){
     if (!is_type(parser, K_RETURN)){
         return false;
     }
+
+    if (!parser->in_function){
+        error = ERR_SEM_FUNCTION;
+        return false;   // Attempt at returning from outside of a function
+    }
+
+    if (!parser->func_is_void && !parser->returned) {
+    // checking function returns for non-void functions:
+        if (parser->in_cycle){
+            // Returning from a cycle holds no real meaning on the function having a return value, so we ignore it
+            // meaning: `while (a == 5) {return 5}` is the same as `while (a == 5) {}`, since we cant check the condition statically
+        } else if (!parser->in_if && !parser->in_else) {
+            parser->returned = true;                        // Returning form main function body is always valid
+        } else if (parser->in_if) {
+            parser->returned_conditional = true;            // Returning from an if statement is valid, but we need to check if the else branch is also returned from
+        } else if (parser->returned_conditional && parser->in_else) {
+            parser->returned_conditional = false;
+            parser->returned = true;                        // If both branches return, the condition is satysfied
+        }
+    }
+
 
     load_token(parser);
     return rule_returned_expression(parser);
