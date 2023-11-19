@@ -73,9 +73,15 @@ definovanou nemodifikovatelnou promennou)
 
 <function_call> -> <identifier> "(" <arguments> ")"
 
-<arguments> -> <expression> <more_arguments> | ε
+<arguments> -> <argument> <more_arguments> | ε
 
-<more_arguments> -> "," <expression> <more_arguments> | ε
+<argument> -> <arg_name> <arg_value>
+
+<arg_name> -> <identifier> ":" | ε
+
+<arg_value> -> <identifier> | <int> | <double> | <string> | <nil>
+
+<more_arguments> -> "," <argument> <more_arguments> | ε
 
 <return_statement> -> "return" <returned_expression>
 
@@ -118,6 +124,9 @@ bool rule_variable_statement(parser_t *parser);
 bool rule_loop(parser_t *parser);
 bool rule_function_call(parser_t *parser);
 bool rule_arguments(parser_t *parser, data_t *data);
+bool rule_argument(parser_t *parser, data_t *data);
+bool rule_arg_name(parser_t *parser, data_t *data);
+bool rule_arg_value(parser_t *parser, data_t *data);
 bool rule_more_arguments(parser_t *parser);
 bool rule_return_statement(parser_t *parser);
 bool rule_returned_expression(parser_t *parser);
@@ -635,7 +644,7 @@ bool rule_initialization(parser_t *parser, data_t *data){
             return false;
         }
         break;
-    case VAL_BOOL: // what to do with this?
+    case VAL_BOOL: // what to do with this? answer: nothing, we dont have BOOL types unless you want to implement them (ho right ahead)
         break;
     default:
         break;
@@ -840,33 +849,78 @@ bool rule_function_call(parser_t *parser){
         return false;
     }
     load_token(parser);
-    if (!rule_arguments(parser, &data)){
+    if (is_type(parser, TOK_RBRACKET)){
+        return true;
+    }
+    else if (!rule_arguments(parser, &data)){
         return false;
     }
-    if (!is_type(parser, TOK_RBRACKET)){
-        return false;
-    }
-    load_token(parser);
+
+    // todo: check if i should consume token here or in arguments
 
     return true;
 }
 
-// <arguments> -> <expression> <more_arguments> | ε
+// <arguments> -> <argument> <more_arguments> | ε
 
 bool rule_arguments(parser_t *parser, data_t *data){
-    if(is_type(parser, TOK_RBRACKET)){
+    if (is_type(parser, TOK_RBRACKET)){
         return true;
     }
-
-    variable_type_t expr = exp_parsing(parser);
-    if (expr == EXP_ERR){
+    if(!rule_argument(parser, data)){
         return false;
     }
 
     return rule_more_arguments(parser);
 }
 
-// <more_arguments> -> "," <expression> <more_arguments> | ε
+// <argument> -> <arg_name> <arg_value>
+
+bool rule_argument(parser_t *parser, data_t *data){
+    if (!rule_arg_name(parser, data)){
+        return false;
+    }
+    return rule_arg_value(parser, data);
+}
+
+// <arg_name> -> <identifier> ":" | ε
+
+bool rule_arg_name(parser_t *parser, data_t *data){
+    switch(parser->token.type){
+        case TOK_INT:
+        case TOK_DOUBLE:
+        case TOK_STRING:
+        case K_NIL:
+            return true; // ε
+    }
+
+    if (!is_type(parser, TOK_IDENTIFIER)){
+        return false;
+    }
+    load_token(parser);
+    if (!is_type(parser, TOK_COLON)){
+        return false;
+    }
+    load_token(parser);
+    return true;
+}
+
+// <arg_value> -> <identifier> | <int> | <double> | <string> | <nil>
+
+bool rule_arg_value(parser_t *parser, data_t *data){
+    switch(parser->token.type){
+        case TOK_IDENTIFIER:
+        case TOK_INT:
+        case TOK_DOUBLE:
+        case TOK_STRING:
+        case K_NIL:
+            return true;
+        default:
+            return false;
+    }
+}
+
+// <more_arguments> -> "," <argument> <more_arguments> | ε
 
 bool rule_more_arguments(parser_t *parser){
     if(is_type(parser, TOK_RBRACKET)){
@@ -877,11 +931,13 @@ bool rule_more_arguments(parser_t *parser){
         return false;
     }
     load_token(parser);
-    exp_parsing(parser);
-    if (error != ERR_OK) {
+    if (!rule_argument(parser, NULL)){
         return false;
     }
-    return rule_more_arguments(parser);
+    if (!rule_more_arguments(parser)){
+        return false;
+    }
+    return true;
 }
 
 // <return_statement> -> "return" <returned_expression>
