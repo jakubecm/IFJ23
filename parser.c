@@ -129,6 +129,9 @@ void parser_init(parser_t *parser, scanner_t *scanner)
     parser->stack = malloc(sizeof(stack_t));
     stack_init(parser->stack);
     parser->function = NULL;
+    parser->in_function = false;
+    parser->func_is_void = false;
+    parser->returned = false;
 
     parser->token = get_next_token();
     // Nebude lepsi udelat funkci ktera jen peekne na dalsi token a scanner ho uchova misto tohoto?
@@ -257,6 +260,7 @@ bool rule_function_definition(parser_t *parser){
     if (parser->in_function) {
         return false;   // Attempt at defining a function within a function
     }
+    parser->in_function = true;
     if (!is_type(parser, K_FUNC)){
         return false;
     }
@@ -292,6 +296,7 @@ bool rule_function_definition(parser_t *parser){
 
 bool rule_function_return_type_and_body(parser_t *parser, data_t *data){
     if (is_type(parser, TOK_ARROW)){
+        parser->func_is_void = false;
         load_token(parser);
         data->value.func_id.return_type = str_to_type(parser->token.attribute.string);
         if (!rule_type(parser)){
@@ -312,6 +317,7 @@ bool rule_function_return_type_and_body(parser_t *parser, data_t *data){
         return true;
     }
 
+    parser->func_is_void = true;
     data->value.func_id.return_type = VAL_VOID;
     if (!is_type(parser, TOK_LCURLYBRACKET)){
         return false;
@@ -844,10 +850,23 @@ bool rule_return_statement(parser_t *parser){
 // TODO: poresit return ve void
 bool rule_returned_expression(parser_t *parser){
     if (is_expression(parser)){
+        if(parser->func_is_void){   // PROBLEM: muze se stat, ze budu mit 
+                                    // return
+                                    // x = 5
+                                    // toto je validni kod, ale zpusobil by chybu, protoze nemame eol
+            error = ERR_SEM_TYPE;
+            return false;
+        }
+        parser->returned = true;
         exp_parsing(parser);
         if (error != ERR_OK){
             return false;
         }
+    }
+
+    if (!parser->func_is_void){
+        error = ERR_SEM_TYPE;
+        return false;
     }
     return true;
 }

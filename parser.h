@@ -24,6 +24,8 @@ typedef struct parser
 
     // States of parser
     bool in_function;
+    bool func_is_void;
+    bool returned;
 } parser_t;
 
 #endif // PARSER_H
