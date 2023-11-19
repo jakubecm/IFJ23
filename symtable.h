@@ -46,7 +46,7 @@ typedef struct htab_func_param {
 } htab_func_param_t;
 
 typedef struct vector {
-    struct htab_func_param_t *data;
+    htab_func_param_t *data;
     int size;
     int capacity;
 } vector_t;
@@ -148,7 +148,7 @@ void symbol_table_remove(symbol_table_t *table, htab_key_t key);
 */
 void symbol_table_resize(symbol_table_t *table, size_t new_size);
 
-void vector_init(vector_t *arr, int capacity);
+vector_t *vector_init(int capacity);
 
 void vector_push(vector_t *arr, htab_func_param_t value);
 

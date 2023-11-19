@@ -139,7 +139,7 @@ data_t symbol_table_lookup_generic(symbol_table_t *table, htab_key_t key) {
 data_t symbol_table_lookup_var(symbol_table_t *table, htab_key_t key) {
     size_t hash = htab_hash_function(key) % table->size;
     symbol *s = table->table[hash];
-    while (s != NULL && s->data.type != VAR && strcmp(s->key, key) != 0) {
+    while (s != NULL && (s->data.type != VAR && s->data.type != LET) && strcmp(s->key, key) != 0) {
         s = s->next;
     }
 
@@ -168,15 +168,24 @@ data_t symbol_table_lookup_func(symbol_table_t *table, htab_key_t key) {
 
 //-----------------------DYNAMIC ARRAY-----------------------
 
+vector_t *vector_init(int capacity) {
+    vector_t *arr = (vector_t *)malloc(sizeof(vector_t));
+    if (!arr) {
+        return NULL;
+    }
 
+    arr->data = (htab_func_param_t *)malloc((capacity + 1) * sizeof(htab_func_param_t));
+    if (!arr->data) {
+        free(arr);
+        return NULL;
+    }
 
-void vector_init(vector_t *arr, int capacity) {
-    arr = (vector_t *)malloc(sizeof(vector_t));
-    arr->data = (htab_func_param_t *)malloc(capacity * sizeof(htab_func_param_t));
     arr->size = 0;
     arr->capacity = capacity;
+
     return arr;
 }
+
 
 void vector_push(vector_t *arr, htab_func_param_t value) {
     if (arr->size == arr->capacity) {
@@ -193,12 +202,5 @@ void vector_destroy(vector_t *arr) {
 }
 
 htab_func_param_t *vector_top(vector_t *arr) {
-    return &arr->data[arr->size - 1];
-}
-
-void vector_print(vector_t *arr) {
-    for (int i = 0; i < arr->size; i++) {
-        
-    }
-    printf("\n");
+    return &(arr->data[arr->size - 1]);
 }

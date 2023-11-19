@@ -1,6 +1,9 @@
 /**
  *  @file parser.c
  *
+ *  @todo FIX FUNCTION CALL LL GRAMMAR
+ *  @todo CHECK ERROR CODES
+ *  @todo CHECK IN WITH PSYCHIATRIST
  *
  *  @authors Milan Jakubec (xjakub41)
  *  @authors Jakub Ráček (xracek12)
@@ -277,7 +280,7 @@ bool rule_function_definition(parser_t *parser){
         return false;
     }
     load_token(parser);
-    vector_init(func.value.func_id.parameters, 5);
+    func.value.func_id.parameters = vector_init(5);
     if (!rule_parameter_list(parser, &func)){
         return false;
     }
@@ -621,6 +624,19 @@ bool rule_initialization(parser_t *parser, data_t *data){
         }
         data->value.var_id.value.string = parser->token.attribute.string;
         break;   
+    case VAL_NIL:
+        if (data->value.var_id.type != VAL_INTQ && data->value.var_id.type != VAL_DOUBLEQ && data->value.var_id.type != VAL_STRINGQ){
+            error = ERR_SEM_TYPE;
+            return false;
+        }
+    case VAL_UNKNOWN:
+        if (data->value.var_id.type == VAL_UNKNOWN){
+            error = ERR_SEM_TYPE;
+            return false;
+        }
+        break;
+    case VAL_BOOL: // what to do with this?
+        break;
     default:
         break;
     }
@@ -689,9 +705,11 @@ bool rule_classical_statement(parser_t *parser){
     }
     parser->in_if = true;
     load_token(parser);
+    stack_push_table(parser->stack);
     if (!rule_statement_list(parser)){
         return false;
     }
+    stack_pop_table(parser->stack);
     if (!is_type(parser, TOK_RCURLYBRACKET)){
         return false;
     }
@@ -706,9 +724,11 @@ bool rule_classical_statement(parser_t *parser){
     }
     parser->in_else = true;
     load_token(parser);
+    stack_push_table(parser->stack);
     if (!rule_statement_list(parser)){
         return false;
     }
+    stack_pop_table(parser->stack);
     if (!is_type(parser, TOK_RCURLYBRACKET)){
         return false;
     }
@@ -727,15 +747,23 @@ bool rule_variable_statement(parser_t *parser){
     if (!is_type(parser, TOK_IDENTIFIER)){
         return false;
     }
-    load_token(parser); // Somewhere around here we will check if the variable is defined
+
+    data_t data = stack_lookup_var(parser->stack, parser->token.attribute.string);
+    if (data.type != LET){
+        error = ERR_SEM_FUNCTION;
+        return false;   // variable not found
+    }
+    load_token(parser);
     if (!is_type(parser, TOK_LCURLYBRACKET)){
         return false;
     }
     parser->in_if = true;
     load_token(parser);
+    stack_push_table(parser->stack);
     if (!rule_statement_list(parser)){
         return false;
     }
+    stack_pop_table(parser->stack);
     if (!is_type(parser, TOK_RCURLYBRACKET)){
         return false;
     }
@@ -750,9 +778,11 @@ bool rule_variable_statement(parser_t *parser){
     }
     parser->in_else = true;
     load_token(parser);
+    stack_push_table(parser->stack);
     if (!rule_statement_list(parser)){
         return false;
     }
+    stack_pop_table(parser->stack);
     if (!is_type(parser, TOK_RCURLYBRACKET)){
         return false;
     }
@@ -780,9 +810,11 @@ bool rule_loop(parser_t *parser){
 
     parser->in_cycle = true;
     load_token(parser);
+    stack_push_table(parser->stack);
     if (!rule_statement_list(parser)){
         return false;
     }
+    stack_pop_table(parser->stack);
     if (!is_type(parser, TOK_RCURLYBRACKET)){
         return false;
     }
