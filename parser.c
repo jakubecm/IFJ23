@@ -166,23 +166,23 @@ void load_token(parser_t *parser)
     parser->next_token = get_next_token();
 }
 
-variable_type_t str_to_type(char *str){
-    if (strcmp(str, "Double") == 0){
+variable_type_t str_to_type(token_t t){
+    if (t.type == K_DOUBLE){
         return VAL_DOUBLE;
     }
-    else if (strcmp(str, "Int") == 0){
+    else if (t.type == K_INT){
         return VAL_INT;
     }
-    else if (strcmp(str, "String") == 0){
+    else if (t.type == K_STRING){
         return VAL_STRING;
     }
-    else if (strcmp(str, "Double?") == 0){
+    else if (t.type == K_DOUBLEQ){
         return VAL_DOUBLEQ;
     }
-    else if (strcmp(str, "Int?") == 0){
+    else if (t.type == K_INTQ){
         return VAL_INTQ;
     }
-    else if (strcmp(str, "String?") == 0){
+    else if (t.type == K_STRINGQ){
         return VAL_STRINGQ;
     }
     else{
