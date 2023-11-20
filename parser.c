@@ -307,7 +307,7 @@ bool rule_function_return_type_and_body(parser_t *parser, data_t *data){
     if (is_type(parser, TOK_ARROW)){
         parser->func_is_void = false;
         load_token(parser);
-        data->value.func_id.return_type = str_to_type(parser->token.attribute.string);
+        data->value.func_id.return_type = str_to_type(parser->token);
         if (!rule_type(parser)){
             return false;
         }
@@ -439,7 +439,7 @@ bool rule_no_name_parameter(parser_t *parser, data_t *data){
         return false;
     }
     load_token(parser);
-    vector_top(data->value.func_id.parameters)->parameter.type = str_to_type(parser->token.attribute.string); // type
+    vector_top(data->value.func_id.parameters)->parameter.type = str_to_type(parser->token); // type
     return rule_type(parser);
 }
 
@@ -464,7 +464,7 @@ bool rule_rest_of_identifier_parameter(parser_t *parser, data_t *data){
             return false;
         }
         load_token(parser);
-        vector_top(data->value.func_id.parameters)->parameter.type = str_to_type(parser->token.attribute.string);
+        vector_top(data->value.func_id.parameters)->parameter.type = str_to_type(parser->token);
         return rule_type(parser);
     }
     else if (is_type(parser, TOK_IDENTIFIER)){
@@ -474,7 +474,7 @@ bool rule_rest_of_identifier_parameter(parser_t *parser, data_t *data){
             return false;
         }
         load_token(parser);
-        vector_top(data->value.func_id.parameters)->parameter.type = str_to_type(parser->token.attribute.string);
+        vector_top(data->value.func_id.parameters)->parameter.type = str_to_type(parser->token);
         return rule_type(parser);
     }
 
