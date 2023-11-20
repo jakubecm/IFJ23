@@ -146,3 +146,54 @@ void gen_argdef_var(gen_t *gen, char *name, bool local)
     }
     mergestr(&gen->global, name);
 }
+
+void gen_expression(gen_t *gen, token_type_t operator) {
+    switch(operator) {
+        case TOK_PLUS:
+            mergestr(&gen->local, "ADDS\n");
+            break;
+            
+        case TOK_MINUS:
+            mergestr(&gen->local, "SUBS\n");
+            break;
+
+        case TOK_DIV:
+            mergestr(&gen->local, "POPS GF@op1\n");
+            mergestr(&gen->local, "POPS GF@op2\n");
+            //JUMP IF op1 IS 0
+            mergestr(&gen->local, "DIV GF@op1 GF@op2 GF@op1\n");
+            mergestr(&gen->local, "PUSHS GF@op1\n");
+            break;
+            
+        case TOK_MUL:
+            mergestr(&gen->local, "MULS\n");
+            break;
+
+        case TOK_EQUAL:
+            mergestr(&gen->local, "EQS\n");
+            break;
+
+        case TOK_NOTEQUAL:
+            mergestr(&gen->local, "EQS\nNOTS\n");
+            break;
+
+        case TOK_GREATER:
+            mergestr(&gen->local, "GTS\n");
+            break;
+
+        case TOK_LESS:
+            mergestr(&gen->local, "LTS\n");
+            break;
+
+        case TOK_GREATEREQ:
+            mergestr(&gen->local, "LTS\nNOTS\n");
+            break;
+
+        case TOK_LESSEQ:
+            mergestr(&gen->local, "GTS\nNOTS\n");
+            break;
+            
+        default:
+            return;
+    }
+}
