@@ -47,6 +47,14 @@ void destroy(mystring_t *str);
  */ 
 void addcap(mystring_t *str);
 
+
+/**
+ *   @brief merge two strings 
+ *   @param str1 structer for dynamic string 
+ *   @param str2 string we want to merge
+ */ 
+void mergestr(mystring_t *str1, char *str2);
+
 #endif
 
 /* end of file str.h */

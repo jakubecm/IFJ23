@@ -10,6 +10,7 @@
 #include "error.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 extern error_t error;
 
@@ -33,6 +34,7 @@ void initstr(mystring_t *str){
     str->string = (char*)malloc(str->capacity * sizeof(char));
     if(str->string == NULL){
         error = ERR_INTERNAL;
+        print_error_and_exit(error);
     }
 }
 
@@ -42,6 +44,7 @@ void addcap(mystring_t *str){
     str->string = realloc(str->string,str->capacity * sizeof(char));
     if(str->string == NULL){
         error = ERR_INTERNAL;
+        print_error_and_exit(error);
     }
 }
 
@@ -51,6 +54,21 @@ void destroy(mystring_t *str){
     str->lenght = 0;
     str->capacity = 0;
     str->string = NULL;
+}
+
+void mergestr(mystring_t *str1, char *str2){
+    int lenght;
+    
+    lenght = strlen(str2);
+    str1->capacity += lenght;
+    str1->string = realloc(str1->string,str1->capacity * sizeof(char));
+
+    if(str1->string == NULL){
+        error = ERR_INTERNAL;
+        print_error_and_exit(error);
+    }
+
+    strcat(str1->string,str2);
 }
 
 /* end of file str.c */
