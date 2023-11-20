@@ -23,6 +23,7 @@ void makestr(mystring_t *str, char input){
 
     str->string[str->lenght] = input;
     str->lenght++;
+    str->string[str->lenght] = '\0';
 }
 
 
@@ -61,6 +62,7 @@ void mergestr(mystring_t *str1, char *str2){
     
     lenght = strlen(str2);
     str1->capacity += lenght;
+    str1->lenght += lenght;
     str1->string = realloc(str1->string,str1->capacity * sizeof(char));
 
     if(str1->string == NULL){
@@ -69,6 +71,7 @@ void mergestr(mystring_t *str1, char *str2){
     }
 
     strcat(str1->string,str2);
+    str1->string[str1->lenght] = '\0';
 }
 
 /* end of file str.c */
