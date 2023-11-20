@@ -171,6 +171,7 @@ token_t get_next_token(){
                     }
                     else{
                         error = ERR_LEX;
+                        print_error_and_exit(error);
                     }
                 }
             }
@@ -202,6 +203,7 @@ token_t get_next_token(){
 
                     if(inchar == EOF){
                         error = ERR_LEX;
+                        print_error_and_exit(error);
                         break;
                     }
                     
@@ -249,6 +251,7 @@ token_t get_next_token(){
             
             else{
                 error = ERR_LEX;
+                print_error_and_exit(error);
             }
             break;
 
@@ -304,6 +307,7 @@ token_t get_next_token(){
             
             else{
                 error = ERR_LEX;
+                print_error_and_exit(error);
                 break;
             }      
 
@@ -323,6 +327,7 @@ token_t get_next_token(){
                 state = DNUM;
                 if(!(inchar >= '0' && inchar <= '9')){
                     error = ERR_LEX;
+                    print_error_and_exit(error);
                 }
             }
 
@@ -336,6 +341,7 @@ token_t get_next_token(){
 
                 else{
                     error = ERR_LEX;
+                    print_error_and_exit(error);
                 }
             }
 
@@ -364,6 +370,7 @@ token_t get_next_token(){
 
                 else{
                     error = ERR_LEX;
+                    print_error_and_exit(error);
                 }
             }
 
@@ -391,6 +398,7 @@ token_t get_next_token(){
 
             else{
                 error = ERR_LEX;
+                print_error_and_exit(error);
             }
             
       
@@ -485,6 +493,7 @@ token_t get_next_token(){
 
             else{
                 error = ERR_LEX;
+                print_error_and_exit(error);
                 break;
             }
 
@@ -553,6 +562,7 @@ token_t get_next_token(){
 
             else{
                 error = ERR_LEX;
+                print_error_and_exit(error);
             }
 
         default:
@@ -594,23 +604,27 @@ void backslash(mystring_t *str){
 
                 else{
                     error = ERR_LEX;
+                    print_error_and_exit(error);
                 }
             }
 
             else{
                 error = ERR_LEX;
+                print_error_and_exit(error);
             }
          
         }
 
         else{
             error = ERR_LEX;
+            print_error_and_exit(error);
         }
         
     }
 
     else{
         error = ERR_LEX;
+        print_error_and_exit(error);
     }
 }
 
