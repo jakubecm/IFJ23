@@ -224,3 +224,17 @@ data_t stack_lookup_var(stack_t* stack, htab_key_t key) {
 
     return (data_t){.name = NULL, .value = {.var_id = 0}, .type = NOT_FOUND};
 }
+
+data_t stack_lookup_func(stack_t* stack, htab_key_t key) {
+    Node* currentNode = stack->top;
+    while (currentNode != NULL) {
+        symbol_table_t* table = (symbol_table_t*)currentNode->data;
+        data_t symbol = symbol_table_lookup_func(table, key);
+        if (symbol.type != NOT_FOUND) {
+            return symbol;
+        }
+        currentNode = currentNode->right;
+    }
+
+    return (data_t){.name = NULL, .value = {.var_id = 0}, .type = NOT_FOUND};
+}
