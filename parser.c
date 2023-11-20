@@ -127,7 +127,7 @@ bool rule_arguments(parser_t *parser, data_t *data);
 bool rule_argument(parser_t *parser, data_t *data);
 bool rule_arg_name(parser_t *parser, data_t *data);
 bool rule_arg_value(parser_t *parser, data_t *data);
-bool rule_more_arguments(parser_t *parser);
+bool rule_more_arguments(parser_t *parser, data_t *data);
 bool rule_return_statement(parser_t *parser);
 bool rule_returned_expression(parser_t *parser);
 bool rule_empty_return_statement(parser_t *parser);
@@ -284,6 +284,7 @@ bool rule_function_definition(parser_t *parser){
     }
     func.type = FUNC;
     func.name = parser->token.attribute.string;
+    func.value.func_id.defined = true;
     load_token(parser);
     if (!is_type(parser, TOK_LBRACKET)){
         return false;
@@ -839,20 +840,29 @@ bool rule_function_call(parser_t *parser){
     if (!is_type(parser, TOK_IDENTIFIER)){
         return false;
     }
-    data_t data = symbol_table_lookup_generic(stack_top_table(parser->stack), parser->token.attribute.string);
-    if (data.type == VAR){
+    data_t data = symbol_table_lookup_var(stack_top_table(parser->stack), parser->token.attribute.string);
+    if (data.type != NOT_FOUND){
         error = ERR_SEM_FUNCTION;
         return false;   // Attempt at calling a function, that exists as a variable in the current context
     }
+
+    data = symbol_table_lookup_func(stack_top_table(parser->stack), parser->token.attribute.string);
+    if (data.type == NOT_FOUND){
+        // calling a non-existing function
+        data.name = parser->token.attribute.string;
+        data.type = FUNC;
+        data.value.func_id.defined = false;
+    }
+
     load_token(parser);
     if (!is_type(parser, TOK_LBRACKET)){
         return false;
     }
     load_token(parser);
-    if (is_type(parser, TOK_RBRACKET)){
-        return true;
+    if (!rule_arguments(parser, &data)){
+        return false;
     }
-    else if (!rule_arguments(parser, &data)){
+    if (!is_type(parser, TOK_RBRACKET)){
         return false;
     }
 
@@ -871,7 +881,7 @@ bool rule_arguments(parser_t *parser, data_t *data){
         return false;
     }
 
-    return rule_more_arguments(parser);
+    return rule_more_arguments(parser, data);
 }
 
 // <argument> -> <arg_name> <arg_value>
@@ -922,7 +932,7 @@ bool rule_arg_value(parser_t *parser, data_t *data){
 
 // <more_arguments> -> "," <argument> <more_arguments> | ε
 
-bool rule_more_arguments(parser_t *parser){
+bool rule_more_arguments(parser_t *parser, data_t *data){
     if(is_type(parser, TOK_RBRACKET)){
         return true;
     }
@@ -931,10 +941,10 @@ bool rule_more_arguments(parser_t *parser){
         return false;
     }
     load_token(parser);
-    if (!rule_argument(parser, NULL)){
+    if (!rule_argument(parser, data)){
         return false;
     }
-    if (!rule_more_arguments(parser)){
+    if (!rule_more_arguments(parser, data)){
         return false;
     }
     return true;
