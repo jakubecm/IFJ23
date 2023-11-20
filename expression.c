@@ -296,13 +296,13 @@ variable_type_t exp_parsing(parser_t* parserData)  {
         handle_upcoming(parserData, &stack, &end, &endToken, tmp);
         if(error != ERR_OK) {
             CLEANUP_RESOURCES(stack, analysis);
-            return EXP_ERR;
+            print_error_and_exit(error);
         }
 
         prec_analysis(&stack, parserData, tmp, analysis);
         if(error != ERR_OK) {
             CLEANUP_RESOURCES(stack, analysis);
-            return EXP_ERR;
+            print_error_and_exit(error);
         }
 
         if(parserData->token.type == TOK_DOLLAR && stack_top_terminal(&stack)->type == TOK_DOLLAR) {
