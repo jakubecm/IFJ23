@@ -954,6 +954,12 @@ bool rule_arg_name(parser_t *parser, int argnum, int *argindex, data_t *data){
 bool rule_arg_value(parser_t *parser, int argnum, int *argindex, data_t *data){
     switch(parser->token.type){
         case TOK_IDENTIFIER:
+            data_t arg = symbol_table_lookup_var(stack_top_table(parser->stack), parser->token.attribute.string);
+            if (arg.type == NOT_FOUND){
+                error = ERR_SEM_FUNCTION;
+                return false;   // Attempt at calling a function with a non-existing variable
+            }
+            break;
         case TOK_INT:
         case TOK_DOUBLE:
         case TOK_STRING:

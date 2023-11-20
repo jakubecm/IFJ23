@@ -16,6 +16,9 @@ typedef struct gen{
     mystring_t temp;
     mystring_t local;
     mystring_t functions;
+
+    int label_counter;
+    int arg_counter;
 } gen_t;
 
 /**
@@ -50,7 +53,7 @@ void gen_while(gen_t *gen);
 
 void gen_func(gen_t *gen);
 
-void gen_func_call(gen_t *gen);
+void gen_func_call(gen_t *gen, char *name);
 
 void gen_return(gen_t *gen);
 

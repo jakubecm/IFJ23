@@ -74,4 +74,16 @@ void mergestr(mystring_t *str1, char *str2){
     str1->string[str1->lenght] = '\0';
 }
 
+void mergestr_int(mystring_t *str1, int input){
+    char str2[21];
+    sprintf(str2, "%d", input);
+    mergestr(str1, str2);
+}
+
+void mergestr_float(mystring_t *str1, float input){
+    char str2[35];
+    sprintf(str2, "%f", input);
+    mergestr(str1, str2);
+}
+
 /* end of file str.c */
