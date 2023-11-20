@@ -30,3 +30,10 @@ typedef enum Error {
  * @brief For calling in other files
  */
 extern error_t error;
+
+/**
+ * @brief Prints error message to stderr
+ * 
+ * @param error Error type
+ */
+void print_error_and_exit(error_t error);
