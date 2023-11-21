@@ -136,7 +136,30 @@ void shift(stack_t* stack, parser_t* parserData, sem_data_type_t input_type) {
     token_type_t tmpTok = parserData->token.type;
     
     if(is_literal(tmpTok)) {
-        //geenerate instruction
+        switch(tmpTok) {
+            case TOK_INT:
+                gen_push_int(gen, parserData->token.attribute.number);
+                break;
+
+            case TOK_DOUBLE:
+                gen_push_float(gen, parserData->token.attribute.decimal);
+                break;
+
+            case TOK_STRING:
+                gen_push_string(gen, parserData->token.attribute.string);
+                break;
+
+            case K_NIL:
+                gen_push_nil(gen);
+                break;
+
+            case TOK_IDENTIFIER:
+                gen_push_var(gen, parserData->token.attribute.string, parserData->in_function);
+                break;
+
+            default:
+                break;
+        }
     }
 
     parserData->token = get_next_token();
@@ -178,7 +201,7 @@ void reduce(stack_t* stack, int num, analysis_t* analysis) {
                 }
                 handle_other(stack, analysis->end_type);
                 DEBUG_PRINT("END TYPE: %d\n", analysis->end_type);
-                //GENERATOR
+                gen_expression(gen, analysis->tok2->type);
 
             } else {
                 error = ERR_SYN;

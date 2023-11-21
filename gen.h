@@ -65,3 +65,6 @@ void gen_assign(gen_t *gen);
 
 void gen_footer(gen_t *gen);
 
+void gen_call_convert(gen_t *gen);
+
+void gen_call_convert2(gen_t *gen);

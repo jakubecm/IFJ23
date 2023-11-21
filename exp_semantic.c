@@ -136,7 +136,11 @@ int get_result_type(stack_terminal_t* operator, stack_terminal_t* left, stack_te
             if(is_int(left->data) && is_int(right->data)) {
                 return SEM_INT;
             } else {
-                //left, right to float gen
+                if(is_int(left->data)) {
+                     gen_call_convert(gen);
+                } else if(is_int(right->data)) {
+                    gen_call_convert2(gen);
+                }
                 return SEM_FLOAT;
             }
         } else {
@@ -149,7 +153,11 @@ int get_result_type(stack_terminal_t* operator, stack_terminal_t* left, stack_te
             if(is_int(left->data) && is_int(right->data)) {
                 return SEM_INT;
             } else {
-                //left, right to float gen
+                if(is_int(left->data)) {
+                     gen_call_convert(gen);
+                } else if(is_int(right->data)) {
+                    gen_call_convert2(gen);
+                }
                 return SEM_FLOAT;
             }
         }
@@ -164,7 +172,11 @@ int get_result_type(stack_terminal_t* operator, stack_terminal_t* left, stack_te
     if(operator->type == TOK_LESS || operator->type == TOK_GREATER || operator->type == TOK_GREATEREQ || 
        operator->type == TOK_LESSEQ) {
         if(right->data != left->data) {
-            //left, right to float gen
+            if(is_int(left->data)) {
+                gen_call_convert(gen);
+            } else if(is_int(right->data)) {
+                gen_call_convert2(gen);
+            }
         }
 
         return SEM_BOOL;
