@@ -41,7 +41,7 @@ typedef struct parser
  * @return Initialized parser structure
  */
 
-void parser_init(parser_t *parser, scanner_t *scanner);
+void parser_init(parser_t *parser);
 
 /**
  * @brief Runs parser

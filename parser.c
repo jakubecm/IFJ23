@@ -136,15 +136,16 @@ bool rule_empty_return_statement(parser_t *parser);
 
 //================= PARSER FUNCTIONS ================= //
 
-void parser_init(parser_t *parser, scanner_t *scanner)
+void parser_init(parser_t *parser)
 {
-    parser->scanner = scanner;
     parser->stack = malloc(sizeof(stack_t));
     stack_init(parser->stack);
     parser->function = NULL;
     parser->in_function = false;
     parser->func_is_void = false;
     parser->returned = false;
+
+    stack_push_table(parser->stack);
 
     parser->token = get_next_token();
     parser->next_token = get_next_token();
@@ -548,7 +549,10 @@ bool rule_variable_definition_var(parser_t *parser){
     data.name = parser->token.attribute.string;
 
     load_token(parser);
-    return rule_definition_types(parser, &data);
+    if(rule_definition_types(parser, &data)) {
+        symbol_table_insert(stack_top_table(parser->stack), data.name, data);
+        return true;
+    }
 }
 
 // <definition_types> -> <type_def> | <initialization>
