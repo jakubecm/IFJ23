@@ -8,6 +8,7 @@
  */
 
 #include "gen.h"
+#include "buildin.h"
 
 void gen_init(gen_t *gen)
 {
@@ -55,6 +56,8 @@ void gen_main(gen_t *gen)
     mergestr(&gen->global, "DEFVAR GF@op3\n");
     mergestr(&gen->global, "DEFVAR GF@return_func\n");
     mergestr(&gen->global, "DEFVAR GF@return_exp\n");
+
+    gen_buildin_funcs(gen); // Generates all buildin functions at once (check buildin.c to see)
 }
 
 void gen_arguments(gen_t *gen, vector_t *gen_arguments) {    

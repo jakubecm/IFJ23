@@ -32,7 +32,7 @@ typedef enum Error {
 extern error_t error;
 
 /**
- * @brief Prints error message to stderr
+ * @brief Prints error message to stderr and exits with error code
  * 
  * @param error Error type
  */

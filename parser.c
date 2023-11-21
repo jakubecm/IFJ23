@@ -146,7 +146,6 @@ void parser_init(parser_t *parser, scanner_t *scanner)
     parser->returned = false;
 
     parser->token = get_next_token();
-    // Nebude lepsi udelat funkci ktera jen peekne na dalsi token a scanner ho uchova misto tohoto?
     parser->next_token = get_next_token();
 }
 
@@ -154,6 +153,13 @@ void parser_destroy(parser_t *parser)
 {
     stack_destroy_table(parser->stack);
     stack_free(parser->stack);
+}
+
+void run_parser(parser_t *parser)
+{
+    if(!rule_program(parser)){
+        print_error_and_exit(error);
+    }
 }
 
 bool is_type(parser_t *parser, token_type_t type) { return parser->token.type == type; }
@@ -585,7 +591,7 @@ bool rule_type_def_follow(parser_t *parser, data_t *data){
     return rule_initialization(parser, data);
 }
 
-// <initialization> -> "=" <expression>
+// <initialization> -> "=" <expression> | "=" <function_call>
 
 bool rule_initialization(parser_t *parser, data_t *data){
 
