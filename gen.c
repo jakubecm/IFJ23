@@ -195,8 +195,27 @@ void gen_expression(gen_t *gen, token_type_t operator) {
         case TOK_LESSEQ:
             mergestr(&gen->local, "GTS\nNOTS\n");
             break;
-            
+        
+        case TOK_DQUESTMK:
+            mergestr(&gen->local, "POPS GF@op1\n");
+            mergestr(&gen->local, "POPS GF@op2\n");
+
+            mergestr(&gen->local, "JUMPIFEQ !op2NIL nil@nil GF@op2\n");
+            mergestr(&gen->local, "JUMPIFNEQ !op2NotNIL nil@nil GF@op2\n");
+            break;
+
         default:
             return;
     }
+}
+
+//This goes to buildin!
+void gen_nil_check(gen_t *gen) {
+    mergestr(&gen->global, "LABEL !op2NIL\n");
+    mergestr(&gen->local, "PUSHS GF@op1\n");
+    mergestr(&gen->local, "RETURN\n");
+
+    mergestr(&gen->global, "LABEL !op2NotNIL\n");
+    mergestr(&gen->local, "PUSHS GF@op2\n");
+    mergestr(&gen->local, "RETURN\n");
 }
