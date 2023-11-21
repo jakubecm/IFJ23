@@ -125,9 +125,9 @@ bool rule_variable_statement(parser_t *parser);
 bool rule_loop(parser_t *parser);
 bool rule_function_call(parser_t *parser, data_t *data);
 bool rule_arguments(parser_t *parser, int argnum, int *argindex, data_t *data);
-bool rule_argument(parser_t *parser, int argnum, int *argindex, data_t *data);
-bool rule_arg_name(parser_t *parser, int argnum, int *argindex, data_t *data);
-bool rule_arg_value(parser_t *parser, int argnum, int *argindex, data_t *data);
+bool rule_argument(parser_t *parser, int *argindex, data_t *data);
+bool rule_arg_name(parser_t *parser, int *argindex, data_t *data);
+bool rule_arg_value(parser_t *parser, int *argindex, data_t *data);
 bool rule_more_arguments(parser_t *parser, int argnum, int *argindex, data_t *data);
 bool rule_return_statement(parser_t *parser);
 bool rule_returned_expression(parser_t *parser);
@@ -910,8 +910,11 @@ bool rule_arguments(parser_t *parser, int argnum, int *argindex, data_t *data){
     if (is_type(parser, TOK_RBRACKET)){
         return true;
     }
-    if(!rule_argument(parser, argnum, argindex, data)){
+    if(!rule_argument(parser, argindex, data)){
         return false;
+    }
+    if (*argindex >= argnum){
+        return false;  // Attempt at calling a function with too many arguments
     }
 
     return rule_more_arguments(parser, argnum, argindex, data);
@@ -919,48 +922,49 @@ bool rule_arguments(parser_t *parser, int argnum, int *argindex, data_t *data){
 
 // <argument> -> <arg_name> <arg_value>
 
-bool rule_argument(parser_t *parser, int argnum, int *argindex, data_t *data){
-    if (!rule_arg_name(parser, argnum, argindex, data)){
+bool rule_argument(parser_t *parser, int *argindex, data_t *data){
+    if (!rule_arg_name(parser, argindex, data)){
         return false;
     }
-    return rule_arg_value(parser, argnum, argindex, data);
+    return rule_arg_value(parser, argindex, data);
 }
 
 // <arg_name> -> <identifier> ":" | ε
 
-bool rule_arg_name(parser_t *parser, int argnum, int *argindex, data_t *data){
-    if (!strcmp(parser->token.attribute.string, data->value.func_id.parameters->data[*argindex].call_name)){
-        return true; // ε
-    }
-
+bool rule_arg_name(parser_t *parser, int *argindex, data_t *data){
     switch(parser->token.type){
-        case TOK_INT:
-        case TOK_DOUBLE:
-        case TOK_STRING:
-        case K_NIL:
-            if (!strcmp(data->value.func_id.parameters->data[*argindex].call_name, "_")) {
-                return true; // nameless argument
+        case TOK_IDENTIFIER:
+            // argument is named
+            if (strcmp(data->value.func_id.parameters->data[*argindex].call_name, "_")) {
+                if (strcmp(parser->token.attribute.string, data->value.func_id.parameters->data[*argindex].call_name)) {
+                    return false; // argument should be named but doesnt match
+                    // TODO
+                }
+                load_token(parser);
+                if (!is_type(parser, TOK_COLON)){
+                    return false;
+                }
+                load_token(parser);
+                return true;
+            } else {
+                // is not named -> pass over to arg_value
+                return true;
             }
-            return false;
         default:
+            // argument is named
+            if (strcmp(data->value.func_id.parameters->data[*argindex].call_name, "_")) {
+                return false; // argument should be named but isnt
+                // TODO
+            }
+            // argument is not named
+            return true;
             break;
     }
-
-    if (!is_type(parser, TOK_IDENTIFIER)){
-        return false;
-    }
-    load_token(parser);
-    if (!is_type(parser, TOK_COLON)){
-        return false;
-    }
-    load_token(parser);
-    return true;
-
 }
 
 // <arg_value> -> <identifier> | <int> | <double> | <string> | <nil>
 
-bool rule_arg_value(parser_t *parser, int argnum, int *argindex, data_t *data){
+bool rule_arg_value(parser_t *parser, int *argindex, data_t *data){
     variable_type_t param_type = data->value.func_id.parameters->data[*argindex].parameter.type;
     switch(parser->token.type){
         case TOK_IDENTIFIER:
@@ -971,7 +975,7 @@ bool rule_arg_value(parser_t *parser, int argnum, int *argindex, data_t *data){
                 return false;   // Attempt at calling a function with a non-existing variable
             }
             // check correct type
-            if (arg.type != param_type){
+            if (arg.value.var_id.type != param_type){
                 error = ERR_SEM_TYPE;
                 return false;   // Attempt at calling a function with a variable of a different type than the function expects
             }
@@ -999,11 +1003,14 @@ bool rule_arg_value(parser_t *parser, int argnum, int *argindex, data_t *data){
                 error = ERR_SEM_TYPE;
                 return false;   // Attempt at calling a function with a nil argument, where the function expects a different type
             }
-            return true;
+            break;
         default:
             // TODO
             return false;
     }
+    (*argindex)++;
+    load_token(parser);
+    return true;
 }
 
 // <more_arguments> -> "," <argument> <more_arguments> | ε
@@ -1017,8 +1024,11 @@ bool rule_more_arguments(parser_t *parser, int argnum, int *argindex, data_t *da
         return false;
     }
     load_token(parser);
-    if (!rule_argument(parser, argnum, argindex, data)){
+    if (!rule_argument(parser, argindex, data)){
         return false;
+    }
+    if (*argindex >= argnum){
+        return false;  // Attempt at calling a function with too many arguments
     }
     if (!rule_more_arguments(parser, argnum, argindex, data)){
         return false;
