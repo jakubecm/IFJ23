@@ -81,7 +81,7 @@ typedef union token_attribute
     int number;
     double decimal;
     char *string;
-    bool boolean;
+    bool boolean;  
 } token_attribute_t;
 
 /**
@@ -91,6 +91,7 @@ typedef struct token
 {
     token_type_t type;
     token_attribute_t attribute;
+    bool eol;
 } token_t;
 
 /**

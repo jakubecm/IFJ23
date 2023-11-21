@@ -32,7 +32,9 @@ token_t get_next_token(){
     int preinchar;
     int whitespace = 0;
     int blockcomm;
+    
     token.attribute.string = NULL;
+    token.eol = false;
 
     while(true){
         if(state == COMMENT || state == START){
@@ -44,6 +46,10 @@ token_t get_next_token(){
         if(inchar == EOF){
             token.type = TOK_EOF;
             return token;
+        }
+
+        if(inchar == '\n'){
+            token.eol = true;
         }
 
         switch(state){
