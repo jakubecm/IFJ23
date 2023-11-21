@@ -13,6 +13,7 @@
 
 #include "error.h"
 #include "expression.h"
+#include <string.h>
 
 /** ================== LL GRAMMAR ==================
 
@@ -568,7 +569,7 @@ bool rule_type_def(parser_t *parser, data_t *data){
     }
 
     // loaded token is the type of the variable
-    data->value.var_id.type = parser->token.attribute.string;
+    data->value.var_id.type = str_to_type(parser->token);
 
     load_token(parser);
     return rule_type_def_follow(parser, data);
@@ -870,8 +871,8 @@ bool rule_function_call(parser_t *parser, data_t *var){
     }
 
     if (!data.value.func_id.defined && var != NULL){
-        data_t variable_assignemnt = stack_lookup_var(parser->stack, data.name);
-        if (data.type == NOT_FOUND){
+        data_t variable_assignent = stack_lookup_var(parser->stack, data.name);
+        if (variable_assignent.type == NOT_FOUND){
             if (data.name == var->name){
                 error = ERR_SEM_FUNCTION;
                 return false;   // Attempt at calling a function that is not defined yet, but is being defined as a variable in the current context
@@ -885,7 +886,7 @@ bool rule_function_call(parser_t *parser, data_t *var){
     }
     load_token(parser);
     int argindex = 0;
-    if (!rule_arguments(parser, &data, argnum, &argindex)){
+    if (!rule_arguments(parser, argnum, &argindex, &data)){
         return false;
     }
     if (!is_type(parser, TOK_RBRACKET)){
@@ -922,7 +923,7 @@ bool rule_argument(parser_t *parser, int argnum, int *argindex, data_t *data){
 // <arg_name> -> <identifier> ":" | ε
 
 bool rule_arg_name(parser_t *parser, int argnum, int *argindex, data_t *data){
-    if (parser->token.attribute.string == data->value.func_id.parameters->data[*argindex].call_name){
+    if (!strcmp(parser->token.attribute.string, data->value.func_id.parameters->data[*argindex].call_name)){
         return true; // ε
     }
 
@@ -931,10 +932,12 @@ bool rule_arg_name(parser_t *parser, int argnum, int *argindex, data_t *data){
         case TOK_DOUBLE:
         case TOK_STRING:
         case K_NIL:
-            if (data->value.func_id.parameters->data[*argindex].call_name == "_") {
+            if (!strcmp(data->value.func_id.parameters->data[*argindex].call_name, "_")) {
                 return true; // nameless argument
             }
             return false;
+        default:
+            break;
     }
 
     if (!is_type(parser, TOK_IDENTIFIER)){
@@ -952,20 +955,47 @@ bool rule_arg_name(parser_t *parser, int argnum, int *argindex, data_t *data){
 // <arg_value> -> <identifier> | <int> | <double> | <string> | <nil>
 
 bool rule_arg_value(parser_t *parser, int argnum, int *argindex, data_t *data){
+    variable_type_t param_type = data->value.func_id.parameters->data[*argindex].parameter.type;
     switch(parser->token.type){
         case TOK_IDENTIFIER:
+            // check if var exists
             data_t arg = symbol_table_lookup_var(stack_top_table(parser->stack), parser->token.attribute.string);
             if (arg.type == NOT_FOUND){
                 error = ERR_SEM_FUNCTION;
                 return false;   // Attempt at calling a function with a non-existing variable
             }
+            // check correct type
+            if (arg.type != param_type){
+                error = ERR_SEM_TYPE;
+                return false;   // Attempt at calling a function with a variable of a different type than the function expects
+            }
             break;
         case TOK_INT:
+            if (param_type != VAL_INT && param_type != VAL_INTQ){
+                error = ERR_SEM_TYPE;
+                return false;   // Attempt at calling a function with an int argument, where the function expects a different type
+            }
+            break;
         case TOK_DOUBLE:
+            if (param_type != VAL_DOUBLE && param_type != VAL_DOUBLEQ){
+                error = ERR_SEM_TYPE;
+                return false;   // Attempt at calling a function with a double argument, where the function expects a different type
+            }
+            break;
         case TOK_STRING:
+            if (param_type != VAL_STRING && param_type != VAL_STRINGQ){
+                error = ERR_SEM_TYPE;
+                return false;   // Attempt at calling a function with a string argument, where the function expects a different type
+            }
+            break;
         case K_NIL:
+            if (param_type != VAL_INTQ && param_type != VAL_DOUBLEQ && param_type != VAL_STRINGQ){
+                error = ERR_SEM_TYPE;
+                return false;   // Attempt at calling a function with a nil argument, where the function expects a different type
+            }
             return true;
         default:
+            // TODO
             return false;
     }
 }
