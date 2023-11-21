@@ -191,8 +191,9 @@ void print_stack_contents(stack_t *stack) {
 // --------------------------------- Symtable functions ---------------------------------
 
 void stack_push_table(stack_t* stack) {
-    symbol_table_t* table = symbol_table_init(97);
-    stack_push(stack, table);
+    size_t size = 97;
+    symbol_table_t *table = symbol_table_init(size);
+    stack_push(stack, (symbol_table_t *)&table);
 }
 
 void stack_pop_table(stack_t* stack) {
@@ -202,7 +203,7 @@ void stack_pop_table(stack_t* stack) {
 }
 
 symbol_table_t* stack_top_table(stack_t* stack) {
-    return stack_top(stack);
+    return (stack_top(stack) != NULL) ? stack->top->data : NULL;
 }
 
 void stack_destroy_table(stack_t* stack) {

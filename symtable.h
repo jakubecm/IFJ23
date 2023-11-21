@@ -99,7 +99,7 @@ size_t htab_hash_function(htab_key_t str);
  * @param size Size of the table
  * @return Pointer to new symbol table
 */
-symbol_table_t *symbol_table_init(size_t size);
+symbol_table_t * symbol_table_init(size_t size);
 
 /**
  * @brief Inserts new symbol into the table

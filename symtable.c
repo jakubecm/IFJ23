@@ -7,6 +7,7 @@
 
 #include <string.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include "symtable.h"
 
 // pomocné funkce
@@ -19,14 +20,17 @@ size_t htab_hash_function(htab_key_t str) {
     return h;
 }
 
-symbol_table_t *symbol_table_init(size_t size) {
-    symbol_table_t *table = malloc(sizeof(symbol_table_t));
-    table->size = size;
-    table->table = malloc(sizeof(symbol *) * size);
-    for (size_t i = 0; i < size; i++) {
-        table->table[i] = NULL;
+symbol_table_t * symbol_table_init(size_t size) {
+    symbol_table_t *table = (symbol_table_t *)malloc(sizeof(symbol_table_t));
+    if (table == NULL) {
+        return NULL;
     }
-    return table;
+    table->capacity = size;
+    table->size = 1;
+    // table->table = malloc(sizeof(symbol *) * size);
+    // for (size_t i = 0; i < size; i++) {
+    //     table->table[i] = NULL;
+    // }
 }
 
 void symbol_table_free(symbol_table_t *table) {
@@ -50,7 +54,8 @@ int symbol_table_insert(symbol_table_t *table, htab_key_t key, data_t data) {
         s = s->next;
     }
     if (s != NULL) {
-        return 1; // symbol already exists
+        // symol exists, write new value
+        s->data = data;
     }
 
     if (table->size == table->capacity) {
