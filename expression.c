@@ -334,6 +334,7 @@ variable_type_t exp_parsing(parser_t* parserData)  {
     }
 
     if(end == true) {
+        parserData->token = parserData->next_token;
         parserData->next_token = endToken;
     }
 
@@ -345,12 +346,6 @@ variable_type_t exp_parsing(parser_t* parserData)  {
     DEBUG_PRINT("Converted: %d\n", return_type);
     CLEANUP_RESOURCES(stack, analysis);
     return return_type;
-}
-
-void load_token(parser_t *parser)
-{
-    parser->token = parser->next_token;
-    parser->next_token = get_next_token();
 }
 
 #ifdef DEBUG
