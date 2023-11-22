@@ -37,7 +37,6 @@ bool stack_pop(stack_t *s) {
 
     Node *topNode = s->top;
     s->top = topNode->right;
-    s->top->data = topNode->data;
     free(topNode);
     return true;
 }
@@ -197,7 +196,7 @@ void stack_push_table(stack_t* stack) {
 }
 
 void stack_pop_table(stack_t* stack) {
-    symbol_table_t* table = stack_top(stack);
+    symbol_table_t* table = stack_top_table(stack);
     symbol_table_free(table);
     stack_pop(stack);
 }

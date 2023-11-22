@@ -304,6 +304,8 @@ bool rule_function_definition(parser_t *parser){
     }
     load_token(parser);
     func.value.func_id.parameters = vector_init(5);
+
+    stack_push_table(parser->stack);
     if (!rule_parameter_list(parser, &func)){
         return false;
     }
@@ -311,8 +313,12 @@ bool rule_function_definition(parser_t *parser){
         return false;
     }
     load_token(parser);
+    if (!rule_function_return_type_and_body(parser, &func)){
+        return false;
+    }
+    stack_pop_table(parser->stack);
 
-    return rule_function_return_type_and_body(parser, &func);
+    return true;
 }
 
 // <function_return_type_and_body> -> "{" <void_function_body> "}" | "->" <type> "{" <nonvoid_function_body> "}"
@@ -322,6 +328,7 @@ bool rule_function_return_type_and_body(parser_t *parser, data_t *data){
         parser->func_is_void = false;
         load_token(parser);
         data->value.func_id.return_type = str_to_type(parser->token);
+        parser->return_type = str_to_type(parser->token);
         if (!rule_type(parser)){
             return false;
         }
@@ -450,7 +457,7 @@ bool rule_no_name_parameter(parser_t *parser, data_t *data){
         return false;
     }
 
-    data_t param;
+    data_t param; // symtable variable
     param.name = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1));
     strcpy(param.name, parser->token.attribute.string);
     param.type = VAR;
@@ -464,6 +471,7 @@ bool rule_no_name_parameter(parser_t *parser, data_t *data){
     }
     load_token(parser);
     param.value.var_id.type = str_to_type(parser->token); // type
+    symbol_table_insert(stack_top_table(parser->stack), param.name, param); // push to table
     vector_top(data->value.func_id.parameters)->parameter.type = str_to_type(parser->token); // type
     return rule_type(parser);
 }
@@ -493,13 +501,23 @@ bool rule_rest_of_identifier_parameter(parser_t *parser, data_t *data){
         return rule_type(parser);
     }
     else if (is_type(parser, TOK_IDENTIFIER)){
-        vector_top(data->value.func_id.parameters)->def_name = parser->token.attribute.string;
+        vector_top(data->value.func_id.parameters)->def_name = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1));
+        strcpy(vector_top(data->value.func_id.parameters)->def_name, parser->token.attribute.string);
+
+        data_t param; // symtable variable
+        param.name = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1));
+        strcpy(param.name, parser->token.attribute.string);
+        param.type = VAR;
+        param.value.var_id.type = VAL_UNKNOWN;
+
         load_token(parser);
         if (!is_type(parser, TOK_COLON)){
             return false;
         }
         load_token(parser);
         vector_top(data->value.func_id.parameters)->parameter.type = str_to_type(parser->token);
+        param.value.var_id.type = str_to_type(parser->token);
+        symbol_table_insert(stack_top_table(parser->stack), param.name, param);
         return rule_type(parser);
     }
 
@@ -544,6 +562,8 @@ bool rule_variable_definition_let(parser_t *parser){
     data.type = LET;
     data.name = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1));
     strcpy(data.name, parser->token.attribute.string);
+    //symbol_table_insert(stack_top_table(parser->stack), data.name, data);
+    symbol_table_lookup_var(stack_top_table(parser->stack), parser->token.attribute.string);
 
     load_token(parser);
     if(rule_definition_types(parser, &data)) {
@@ -570,7 +590,7 @@ bool rule_variable_definition_var(parser_t *parser){
     data.type = VAR;
     data.name = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1));
     strcpy(data.name, parser->token.attribute.string);
-
+    symbol_table_insert(stack_top_table(parser->stack), data.name, data);
     load_token(parser);
     if(rule_definition_types(parser, &data)) {
         symbol_table_insert(stack_top_table(parser->stack), data.name, data);
@@ -710,8 +730,8 @@ bool rule_assignment_type(parser_t *parser, data_t *data){
         return rule_function_call(parser, data);
     }
     else{
-        exp_parsing(parser);
-        if (error != ERR_OK){
+        variable_type_t type = exp_parsing(parser);
+        if (type == EXP_ERR){
             return false;
         }
         return true;
@@ -844,8 +864,8 @@ bool rule_loop(parser_t *parser){
     }
     load_token(parser);
     
-    exp_parsing(parser);
-    if (error != ERR_OK){
+    variable_type_t type = exp_parsing(parser);
+    if (error == EXP_ERR){
         return false;
     }
 
@@ -1109,11 +1129,15 @@ bool rule_returned_expression(parser_t *parser){
             error = ERR_SEM_TYPE;
             return false;
         }
-        parser->returned = true;
-        exp_parsing(parser);
-        if (error != ERR_OK){
+        variable_type_t type = exp_parsing(parser);
+        if (type == EXP_ERR){
             return false;
         }
+        if (type != parser->return_type){
+            error = ERR_SEM_TYPE;
+            return false;   // Attempt at returning a value of a different type than the function expects
+        }
+        return true;
     }
 
     if (!parser->func_is_void){
