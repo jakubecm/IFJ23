@@ -89,6 +89,11 @@ void handle_upcoming(parser_t* parserData, stack_t* stack, bool* end, token_t* e
 
     if ((parserData->next_token.type == TOK_IDENTIFIER || parserData->next_token.type == TOK_EOF || parserData->next_token.type >= 20) &&
         (stack_top_token(stack)->type == TOK_NTERM || is_literal(tmp->type) || tmp->type == TOK_RBRACKET || tmp->type == TOK_NOT)) {
+        
+        if(tmp->type = TOK_RBRACKET) {
+            load_token(parserData);
+        }
+        
         *end = true;
 
     }
@@ -322,7 +327,7 @@ variable_type_t exp_parsing(parser_t* parserData)  {
             print_error_and_exit(error);
         }
 
-        if (end) {
+        if(end) {
             break;
         }
 
