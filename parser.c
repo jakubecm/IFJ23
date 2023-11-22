@@ -570,6 +570,7 @@ bool rule_variable_definition_let(parser_t *parser){
         symbol_table_insert(stack_top_table(parser->stack), data.name, data);
         return true;
     }
+    return false;
 }
 
 // <variable_definition_var> -> "var" <identifier> <definition_types>
@@ -596,6 +597,7 @@ bool rule_variable_definition_var(parser_t *parser){
         symbol_table_insert(stack_top_table(parser->stack), data.name, data);
         return true;
     }
+    return false;
 }
 
 // <definition_types> -> <type_def> | <initialization>
@@ -694,6 +696,7 @@ bool rule_initialization(parser_t *parser, data_t *data){
             error = ERR_SEM_TYPE;
             return false;
         }
+        break;
     case VAL_UNKNOWN:
         if (data->value.var_id.type == VAL_UNKNOWN){
             error = ERR_SEM_TYPE;
@@ -865,7 +868,7 @@ bool rule_loop(parser_t *parser){
     load_token(parser);
     
     variable_type_t type = exp_parsing(parser);
-    if (error == EXP_ERR){
+    if (type == EXP_ERR){
         return false;
     }
 
@@ -1016,10 +1019,11 @@ bool rule_arg_name(parser_t *parser, int *argindex, data_t *data){
 
 bool rule_arg_value(parser_t *parser, int *argindex, data_t *data){
     variable_type_t param_type = data->value.func_id.parameters->data[*argindex].parameter.type;
+    data_t *arg = NULL;
     switch(parser->token.type){
         case TOK_IDENTIFIER:
             // check if var exists
-            data_t *arg = symbol_table_lookup_var(stack_top_table(parser->stack), parser->token.attribute.string);
+            arg = symbol_table_lookup_var(stack_top_table(parser->stack), parser->token.attribute.string);
             if (arg == NULL){
                 error = ERR_SEM_FUNCTION;
                 return false;   // Attempt at calling a function with a non-existing variable

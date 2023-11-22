@@ -13,12 +13,6 @@
 
 error_t error;
 
-void load_token(parser_t *parser)
-{
-    parser->token = parser->next_token;
-    parser->next_token = get_next_token();
-}
-
 static char precedence_tab[TABLE_SIZE][TABLE_SIZE] =
 {
     //   +    -    *    /   ==   !=    <    >   <=   >=   ??    !    (    )    id  int  flo  str  nil   $

@@ -53,3 +53,5 @@ void run_parser(parser_t *parser);
  * @brief Destroys parser
  */
 void parser_destroy(parser_t *parser);
+
+void load_token(parser_t *parser);
