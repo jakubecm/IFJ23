@@ -84,14 +84,13 @@ void handle_upcoming(parser_t* parserData, stack_t* stack, bool* end, token_t* e
     if (parserData->token.type == TOK_LBRACKET) {
         stack_push_after(stack, SEM_UNDEF, TOK_ENDMARKER);
         stack_push_token(stack, SEM_OPERATOR, parserData->token.type);
-        load_token(&parserData);
+        load_token(parserData);
     }
 
     if ((parserData->next_token.type == TOK_IDENTIFIER || parserData->next_token.type == TOK_EOF || parserData->next_token.type >= 20) &&
         (stack_top_token(stack)->type == TOK_NTERM || is_literal(tmp->type) || tmp->type == TOK_RBRACKET || tmp->type == TOK_NOT)) {
-        *endToken = parserData->token;
         *end = true;
-        parserData->token.type = TOK_DOLLAR;
+
     }
 }
 
@@ -162,7 +161,7 @@ void shift(stack_t* stack, parser_t* parserData, sem_data_type_t input_type) {
         }
     }
 
-    load_token(&parserData);
+    load_token(parserData);
 }
 
 void reduce(stack_t* stack, int num, analysis_t* analysis) {
@@ -312,7 +311,7 @@ variable_type_t exp_parsing(parser_t* parserData)  {
     /** Exp parser start **/
     stack_push_token(&stack, SEM_UNDEF, TOK_DOLLAR);
 
-    while(continue_while) {
+    while(continue_while || !end) {
         tmp = stack_top_terminal(&stack);
         DEBUG_PRINT("Tmp: %d\n", tmp->type);
         DEBUG_PRINT("data token: %d\n", parserData->token.type);
@@ -321,6 +320,10 @@ variable_type_t exp_parsing(parser_t* parserData)  {
         if(error != ERR_OK) {
             CLEANUP_RESOURCES(stack, analysis);
             print_error_and_exit(error);
+        }
+
+        if (end) {
+            break;
         }
 
         prec_analysis(&stack, parserData, tmp, analysis);
@@ -334,9 +337,6 @@ variable_type_t exp_parsing(parser_t* parserData)  {
         }
     }
 
-    if(end == true) {
-        load_token(&parserData);
-    }
 
     //Last token on the top of stack
     stack_type = stack_top_token(&stack)->data;

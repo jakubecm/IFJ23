@@ -124,12 +124,12 @@ symbol_table_t* stack_top_table(stack_t* stack);
 /**
  * @brief Looks through the symtable stack to find a variable with the given key
 */
-data_t stack_lookup_var(stack_t* stack, htab_key_t key);
+data_t *stack_lookup_var(stack_t* stack, htab_key_t key);
 
 /**
  * @brief Looks through the symtable stack to find a function with the given key
 */
-data_t stack_lookup_func(stack_t* stack, htab_key_t key);
+data_t *stack_lookup_func(stack_t* stack, htab_key_t key);
 
 /**
  * @brief Destroy the symtable stack

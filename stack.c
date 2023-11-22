@@ -191,9 +191,9 @@ void print_stack_contents(stack_t *stack) {
 // --------------------------------- Symtable functions ---------------------------------
 
 void stack_push_table(stack_t* stack) {
-    size_t size = 97;
-    symbol_table_t *table = symbol_table_init(size);
-    stack_push(stack, (symbol_table_t *)&table);
+    size_t size = 19;
+    symbol_table_t* table = symbol_table_init(size);
+    stack_push(stack, table);
 }
 
 void stack_pop_table(stack_t* stack) {
@@ -212,30 +212,30 @@ void stack_destroy_table(stack_t* stack) {
     stack_pop(stack);
 }
 
-data_t stack_lookup_var(stack_t* stack, htab_key_t key) {
+data_t *stack_lookup_var(stack_t* stack, htab_key_t key) {
     Node* currentNode = stack->top;
     while (currentNode != NULL) {
         symbol_table_t* table = (symbol_table_t*)currentNode->data;
-        data_t symbol = symbol_table_lookup_var(table, key);
-        if (symbol.type != NOT_FOUND) {
+        data_t *symbol = symbol_table_lookup_var(table, key);
+        if (symbol != NULL) {
             return symbol;
         }
         currentNode = currentNode->right;
     }
 
-    return (data_t){.name = NULL, .value = {.var_id = 0}, .type = NOT_FOUND};
+    return NULL;
 }
 
-data_t stack_lookup_func(stack_t* stack, htab_key_t key) {
+data_t *stack_lookup_func(stack_t* stack, htab_key_t key) {
     Node* currentNode = stack->top;
     while (currentNode != NULL) {
         symbol_table_t* table = (symbol_table_t*)currentNode->data;
-        data_t symbol = symbol_table_lookup_func(table, key);
-        if (symbol.type != NOT_FOUND) {
+        data_t *symbol = symbol_table_lookup_func(table, key);
+        if (symbol != NULL) {
             return symbol;
         }
         currentNode = currentNode->right;
     }
 
-    return (data_t){.name = NULL, .value = {.var_id = 0}, .type = NOT_FOUND};
+    return NULL;
 }

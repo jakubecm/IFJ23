@@ -137,9 +137,9 @@ int get_result_type(stack_terminal_t* operator, stack_terminal_t* left, stack_te
                 return SEM_INT;
             } else {
                 if(is_int(left->data)) {
-                     gen_call_convert(gen);
+                     //gen_call_convert(gen);
                 } else if(is_int(right->data)) {
-                    gen_call_convert2(gen);
+                    //gen_call_convert2(gen);
                 }
                 return SEM_FLOAT;
             }
@@ -154,9 +154,9 @@ int get_result_type(stack_terminal_t* operator, stack_terminal_t* left, stack_te
                 return SEM_INT;
             } else {
                 if(is_int(left->data)) {
-                     gen_call_convert(gen);
+                     //gen_call_convert(gen);
                 } else if(is_int(right->data)) {
-                    gen_call_convert2(gen);
+                    //gen_call_convert2(gen);
                 }
                 return SEM_FLOAT;
             }
@@ -173,9 +173,9 @@ int get_result_type(stack_terminal_t* operator, stack_terminal_t* left, stack_te
        operator->type == TOK_LESSEQ) {
         if(right->data != left->data) {
             if(is_int(left->data)) {
-                gen_call_convert(gen);
+                //gen_call_convert(gen);
             } else if(is_int(right->data)) {
-                gen_call_convert2(gen);
+                //gen_call_convert2(gen);
             }
         }
 
