@@ -84,10 +84,10 @@ void handle_upcoming(parser_t* parserData, stack_t* stack, bool* end, token_t* e
     if (parserData->token.type == TOK_LBRACKET) {
         stack_push_after(stack, SEM_UNDEF, TOK_ENDMARKER);
         stack_push_token(stack, SEM_OPERATOR, parserData->token.type);
-        parserData->token = get_next_token();
+        load_token(&parserData);
     }
 
-    if ((parserData->token.type == TOK_IDENTIFIER || parserData->token.type == TOK_EOF || parserData->token.type >= 20) &&
+    if ((parserData->next_token.type == TOK_IDENTIFIER || parserData->next_token.type == TOK_EOF || parserData->next_token.type >= 20) &&
         (stack_top_token(stack)->type == TOK_NTERM || is_literal(tmp->type) || tmp->type == TOK_RBRACKET || tmp->type == TOK_NOT)) {
         *endToken = parserData->token;
         *end = true;
@@ -162,7 +162,7 @@ void shift(stack_t* stack, parser_t* parserData, sem_data_type_t input_type) {
         }
     }
 
-    parserData->token = get_next_token();
+    load_token(&parserData);
 }
 
 void reduce(stack_t* stack, int num, analysis_t* analysis) {
@@ -291,6 +291,7 @@ variable_type_t convert_type(sem_data_type_t type) {
     }
 }
 
+// if ( x < 10)
 /** Main expression parser **/
 variable_type_t exp_parsing(parser_t* parserData)  {
     /** Structure declarations **/
@@ -334,8 +335,7 @@ variable_type_t exp_parsing(parser_t* parserData)  {
     }
 
     if(end == true) {
-        parserData->token = parserData->next_token;
-        parserData->next_token = endToken;
+        load_token(&parserData);
     }
 
     //Last token on the top of stack
