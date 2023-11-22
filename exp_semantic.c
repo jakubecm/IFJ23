@@ -13,7 +13,7 @@
 extern error_t error;
 
 sem_data_type_t tok_type(parser_t* parserData) { 
-    data_t tmpData;
+    data_t *tmpData;
 
     switch(parserData->token.type) {
         case TOK_NOT:
@@ -43,8 +43,8 @@ sem_data_type_t tok_type(parser_t* parserData) {
         case TOK_IDENTIFIER:
 
             tmpData = stack_lookup_var(parserData->stack, parserData->token.attribute.string);
-            if(tmpData.type == VAR || tmpData.type == LET) {
-                switch(tmpData.value.var_id.type) {
+            if(tmpData->type == VAR || tmpData->type == LET) {
+                switch(tmpData->value.var_id.type) {
                     case VAL_INT:
                     case VAL_INTQ:
                         return SEM_INT;
