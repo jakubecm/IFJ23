@@ -75,7 +75,7 @@ void handle_other(stack_t* stack, sem_data_type_t end_type) {
  * @param endToken - temporary variable to save the next token after the expression
  * @param tmp - temporary variable to get the top token of the stack
  */
-void handle_upcoming(parser_t* parserData, stack_t* stack, bool* end, token_t* endToken, stack_terminal_t* tmp) {
+void handle_upcoming(parser_t* parserData, stack_t* stack) {
     if (parserData->token.type == TOK_ASSIGNMENT) {
         error = ERR_INTERNAL;
         return;
@@ -86,17 +86,6 @@ void handle_upcoming(parser_t* parserData, stack_t* stack, bool* end, token_t* e
         stack_push_token(stack, SEM_OPERATOR, parserData->token.type);
         load_token(parserData);
     }
-
-    if ((parserData->next_token.type == TOK_IDENTIFIER || parserData->next_token.type == TOK_EOF || parserData->next_token.type >= 20) &&
-        (stack_top_token(stack)->type == TOK_NTERM || is_literal(tmp->type) || tmp->type == TOK_RBRACKET || tmp->type == TOK_NOT)) {
-        
-        if(tmp->type = TOK_RBRACKET) {
-            load_token(parserData);
-        }
-        
-        *end = true;
-
-    }
 }
 
 
@@ -104,6 +93,9 @@ void handle_upcoming(parser_t* parserData, stack_t* stack, bool* end, token_t* e
 int precedence(stack_terminal_t* top, token_t* input) {
     token_t tmpInput = *input;
     stack_terminal_t tmpTop = *top;
+
+    DEBUG_PRINT("PREC next token: %d\n", top->type);
+    DEBUG_PRINT("PPREC next token: %d\n", input->type);
 
     if(input->type == TOK_IDENTIFIER) {
         if(iskeyw(input) == true && input->type != K_NIL) {
@@ -118,7 +110,7 @@ int precedence(stack_terminal_t* top, token_t* input) {
     }
 
     if (top->type >= 20 || input->type >= 20) {
-        return 'X';
+        return '>';
     }
 
     return precedence_tab[tmpTop.type][tmpInput.type];
@@ -231,10 +223,6 @@ void prec_analysis(stack_t *stack, parser_t* parserData, stack_terminal_t* tmp, 
             if(error != ERR_OK) {
                 return;
             }
-
-            #ifdef DEBUG
-                print_stack_contents(stack);
-            #endif
             DEBUG_PRINT("==============END SHIFT\n");
 
             break;
@@ -249,18 +237,12 @@ void prec_analysis(stack_t *stack, parser_t* parserData, stack_terminal_t* tmp, 
 
             DEBUG_PRINT("num reduce: %d\n", num);
             DEBUG_PRINT("BEFORE REDUCE\n");
-            #ifdef DEBUG
-                    print_stack_contents(stack);
-            #endif
 
             reduce(stack, num, analysis);
             if(error != ERR_OK) {
                 return;
             }
 
-            #ifdef DEBUG
-                print_stack_contents(stack);
-            #endif
             DEBUG_PRINT("==============END REDUCE\n");
             break;
 
@@ -271,7 +253,7 @@ void prec_analysis(stack_t *stack, parser_t* parserData, stack_terminal_t* tmp, 
             }
 
             stack_push_token(stack, input_type, parserData->token.type);
-            parserData->token = get_next_token();
+            load_token(parserData);
             break;
                 
         default:
@@ -295,7 +277,6 @@ variable_type_t convert_type(sem_data_type_t type) {
     }
 }
 
-// if ( x < 10)
 /** Main expression parser **/
 variable_type_t exp_parsing(parser_t* parserData)  {
     /** Structure declarations **/
@@ -307,7 +288,6 @@ variable_type_t exp_parsing(parser_t* parserData)  {
 
     /** Variable declarations **/
     stack_terminal_t *tmp;
-    token_t endToken; 
     bool continue_while = true, end = false;
     sem_data_type_t stack_type;
     variable_type_t return_type;
@@ -321,26 +301,32 @@ variable_type_t exp_parsing(parser_t* parserData)  {
         DEBUG_PRINT("Tmp: %d\n", tmp->type);
         DEBUG_PRINT("data token: %d\n", parserData->token.type);
 
-        handle_upcoming(parserData, &stack, &end, &endToken, tmp);
+        handle_upcoming(parserData, &stack);
         if(error != ERR_OK) {
             CLEANUP_RESOURCES(stack, analysis);
             print_error_and_exit(error);
         }
 
-        if(end) {
+        if(parserData->token.type >= 20 && stack_top_terminal(&stack)->type == TOK_DOLLAR) {
             break;
         }
+
+        if((parserData->token.type == TOK_IDENTIFIER || parserData->next_token.type == TOK_EOF || parserData->next_token.type >= 20) &&
+           (stack_top_token(&stack)->type == TOK_NTERM || is_literal(tmp->type) || tmp->type == TOK_RBRACKET || tmp->type == TOK_NOT)) {
+            
+            end = true;
+
+        } 
 
         prec_analysis(&stack, parserData, tmp, analysis);
         if(error != ERR_OK) {
             CLEANUP_RESOURCES(stack, analysis);
             print_error_and_exit(error);
         }
-
-        if(parserData->token.type == TOK_DOLLAR && stack_top_terminal(&stack)->type == TOK_DOLLAR) {
-            continue_while = false;
-        }
     }
+    #ifdef DEBUG
+        print_stack_contents(&stack);
+    #endif
 
 
     //Last token on the top of stack
@@ -358,11 +344,15 @@ int main() {
     error = ERR_OK;
 
     parser_t* parserData = malloc(sizeof(parser_t));
-    load_token(parserData);
+    parserData->token = get_next_token();
+    parserData->next_token = get_next_token();
+    DEBUG_PRINT("Parser next token: %d\n", parserData->token.type);
+    DEBUG_PRINT("Parser next token: %d\n", parserData->next_token.type);
     variable_type_t test = exp_parsing(parserData);
 
     DEBUG_PRINT("Variable for core: %d\n", test);
     DEBUG_PRINT("Parser next token: %d\n", parserData->token.type);
+    DEBUG_PRINT("Parser next token: %d\n", parserData->next_token.type);
     DEBUG_PRINT("exit: %d\n", error);
 }
 #endif
