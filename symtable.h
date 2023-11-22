@@ -74,7 +74,6 @@ typedef struct data {
 typedef struct symbol {
     htab_key_t key;
     data_t data;
-    struct symbol *next;
 } symbol;
 
 /**
@@ -83,7 +82,7 @@ typedef struct symbol {
 typedef struct symbol_table_t {
     size_t capacity;
     size_t size;
-    symbol **table;
+    struct symbol **table; // THIS IS THE WAYE
 } symbol_table_t;
 
 
@@ -112,7 +111,7 @@ void symbol_table_free(symbol_table_t *table);
  * @param table Pointer to the symbol table
  * @param key key of the symbol
 */
-data_t symbol_table_lookup_generic(symbol_table_t *table, htab_key_t key);
+data_t *symbol_table_lookup_generic(symbol_table_t *table, htab_key_t key);
 
 /**
  * @brief Search for a function with the given key.
@@ -120,7 +119,7 @@ data_t symbol_table_lookup_generic(symbol_table_t *table, htab_key_t key);
  * @param table Pointer to the symbol table
  * @param key key of the symbol
 */
-data_t symbol_table_lookup_func(symbol_table_t *table, htab_key_t key);
+data_t *symbol_table_lookup_func(symbol_table_t *table, htab_key_t key);
 
 /**
  * @brief Search for a variable with the given key.
@@ -128,7 +127,7 @@ data_t symbol_table_lookup_func(symbol_table_t *table, htab_key_t key);
  * @param table Pointer to the symbol table
  * @param key key of the symbol
 */
-data_t symbol_table_lookup_var(symbol_table_t *table, htab_key_t key);
+data_t *symbol_table_lookup_var(symbol_table_t *table, htab_key_t key);
 
 /**
  * @brief Inserts new symbol into the table
@@ -136,7 +135,7 @@ data_t symbol_table_lookup_var(symbol_table_t *table, htab_key_t key);
  * @param key key of the symbol
  * @param value Value of the symbol
 */
-int symbol_table_insert(symbol_table_t *table, htab_key_t key, data_t data);
+void symbol_table_insert(symbol_table_t *table, htab_key_t key, data_t data);
 
 /**
  * @brief Removes symbol from the table
@@ -147,6 +146,8 @@ void symbol_table_remove(symbol_table_t *table, htab_key_t key);
  * @brief Resizes the symbol table
 */
 void symbol_table_resize(symbol_table_t *table, size_t new_size);
+
+void symbol_table_print(symbol_table_t *table);
 
 vector_t *vector_init(int capacity);
 
