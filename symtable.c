@@ -39,6 +39,12 @@ symbol_table_t * symbol_table_init(size_t size) {
 }
 
 void symbol_table_free(symbol_table_t *table) {
+    for (size_t i = 0; i < table->capacity; i++) {
+        if (table->table[i] != NULL) {
+            free(table->table[i]->key);
+            free(table->table[i]);
+        }
+    }
     free(table->table);
     free(table);
 }
