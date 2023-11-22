@@ -87,11 +87,11 @@ void handle_upcoming(parser_t* parserData, stack_t* stack, bool* end, token_t* e
         parserData->token = get_next_token();
     }
 
-    if ((parserData->token.type == TOK_IDENTIFIER || parserData->token.type == TOK_EOF || parserData->token.type >= 20) &&
+    if ((parserData->next_token.type == TOK_IDENTIFIER || parserData->next_token.type == TOK_EOF || parserData->next_token.type >= 20) &&
         (stack_top_token(stack)->type == TOK_NTERM || is_literal(tmp->type) || tmp->type == TOK_RBRACKET || tmp->type == TOK_NOT)) {
-        *endToken = parserData->token;
+        *endToken = parserData->next_token;
         *end = true;
-        parserData->token.type = TOK_DOLLAR;
+        parserData->next_token.type = TOK_DOLLAR;
     }
 }
 
@@ -162,7 +162,7 @@ void shift(stack_t* stack, parser_t* parserData, sem_data_type_t input_type) {
         }
     }
 
-    parserData->token = get_next_token();
+    load_token(&parserData);
 }
 
 void reduce(stack_t* stack, int num, analysis_t* analysis) {
@@ -267,7 +267,7 @@ void prec_analysis(stack_t *stack, parser_t* parserData, stack_terminal_t* tmp, 
             }
 
             stack_push_token(stack, input_type, parserData->token.type);
-            parserData->token = get_next_token();
+            load_token(&parserData);
             break;
                 
         default:
