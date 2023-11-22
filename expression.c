@@ -87,11 +87,11 @@ void handle_upcoming(parser_t* parserData, stack_t* stack, bool* end, token_t* e
         parserData->token = get_next_token();
     }
 
-    if ((parserData->next_token.type == TOK_IDENTIFIER || parserData->next_token.type == TOK_EOF || parserData->next_token.type >= 20) &&
+    if ((parserData->token.type == TOK_IDENTIFIER || parserData->token.type == TOK_EOF || parserData->token.type >= 20) &&
         (stack_top_token(stack)->type == TOK_NTERM || is_literal(tmp->type) || tmp->type == TOK_RBRACKET || tmp->type == TOK_NOT)) {
-        *endToken = parserData->next_token;
+        *endToken = parserData->token;
         *end = true;
-        parserData->next_token.type = TOK_DOLLAR;
+        parserData->token.type = TOK_DOLLAR;
     }
 }
 
@@ -138,23 +138,23 @@ void shift(stack_t* stack, parser_t* parserData, sem_data_type_t input_type) {
     if(is_literal(tmpTok)) {
         switch(tmpTok) {
             case TOK_INT:
-                gen_push_int(gen, parserData->token.attribute.number);
+                //gen_push_int(gen, parserData->token.attribute.number);
                 break;
 
             case TOK_DOUBLE:
-                gen_push_float(gen, parserData->token.attribute.decimal);
+                //gen_push_float(gen, parserData->token.attribute.decimal);
                 break;
 
             case TOK_STRING:
-                gen_push_string(gen, parserData->token.attribute.string);
+                //gen_push_string(gen, parserData->token.attribute.string);
                 break;
 
             case K_NIL:
-                gen_push_nil(gen);
+                //gen_push_nil(gen);
                 break;
 
             case TOK_IDENTIFIER:
-                gen_push_var(gen, parserData->token.attribute.string, parserData->in_function);
+                //gen_push_var(gen, parserData->token.attribute.string, parserData->in_function);
                 break;
 
             default:
@@ -162,7 +162,7 @@ void shift(stack_t* stack, parser_t* parserData, sem_data_type_t input_type) {
         }
     }
 
-    load_token(&parserData);
+    parserData->token = get_next_token();
 }
 
 void reduce(stack_t* stack, int num, analysis_t* analysis) {
@@ -201,7 +201,7 @@ void reduce(stack_t* stack, int num, analysis_t* analysis) {
                 }
                 handle_other(stack, analysis->end_type);
                 DEBUG_PRINT("END TYPE: %d\n", analysis->end_type);
-                gen_expression(gen, analysis->tok2->type);
+                //gen_expression(gen, analysis->tok2->type);
 
             } else {
                 error = ERR_SYN;
@@ -267,7 +267,7 @@ void prec_analysis(stack_t *stack, parser_t* parserData, stack_terminal_t* tmp, 
             }
 
             stack_push_token(stack, input_type, parserData->token.type);
-            load_token(&parserData);
+            parserData->token = get_next_token();
             break;
                 
         default:
@@ -334,7 +334,7 @@ variable_type_t exp_parsing(parser_t* parserData)  {
     }
 
     if(end == true) {
-        parserData->token = endToken;
+        parserData->next_token = endToken;
     }
 
     //Last token on the top of stack
@@ -347,12 +347,18 @@ variable_type_t exp_parsing(parser_t* parserData)  {
     return return_type;
 }
 
+void load_token(parser_t *parser)
+{
+    parser->token = parser->next_token;
+    parser->next_token = get_next_token();
+}
+
 #ifdef DEBUG
 int main() {
     error = ERR_OK;
 
     parser_t* parserData = malloc(sizeof(parser_t));
-    parserData->token = get_next_token();
+    load_token(parserData);
     variable_type_t test = exp_parsing(parserData);
 
     DEBUG_PRINT("Variable for core: %d\n", test);
