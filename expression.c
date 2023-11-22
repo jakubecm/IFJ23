@@ -13,6 +13,12 @@
 
 error_t error;
 
+void load_token(parser_t *parser)
+{
+    parser->token = parser->next_token;
+    parser->next_token = get_next_token();
+}
+
 static char precedence_tab[TABLE_SIZE][TABLE_SIZE] =
 {
     //   +    -    *    /   ==   !=    <    >   <=   >=   ??    !    (    )    id  int  flo  str  nil   $
@@ -75,7 +81,7 @@ void handle_other(stack_t* stack, sem_data_type_t end_type) {
  * @param endToken - temporary variable to save the next token after the expression
  * @param tmp - temporary variable to get the top token of the stack
  */
-void handle_upcoming(parser_t* parserData, stack_t* stack, bool* end, token_t* endToken, stack_terminal_t* tmp) {
+void handle_upcoming(parser_t* parserData, stack_t* stack, bool* end, bool* end2, token_t* endToken, stack_terminal_t* tmp) {
     if (parserData->token.type == TOK_ASSIGNMENT) {
         error = ERR_INTERNAL;
         return;
@@ -84,14 +90,23 @@ void handle_upcoming(parser_t* parserData, stack_t* stack, bool* end, token_t* e
     if (parserData->token.type == TOK_LBRACKET) {
         stack_push_after(stack, SEM_UNDEF, TOK_ENDMARKER);
         stack_push_token(stack, SEM_OPERATOR, parserData->token.type);
-        parserData->token = get_next_token();
+        load_token(parserData);
     }
 
     if ((parserData->token.type == TOK_IDENTIFIER || parserData->token.type == TOK_EOF || parserData->token.type >= 20) &&
         (stack_top_token(stack)->type == TOK_NTERM || is_literal(tmp->type) || tmp->type == TOK_RBRACKET || tmp->type == TOK_NOT)) {
-        *endToken = parserData->token;
-        *end = true;
-        parserData->token.type = TOK_DOLLAR;
+        DEBUG_PRINT("HERE 1");
+        DEBUG_PRINT("Token type: %d", parserData->token.type);
+
+        if(tmp->type == TOK_RBRACKET) {
+            *end2 = true;
+            *endToken = parserData->token;
+            parserData->token.type = TOK_DOLLAR;
+        } else {
+            *endToken = parserData->token;
+            *end = true;
+            parserData->token.type = TOK_DOLLAR;
+        }
     }
 }
 
@@ -139,7 +154,7 @@ void shift(stack_t* stack, parser_t* parserData, sem_data_type_t input_type) {
         //geenerate instruction
     }
 
-    parserData->token = get_next_token();
+    load_token(parserData);
 }
 
 void reduce(stack_t* stack, int num, analysis_t* analysis) {
@@ -244,7 +259,7 @@ void prec_analysis(stack_t *stack, parser_t* parserData, stack_terminal_t* tmp, 
             }
 
             stack_push_token(stack, input_type, parserData->token.type);
-            parserData->token = get_next_token();
+            load_token(parserData);
             break;
                 
         default:
@@ -280,7 +295,7 @@ variable_type_t exp_parsing(parser_t* parserData)  {
     /** Variable declarations **/
     stack_terminal_t *tmp;
     token_t endToken; 
-    bool continue_while = true, end = false;
+    bool continue_while = true, end = false, end2 = false;
     sem_data_type_t stack_type;
     variable_type_t return_type;
     DEBUG_PRINT("data token: %d\n", parserData->token.type);
@@ -293,7 +308,7 @@ variable_type_t exp_parsing(parser_t* parserData)  {
         DEBUG_PRINT("Tmp: %d\n", tmp->type);
         DEBUG_PRINT("data token: %d\n", parserData->token.type);
 
-        handle_upcoming(parserData, &stack, &end, &endToken, tmp);
+        handle_upcoming(parserData, &stack, &end, &end2, &endToken, tmp);
         if(error != ERR_OK) {
             CLEANUP_RESOURCES(stack, analysis);
             print_error_and_exit(error);
@@ -312,7 +327,10 @@ variable_type_t exp_parsing(parser_t* parserData)  {
 
     if(end == true) {
         parserData->token = endToken;
-        parserData->next_token = get_next_token();
+    }
+
+    if(end2 == true) {
+        parserData->token = endToken;
     }
 
     DEBUG_PRINT("Parser next token: %d\n", parserData->token.type);
@@ -335,6 +353,10 @@ int main() {
 
     parser_t* parserData = malloc(sizeof(parser_t));
     parserData->token = get_next_token();
+    parserData->next_token = get_next_token();
+    DEBUG_PRINT("Parser next token: %d\n", parserData->token.type);
+    DEBUG_PRINT("Parser next token: %d\n", parserData->next_token.type);
+
     variable_type_t test = exp_parsing(parserData);
 
     DEBUG_PRINT("Variable for core: %d\n", test);
