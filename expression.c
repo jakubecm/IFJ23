@@ -13,6 +13,12 @@
 
 error_t error;
 
+void load_token(parser_t *parser)
+{
+    parser->token = parser->next_token;
+    parser->next_token = get_next_token();
+}
+
 static char precedence_tab[TABLE_SIZE][TABLE_SIZE] =
 {
     //   +    -    *    /   ==   !=    <    >   <=   >=   ??    !    (    )    id  int  flo  str  nil   $
@@ -111,6 +117,10 @@ int precedence(stack_terminal_t* top, token_t* input) {
 
     if (top->type >= 20 || input->type >= 20) {
         return '>';
+    }
+
+    if(top->type == TOK_DOLLAR && input->type >= 20) {
+        return 'F';
     }
 
     return precedence_tab[tmpTop.type][tmpInput.type];
@@ -220,6 +230,9 @@ void prec_analysis(stack_t *stack, parser_t* parserData, stack_terminal_t* tmp, 
         case '<':
             DEBUG_PRINT("==============SHIFT\n");
             shift(stack, parserData, input_type);
+            #ifdef DEBUG
+                print_stack_contents(stack);
+            #endif
             if(error != ERR_OK) {
                 return;
             }
@@ -239,6 +252,9 @@ void prec_analysis(stack_t *stack, parser_t* parserData, stack_terminal_t* tmp, 
             DEBUG_PRINT("BEFORE REDUCE\n");
 
             reduce(stack, num, analysis);
+            #ifdef DEBUG
+                print_stack_contents(stack);
+            #endif
             if(error != ERR_OK) {
                 return;
             }
@@ -255,6 +271,9 @@ void prec_analysis(stack_t *stack, parser_t* parserData, stack_terminal_t* tmp, 
             stack_push_token(stack, input_type, parserData->token.type);
             load_token(parserData);
             break;
+
+        case 'F':
+            return;
                 
         default:
             error = ERR_SYN;
@@ -311,18 +330,22 @@ variable_type_t exp_parsing(parser_t* parserData)  {
             break;
         }
 
-        if((parserData->token.type == TOK_IDENTIFIER || parserData->next_token.type == TOK_EOF || parserData->next_token.type >= 20) &&
-           (stack_top_token(&stack)->type == TOK_NTERM || is_literal(tmp->type) || tmp->type == TOK_RBRACKET || tmp->type == TOK_NOT)) {
-            
-            end = true;
-
-        } 
 
         prec_analysis(&stack, parserData, tmp, analysis);
+        #ifdef DEBUG
+            print_stack_contents(&stack);
+        #endif
         if(error != ERR_OK) {
             CLEANUP_RESOURCES(stack, analysis);
             print_error_and_exit(error);
         }
+                
+        if((parserData->token.type == TOK_IDENTIFIER || parserData->next_token.type == TOK_EOF || parserData->next_token.type >= 20) &&
+           (stack_top_token(&stack)->type == TOK_NTERM || is_literal(parserData->token.type) || tmp->type == TOK_RBRACKET || tmp->type == TOK_NOT)) {
+            
+            end = true;
+
+        } 
     }
     #ifdef DEBUG
         print_stack_contents(&stack);
