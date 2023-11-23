@@ -55,7 +55,11 @@ void gen_endif(gen_t *gen);
 
 void gen_while(gen_t *gen);
 
-void gen_func(gen_t *gen);
+void gen_while_exit(gen_t *gen);
+
+void gen_while_end(gen_t *gen);
+
+void gen_func(gen_t *gen, token_t *name);
 
 void gen_func_call(gen_t *gen, char *name);
 

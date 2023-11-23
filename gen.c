@@ -64,6 +64,13 @@ void gen_var_definition(gen_t *gen, token_t* token, bool in_function)
     }
 }
 
+// Paremeter return type??
+void gen_func(gen_t *gen, token_t *name){
+    mergestr(&gen->functions, "LABEL $");
+    mergestr(&gen->functions, name->attribute.string);
+    mergestr(&gen->functions, "\n");
+}
+
 void gen_arguments(gen_t *gen, vector_t *gen_arguments) {    
     mergestr(&gen->global, "CREATEFRAME\n");
 }
@@ -106,6 +113,25 @@ void gen_endif(gen_t *gen)
 void gen_while(gen_t *gen)
 {
     mergestr(&gen->global, "LABEL $while$");
+    mergestr_int(&gen->global, gen->label_counter);
+    mergestr(&gen->global, "\n");
+}
+
+void gen_while_exit(gen_t *gen)
+{
+    mergestr(&gen->global, "POPS GF@return_exp\n"); // beru ze zasobniku vysledek vyrazu
+    mergestr(&gen->global, "JUMPIFEQ $whileEnd$");
+    mergestr_int(&gen->global, gen->label_counter);
+    mergestr(&gen->global, " GF@return_exp bool@false\n");
+}
+
+void gen_while_end(gen_t *gen)
+{
+    mergestr(&gen->global, "JUMP $while$");
+    mergestr_int(&gen->global, gen->label_counter);
+    mergestr(&gen->global, "\n");
+
+    mergestr(&gen->global, "LABEL $whileEnd$");
     mergestr_int(&gen->global, gen->label_counter);
     mergestr(&gen->global, "\n");
     gen->label_counter++;
