@@ -110,9 +110,8 @@ bool check_operator_compatibility(stack_terminal_t* operator, stack_terminal_t* 
         
         case TOK_EQUAL:
         case TOK_NOTEQUAL:
-            return (is_string(left->data) && is_string(right->data)) ||
-                   (is_float(left->data) && is_float(right->data))   ||
-                   (is_int(left->data) && is_int(right->data));
+            return ((is_string(left->data) || is_nil(left->data)) && (is_string(right->data) || is_nil(left->data))) ||
+                   ((is_number(left->data) || is_nil(left->data)) && (is_number(right->data) || is_nil(right->data)));
                    
         case TOK_LESS:
         case TOK_GREATER:
@@ -168,8 +167,30 @@ int get_result_type(stack_terminal_t* operator, stack_terminal_t* left, stack_te
     }
 
     if(operator->type == TOK_EQUAL || operator->type == TOK_NOTEQUAL) {
-        //Since these two operators accept just the same data type from both variables,
-        //there is no need for additional check.
+        if(is_string(left->data) && !is_string(right->data)) {
+            return SEM_UNDEF;
+        }
+        
+        if(left->type == TOK_IDENTIFIER && right->type == TOK_IDENTIFIER) {
+            if(left->data == right->data) {
+                return SEM_BOOL;
+            } else {
+                return SEM_UNDEF;
+            }
+        }
+
+        if((is_number(left->data) || is_nil(left->data)) && (is_number(right->data) || is_nil(left->data))) {
+            if(is_int(left->data) && is_int(right->data)) {
+                return SEM_BOOL;
+            } else {
+                if(is_int(left->data)) {
+                     //gen_call_convert(gen);
+                } else if(is_int(right->data)) {
+                    //gen_call_convert2(gen);
+                }
+                return SEM_BOOL;
+            }
+        }
         return SEM_BOOL;
     }
 
