@@ -68,7 +68,7 @@ void gen_arguments(gen_t *gen, vector_t *gen_arguments) {
     mergestr(&gen->global, "CREATEFRAME\n");
 }
 
-void gen_func_call(gen_t *gen, char *name)
+void gen_func_call(gen_t *gen, token_t *name)
 {
     mergestr(&gen->global, "CALL $");
     mergestr(&gen->global, name);
@@ -77,10 +77,11 @@ void gen_func_call(gen_t *gen, char *name)
 
 void gen_if(gen_t *gen)
 {
+    mergestr(&gen->global, "POPS GF@return_exp\n");
     // funkce predpoklada ze v globalni promenne GF@return_exp je vysledek vyrazu ktery se ma vyhodnocovat (true nebo false)
     mergestr(&gen->global, "JUMPIFNEQ $else$");
     mergestr_int(&gen->global, gen->label_counter);
-    mergestr(&gen->global, " GF@return_exp bool@true\n");
+    mergestr(&gen->global, " GF@return_exp bool@false\n");
 }
 
 void gen_else(gen_t *gen)
@@ -88,6 +89,7 @@ void gen_else(gen_t *gen)
     mergestr(&gen->global, "JUMP $endif$");
     mergestr_int(&gen->global, gen->label_counter);
     mergestr(&gen->global, "\n");
+
     mergestr(&gen->global, "LABEL $else$");
     mergestr_int(&gen->global, gen->label_counter);
     mergestr(&gen->global, "\n");
@@ -96,6 +98,14 @@ void gen_else(gen_t *gen)
 void gen_endif(gen_t *gen)
 {
     mergestr(&gen->global, "LABEL $endif$");
+    mergestr_int(&gen->global, gen->label_counter);
+    mergestr(&gen->global, "\n");
+    gen->label_counter++;
+}
+
+void gen_while(gen_t *gen)
+{
+    mergestr(&gen->global, "LABEL $while$");
     mergestr_int(&gen->global, gen->label_counter);
     mergestr(&gen->global, "\n");
     gen->label_counter++;
