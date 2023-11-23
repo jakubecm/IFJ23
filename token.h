@@ -36,6 +36,7 @@ typedef enum token_type
     TOK_STRING,        // string literal (eg. "hello world")
     K_NIL,             // nil (keyword, here due to precedence table)
     TOK_DOLLAR,        // $
+    TOK_MLSTRING,      // multiline string 
     TOK_ENDMARKER,     // symbol used for precedence analysis (dont move it from here)
     TOK_COLON,         // :
     TOK_COMMA,         // ,
@@ -46,7 +47,6 @@ typedef enum token_type
     TOK_QUESTMK,       // ?
     TOK_EOF,           // end of file
     TOK_UNDERSCORE,    // _
-    TOK_MLSTRING,      // multiline string 
     TOK_BOOL,          // boolean
     TOK_UNDEF,         // undefined
 

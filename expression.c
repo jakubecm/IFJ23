@@ -13,6 +13,12 @@
 
 error_t error;
 
+void load_token(parser_t *parser)
+{
+    parser->token = parser->next_token;
+    parser->next_token = get_next_token();
+}
+
 static char precedence_tab[TABLE_SIZE][TABLE_SIZE] =
 {
     //   +    -    *    /   ==   !=    <    >   <=   >=   ??    !    (    )    id  int  flo  str  nil   $
@@ -117,15 +123,18 @@ int precedence(stack_terminal_t* top, token_t* input) {
     }
     if(top->type == TOK_MLSTRING) {
         tmpTop.type = TOK_STRING;
+        top->type = TOK_STRING;
     }
+
     if(input->type == TOK_MLSTRING) {
         tmpInput.type = TOK_STRING;
+        input->type = TOK_STRING;
     }
 
-    if (top->type >= 20 || input->type >= 20) {
+    if (tmpTop.type >= 21 || tmpInput.type >= 21) {
         return 'X';
     }
-
+    
     return precedence_tab[tmpTop.type][tmpInput.type];
 }
 
@@ -145,7 +154,16 @@ void shift(stack_t* stack, parser_t* parserData, sem_data_type_t input_type) {
     token_type_t tmpTok = parserData->token.type;
     
     if(is_literal(tmpTok)) {
-        //geenerate instruction
+        switch(tmpTok) {
+            case TOK_INT:
+                //gen_push_int(parserData->gen, parserData->token.attribute.number);
+            case TOK_DOUBLE:
+            case TOK_STRING:
+            case K_NIL:
+            case TOK_IDENTIFIER:
+            default:
+                break;
+        }
     }
 
     load_token(parserData);
@@ -276,7 +294,7 @@ variable_type_t convert_type(sem_data_type_t type) {
             return VAL_UNKNOWN;
     }
 }
-
+//
 /** Main expression parser **/
 variable_type_t exp_parsing(parser_t* parserData)  {
     /** Structure declarations **/
