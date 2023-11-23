@@ -929,7 +929,7 @@ bool rule_function_call(parser_t *parser, data_t *var){
     }
 
     int argnum = 0;
-    data = symbol_table_lookup_func(stack_top_table(parser->stack), parser->token.attribute.string);
+    data = stack_lookup_func(parser->stack, parser->token.attribute.string);
     if (data == NULL){
         // calling a non-existing function
         data_t data;
@@ -953,7 +953,7 @@ bool rule_function_call(parser_t *parser, data_t *var){
         argnum = data->value.func_id.parameters->size;
     }
 
-    data = symbol_table_lookup_func(stack_top_table(parser->stack), parser->token.attribute.string);
+    data = stack_lookup_func(parser->stack, parser->token.attribute.string);
     if (!data->value.func_id.defined && var != NULL) {
         data_t *variable_assignent = stack_lookup_var(parser->stack, data->name);
         if (variable_assignent == NULL) {
@@ -1227,6 +1227,7 @@ void insert_builtins_to_table(parser_t *parser) {
     data_t data;
     data.type = FUNC;
     data.value.func_id.defined = true;
+    data.value.func_id.arguments_defined = true;
     data.value.func_id.return_type = VAL_STRINGQ;
     data.value.func_id.parameters = vector_init(0);
     symbol_table_insert(stack_top_table(parser->stack), "readString", data);
@@ -1240,7 +1241,8 @@ void insert_builtins_to_table(parser_t *parser) {
     data.value.func_id.return_type = VAL_VOID;
     data.value.func_id.parameters = vector_init(99);
     for (int i = 0; i < 99; i++) {
-        vector_push(data.value.func_id.parameters, (htab_func_param_t){});
+        htab_func_param_t p;
+        vector_push(data.value.func_id.parameters, p);
         vector_top(data.value.func_id.parameters)->call_name = malloc(sizeof(char) * 2);
         strcpy(vector_top(data.value.func_id.parameters)->call_name, "_");
         vector_top(data.value.func_id.parameters)->parameter.type = VAL_TERM;
