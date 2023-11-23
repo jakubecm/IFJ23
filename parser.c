@@ -136,7 +136,7 @@ bool rule_empty_return_statement(parser_t *parser);
 
 //================= PARSER FUNCTIONS ================= //
 
-void parser_init(parser_t *parser)
+void parser_init(parser_t *parser, gen_t *gen)
 {
     parser->stack = malloc(sizeof(stack_t));
     stack_init(parser->stack);
@@ -149,6 +149,8 @@ void parser_init(parser_t *parser)
 
     parser->token = get_next_token();
     parser->next_token = get_next_token();
+    parser->gen = gen;
+    gen_init(gen);
 }
 
 void parser_destroy(parser_t *parser)
