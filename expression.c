@@ -13,12 +13,6 @@
 
 error_t error;
 
-void load_token(parser_t *parser)
-{
-    parser->token = parser->next_token;
-    parser->next_token = get_next_token();
-}
-
 static char precedence_tab[TABLE_SIZE][TABLE_SIZE] =
 {
     //   +    -    *    /   ==   !=    <    >   <=   >=   ??    !    (    )    id  int  flo  str  nil   $
@@ -95,8 +89,6 @@ void handle_upcoming(parser_t* parserData, stack_t* stack, bool* end, bool* end2
 
     if ((parserData->token.type == TOK_IDENTIFIER || parserData->token.type == TOK_EOF || parserData->token.type >= 20) &&
         (stack_top_token(stack)->type == TOK_NTERM || is_literal(tmp->type) || tmp->type == TOK_RBRACKET || tmp->type == TOK_NOT)) {
-        DEBUG_PRINT("HERE 1");
-        DEBUG_PRINT("Token type: %d", parserData->token.type);
 
         if(tmp->type == TOK_RBRACKET) {
             *end2 = true;
@@ -134,7 +126,7 @@ int precedence(stack_terminal_t* top, token_t* input) {
     if (tmpTop.type >= 21 || tmpInput.type >= 21) {
         return 'X';
     }
-    
+
     return precedence_tab[tmpTop.type][tmpInput.type];
 }
 
@@ -158,9 +150,13 @@ void shift(stack_t* stack, parser_t* parserData, sem_data_type_t input_type) {
             case TOK_INT:
                 //gen_push_int(parserData->gen, parserData->token.attribute.number);
             case TOK_DOUBLE:
+                //gen_push_float(parserData->gen, parserData->token.attribute.decimal);
             case TOK_STRING:
+                //gen_push_string(parserData->gen, parserData->token.attribute.string);
             case K_NIL:
+                //gen_push_nil(parserData->gen);
             case TOK_IDENTIFIER:
+                //gen_push_var(parserData->gen, parserData->token.attribute.string, parserData->in_function);
             default:
                 break;
         }
@@ -169,7 +165,7 @@ void shift(stack_t* stack, parser_t* parserData, sem_data_type_t input_type) {
     load_token(parserData);
 }
 
-void reduce(stack_t* stack, int num, analysis_t* analysis) {
+void reduce(stack_t* stack, int num, analysis_t* analysis, parser_t* parserData) {
     switch(num) {
         case 1:
             if(is_literal(analysis->tok1->type)) { 
@@ -205,7 +201,7 @@ void reduce(stack_t* stack, int num, analysis_t* analysis) {
                 }
                 handle_other(stack, analysis->end_type);
                 DEBUG_PRINT("END TYPE: %d\n", analysis->end_type);
-                //GENERATOR
+                //gen_expression(parserData->gen, analysis->tok2->type);
 
             } else {
                 error = ERR_SYN;
@@ -253,7 +249,7 @@ void prec_analysis(stack_t *stack, parser_t* parserData, stack_terminal_t* tmp, 
                     print_stack_contents(stack);
             #endif
 
-            reduce(stack, num, analysis);
+            reduce(stack, num, analysis, parserData);
             if(error != ERR_OK) {
                 return;
             }
