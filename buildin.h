@@ -12,7 +12,7 @@
  * Takes all buildin functions and generates them in gen header.
  * @param gen Generator
 */
-void gen_buildin_func(gen_t *gen);
+void gen_buildin_funcs(gen_t *gen);
 
 /**
  * @brief function readString() -> String?
