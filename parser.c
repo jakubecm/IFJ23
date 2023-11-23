@@ -554,6 +554,8 @@ bool rule_variable_definition_let(parser_t *parser){
         return false;
     }
 
+    gen_var_definition(parser->gen, &parser->token, parser->in_function);
+
     data_t *var = symbol_table_lookup_generic(stack_top_table(parser->stack), parser->token.attribute.string);
     if (var != NULL){
         error = ERR_SEM_FUNCTION;
@@ -582,6 +584,12 @@ bool rule_variable_definition_var(parser_t *parser){
         return false;
     }
     load_token(parser);
+
+    if(!is_type(parser, TOK_IDENTIFIER)){
+        return false;
+    }
+
+    gen_var_definition(parser->gen, &parser->token, parser->in_function);
 
     data_t *var = symbol_table_lookup_generic(stack_top_table(parser->stack), parser->token.attribute.string);
     if (var != NULL){
@@ -770,6 +778,8 @@ bool rule_classical_statement(parser_t *parser){
     if (type == EXP_ERR){
         return false;
     }
+    gen_if(parser->gen);
+
     if (!is_type(parser, TOK_LCURLYBRACKET)){
         return false;
     }
@@ -788,6 +798,9 @@ bool rule_classical_statement(parser_t *parser){
     if (!is_type(parser, K_ELSE)){
         return false;
     }
+
+    gen_else(parser->gen);
+
     load_token(parser);
     if (!is_type(parser, TOK_LCURLYBRACKET)){
         return false;
@@ -803,6 +816,7 @@ bool rule_classical_statement(parser_t *parser){
         return false;
     }
     parser->in_else = false;
+    gen_endif(parser->gen);
     load_token(parser);
     return true;
 }
@@ -823,6 +837,8 @@ bool rule_variable_statement(parser_t *parser){
         error = ERR_SEM_FUNCTION;
         return false;   // variable not found
     }
+    // je promenna typ_nil?
+    //gen_variable_statement(gen, typpromenne)
     load_token(parser);
     if (!is_type(parser, TOK_LCURLYBRACKET)){
         return false;

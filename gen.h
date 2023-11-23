@@ -50,6 +50,10 @@ void gen_print(gen_t *gen);
 
 void gen_if(gen_t *gen);
 
+void gen_else(gen_t *gen);
+
+void gen_endif(gen_t *gen);
+
 void gen_while(gen_t *gen);
 
 void gen_func(gen_t *gen);
