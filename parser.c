@@ -452,7 +452,8 @@ bool rule_no_name_parameter(parser_t *parser, data_t *data){
     if (!is_type(parser, TOK_UNDERSCORE)){
         return false;
     }
-    vector_top(data->value.func_id.parameters)->call_name = NULL; // _
+    vector_top(data->value.func_id.parameters)->call_name = malloc(sizeof(char) * 2); // _
+    strcpy(vector_top(data->value.func_id.parameters)->call_name, "_");
 
     load_token(parser);
     if (!is_type(parser, TOK_IDENTIFIER)){
@@ -484,7 +485,8 @@ bool rule_identifier_parameter(parser_t *parser, data_t *data){
     if (!is_type(parser, TOK_IDENTIFIER)){
         return false;
     }
-    vector_top(data->value.func_id.parameters)->call_name = parser->token.attribute.string;
+    vector_top(data->value.func_id.parameters)->call_name = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1));
+    strcpy(vector_top(data->value.func_id.parameters)->call_name, parser->token.attribute.string);
     load_token(parser);
     return rule_rest_of_identifier_parameter(parser, data);
 }
@@ -493,7 +495,8 @@ bool rule_identifier_parameter(parser_t *parser, data_t *data){
 
 bool rule_rest_of_identifier_parameter(parser_t *parser, data_t *data){
     if (is_type(parser, TOK_UNDERSCORE)){
-        vector_top(data->value.func_id.parameters)->def_name = NULL;
+        vector_top(data->value.func_id.parameters)->def_name = malloc(sizeof(char) * 2);
+        strcpy(vector_top(data->value.func_id.parameters)->def_name, "_");
         load_token(parser);
         if (!is_type(parser, TOK_COLON)){
             return false;
