@@ -85,10 +85,6 @@ void gen_func_Int2Double(gen_t *gen)
     mergestr(&gen->functions, "PUSHFRAME\n");
     mergestr(&gen->functions, "DEFVAR LF@temp\n");
     mergestr(&gen->functions, "POPS LF@temp\n");
-    mergestr(&gen->functions, "TYPE GF@tmp LF@temp\n");
-    mergestr(&gen->functions, "JUMPIFEQ $int2float_int string@int GF@tmp\n");
-    mergestr(&gen->functions, "JUMP $ERR_SEM_COMP\n"); // nesedi typ
-    mergestr(&gen->functions, "LABEL $int2float_int\n");
     mergestr(&gen->functions, "INT2FLOAT LF@temp LF@temp\n");
     mergestr(&gen->functions, "PUSHS LF@temp\n");
     mergestr(&gen->functions, "POPFRAME\n");
@@ -104,10 +100,6 @@ void gen_func_Int2Double2(gen_t *gen)
     mergestr(&gen->functions, "DEFVAR LF@temp2\n");
     mergestr(&gen->functions, "POPS LF@temp1\n");
     mergestr(&gen->functions, "POPS LF@temp2\n");
-    mergestr(&gen->functions, "TYPE GF@tmp LF@temp2\n");
-    mergestr(&gen->functions, "JUMPIFEQ $int2float2_int string@int GF@tmp\n");
-    mergestr(&gen->functions, "JUMP $ERR_SEM_COMP\n"); // nesedi typ
-    mergestr(&gen->functions, "LABEL $int2float2_int\n");
     mergestr(&gen->functions, "INT2FLOAT LF@temp2 LF@temp2\n");
     mergestr(&gen->functions, "PUSHS LF@temp2\n");
     mergestr(&gen->functions, "PUSHS LF@temp1\n");
@@ -122,10 +114,6 @@ void gen_func_Double2Int(gen_t *gen)
     mergestr(&gen->functions, "PUSHFRAME\n");
     mergestr(&gen->functions, "DEFVAR LF@temp\n");
     mergestr(&gen->functions, "POPS LF@temp\n");
-    mergestr(&gen->functions, "TYPE GF@tmp LF@temp\n");
-    mergestr(&gen->functions, "JUMPIFEQ $float2int_float string@float GF@tmp\n");
-    mergestr(&gen->functions, "JUMP $ERR_SEM_COMP\n"); // nesedi typ
-    mergestr(&gen->functions, "LABEL $float2int_float\n");
     mergestr(&gen->functions, "FLOAT2INT LF@temp LF@temp\n");
     mergestr(&gen->functions, "PUSHS LF@temp\n");
     mergestr(&gen->functions, "POPFRAME\n");
@@ -139,8 +127,6 @@ void gen_func_length(gen_t *gen)
     mergestr(&gen->functions, "PUSHFRAME\n");
     mergestr(&gen->functions, "DEFVAR LF@temp\n");
     mergestr(&gen->functions, "POPS LF@temp\n");
-    mergestr(&gen->functions, "TYPE GF@tmp LF@temp\n");
-    mergestr(&gen->functions, "JUMPIFNEQ $ERR_SEM_CALL string@string GF@tmp\n"); // nesedi typ
     mergestr(&gen->functions, "STRLEN LF@temp LF@temp\n");
     mergestr(&gen->functions, "PUSHS LF@temp\n");
     mergestr(&gen->functions, "POPFRAME\n");
