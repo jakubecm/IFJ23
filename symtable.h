@@ -24,7 +24,8 @@ typedef enum variable_type {
     VAL_STRINGQ, // String?
     VAL_NIL,     // Nil
     VAL_UNKNOWN,  // Type not provided yet
-    VAL_VOID     // Void
+    VAL_VOID,     // Void
+    VAL_TERM    // Term - Used for write function
 } variable_type_t;
 
 typedef enum symbol_type {
@@ -54,6 +55,7 @@ typedef struct vector {
 typedef struct htab_func {
     vector_t *parameters;
     variable_type_t return_type;
+    bool arguments_defined;
     bool defined;
 } htab_func_t;
 

@@ -146,6 +146,7 @@ void parser_init(parser_t *parser, gen_t *gen)
     parser->returned = false;
 
     stack_push_table(parser->stack);
+    insert_builtins_to_table(parser);
 
     parser->token = get_next_token();
     parser->next_token = get_next_token();
@@ -934,6 +935,8 @@ bool rule_function_call(parser_t *parser, data_t *var){
         data.name = parser->token.attribute.string;
         data.type = FUNC;
         data.value.func_id.defined = false;
+        data.value.func_id.arguments_defined = false;
+        data.value.func_id.parameters = vector_init(5);
         data.value.func_id.return_type = VAL_UNKNOWN;
         if (var != NULL){
             data.value.func_id.return_type = var->value.var_id.type;
@@ -968,6 +971,13 @@ bool rule_function_call(parser_t *parser, data_t *var){
     int argindex = 0;
     if (!rule_arguments(parser, argnum, &argindex, data)){
         return false;
+    }
+    if (!data->value.func_id.arguments_defined) {
+        data->value.func_id.arguments_defined = true;
+    }
+
+    if (argindex < argnum){
+        return false;  // Attempt at calling a function with too few arguments
     }
     if (!is_type(parser, TOK_RBRACKET)){
         return false;
@@ -1008,6 +1018,17 @@ bool rule_argument(parser_t *parser, int *argindex, data_t *data){
 bool rule_arg_name(parser_t *parser, int *argindex, data_t *data){
     switch(parser->token.type){
         case TOK_IDENTIFIER:
+            if (!data->value.func_id.arguments_defined) { // on funcion call before definition ve save the function params
+                if (is_type_next(parser, TOK_COLON)) { // has call name
+                    vector_top(data->value.func_id.parameters)->call_name = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1));
+                    strcpy(vector_top(data->value.func_id.parameters)->call_name, parser->token.attribute.string);
+                    load_token(parser);
+                    load_token(parser);
+                }
+                vector_top(data->value.func_id.parameters)->call_name = malloc(sizeof(char) * 2);
+                strcpy(vector_top(data->value.func_id.parameters)->call_name, "_");
+                return true;
+            }
             // argument is named
             if (strcmp(data->value.func_id.parameters->data[*argindex].call_name, "_")) {
                 if (strcmp(parser->token.attribute.string, data->value.func_id.parameters->data[*argindex].call_name)) {
@@ -1040,9 +1061,16 @@ bool rule_arg_name(parser_t *parser, int *argindex, data_t *data){
 
 bool rule_arg_value(parser_t *parser, int *argindex, data_t *data){
     variable_type_t param_type = data->value.func_id.parameters->data[*argindex].parameter.type;
+    if (param_type == VAL_TERM){ // buildin write function only
+        return true;
+    }
     data_t *arg = NULL;
     switch(parser->token.type){
         case TOK_IDENTIFIER:
+            if (!data->value.func_id.arguments_defined) { // on funcion call before definition ve save the function params
+                vector_top(data->value.func_id.parameters)->parameter.type = stack_lookup_var(parser->stack, parser->token.attribute.string)->value.var_id.type;
+                break;
+            }
             // check if var exists
             arg = symbol_table_lookup_var(stack_top_table(parser->stack), parser->token.attribute.string);
             if (arg == NULL){
@@ -1083,6 +1111,11 @@ bool rule_arg_value(parser_t *parser, int *argindex, data_t *data){
             // TODO
             return false;
     }
+
+    if (!data->value.func_id.arguments_defined && parser->token.type != TOK_IDENTIFIER) {
+        vector_top(data->value.func_id.parameters)->parameter.type = parser->token.type;
+    }
+
     (*argindex)++;
     load_token(parser);
     return true;
@@ -1174,3 +1207,101 @@ bool rule_returned_expression(parser_t *parser){
 
 
 //================= GRAMMAR RULES END HERE ================= //
+
+//================= BUILT IN FUNCTIONS ================= //
+
+/*
+   func readString() -> String?
+    func readInt() -> Int?
+    func readDouble() -> Double?
+    func write ( term1 , term2 , …, term𝑛 )
+    func Int2Double(_ term ∶ Int) -> Double
+    func Double2Int(_ term ∶ Double) -> Int
+    func length(_ 𝑠 : String) -> Int
+    func substring(of 𝑠 : String, startingAt 𝑖 : Int, endingBefore 𝑗 : Int) -> String?
+    func ord(_ 𝑐 : String) -> Int
+    func chr(_ 𝑖 : Int) -> String
+*/
+void insert_builtins_to_table(parser_t *parser) {
+    data_t data;
+    data.type = FUNC;
+    data.value.func_id.defined = true;
+    data.value.func_id.return_type = VAL_STRINGQ;
+    data.value.func_id.parameters = vector_init(0);
+    symbol_table_insert(stack_top_table(parser->stack), "readString", data);
+
+    data.value.func_id.return_type = VAL_INTQ;
+    symbol_table_insert(stack_top_table(parser->stack), "readInt", data);
+
+    data.value.func_id.return_type = VAL_DOUBLEQ;
+    symbol_table_insert(stack_top_table(parser->stack), "readDouble", data);
+
+    data.value.func_id.return_type = VAL_VOID;
+    data.value.func_id.parameters = vector_init(99);
+    for (int i = 0; i < 99; i++) {
+        vector_push(data.value.func_id.parameters, (htab_func_param_t){});
+        vector_top(data.value.func_id.parameters)->call_name = malloc(sizeof(char) * 2);
+        strcpy(vector_top(data.value.func_id.parameters)->call_name, "_");
+        vector_top(data.value.func_id.parameters)->parameter.type = VAL_TERM;
+    }
+    symbol_table_insert(stack_top_table(parser->stack), "write", data);
+
+    data.value.func_id.return_type = VAL_DOUBLE;
+    data.value.func_id.parameters = vector_init(1);
+    vector_push(data.value.func_id.parameters, (htab_func_param_t){});
+    vector_top(data.value.func_id.parameters)->call_name = malloc(sizeof(char) * 2);
+    strcpy(vector_top(data.value.func_id.parameters)->call_name, "_");
+    vector_top(data.value.func_id.parameters)->parameter.type = VAL_INT;
+    symbol_table_insert(stack_top_table(parser->stack), "Int2Double", data);
+
+    data.value.func_id.return_type = VAL_INT;
+    data.value.func_id.parameters = vector_init(1);
+    vector_push(data.value.func_id.parameters, (htab_func_param_t){});
+    vector_top(data.value.func_id.parameters)->call_name = malloc(sizeof(char) * 2);
+    strcpy(vector_top(data.value.func_id.parameters)->call_name, "_");
+    vector_top(data.value.func_id.parameters)->parameter.type = VAL_DOUBLE;
+    symbol_table_insert(stack_top_table(parser->stack), "Double2Int", data);
+
+    data.value.func_id.return_type = VAL_INT;
+    data.value.func_id.parameters = vector_init(1);
+    vector_push(data.value.func_id.parameters, (htab_func_param_t){});
+    vector_top(data.value.func_id.parameters)->call_name = malloc(sizeof(char) * 2);
+    strcpy(vector_top(data.value.func_id.parameters)->call_name, "_");
+    vector_top(data.value.func_id.parameters)->parameter.type = VAL_STRING;
+    symbol_table_insert(stack_top_table(parser->stack), "length", data);
+
+    data.value.func_id.return_type = VAL_STRINGQ;
+    data.value.func_id.parameters = vector_init(3);
+    vector_push(data.value.func_id.parameters, (htab_func_param_t){});
+    vector_top(data.value.func_id.parameters)->call_name = malloc(sizeof(char) * 3);
+    strcpy(vector_top(data.value.func_id.parameters)->call_name, "of");
+    vector_top(data.value.func_id.parameters)->parameter.type = VAL_STRING;
+
+    vector_push(data.value.func_id.parameters, (htab_func_param_t){});
+    vector_top(data.value.func_id.parameters)->call_name = malloc(sizeof(char) * 11);
+    strcpy(vector_top(data.value.func_id.parameters)->call_name, "startingAt");
+    vector_top(data.value.func_id.parameters)->parameter.type = VAL_INT;
+
+    vector_push(data.value.func_id.parameters, (htab_func_param_t){});
+    vector_top(data.value.func_id.parameters)->call_name = malloc(sizeof(char) * 13);
+    strcpy(vector_top(data.value.func_id.parameters)->call_name, "endingBefore");
+    vector_top(data.value.func_id.parameters)->parameter.type = VAL_INT;
+    symbol_table_insert(stack_top_table(parser->stack), "substring", data);
+
+    data.value.func_id.return_type = VAL_INT;
+    data.value.func_id.parameters = vector_init(1);
+    vector_push(data.value.func_id.parameters, (htab_func_param_t){});
+    vector_top(data.value.func_id.parameters)->call_name = malloc(sizeof(char) * 2);
+    strcpy(vector_top(data.value.func_id.parameters)->call_name, "_");
+    vector_top(data.value.func_id.parameters)->parameter.type = VAL_STRING;
+    symbol_table_insert(stack_top_table(parser->stack), "ord", data);
+
+    data.value.func_id.return_type = VAL_STRINGQ;
+    data.value.func_id.parameters = vector_init(1);
+    vector_push(data.value.func_id.parameters, (htab_func_param_t){});
+    vector_top(data.value.func_id.parameters)->call_name = malloc(sizeof(char) * 2);
+    strcpy(vector_top(data.value.func_id.parameters)->call_name, "_");
+    vector_top(data.value.func_id.parameters)->parameter.type = VAL_INT;
+    symbol_table_insert(stack_top_table(parser->stack), "chr", data);
+
+}
