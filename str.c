@@ -86,4 +86,7 @@ void mergestr_float(mystring_t *str1, float input){
     mergestr(str1, str2);
 }
 
+void printstr(mystring_t *str){
+    printf("%s", str->string);
+}
 /* end of file str.c */

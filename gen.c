@@ -10,6 +10,7 @@
 #include "gen.h"
 #include "buildin.h"
 
+
 void gen_init(gen_t *gen)
 {
     initstr(&gen->header);
@@ -26,16 +27,6 @@ void gen_free(gen_t *gen)
     destroy(&gen->temp);
     destroy(&gen->local);
     destroy(&gen->functions);
-}
-
-void gen_print(gen_t *gen)
-{
-    printf("%s", gen->header.string);
-    printf("%s", "-----------------global------------------");
-    printf("%s", gen->global.string);
-    printf("%s", "-----------------functions---------------");
-    printf("%s", gen->functions.string);
-
 }
 
 void gen_header(gen_t *gen)
@@ -58,6 +49,19 @@ void gen_main(gen_t *gen)
     mergestr(&gen->global, "DEFVAR GF@return_exp\n");
 
     gen_buildin_funcs(gen); // Generates all buildin functions at once (check buildin.c to see)
+}
+
+void gen_var_definition(gen_t *gen, token_t* token, bool in_function)
+{
+    if (in_function) {
+        mergestr(&gen->local, "DEFVAR LF@");
+        mergestr(&gen->local, token->attribute.string);
+        mergestr(&gen->local, "\n");
+    } else {
+        mergestr(&gen->global, "DEFVAR GF@");
+        mergestr(&gen->global, token->attribute.string);
+        mergestr(&gen->global, "\n");
+    }
 }
 
 void gen_arguments(gen_t *gen, vector_t *gen_arguments) {    
@@ -211,4 +215,10 @@ void gen_call_convert(gen_t *gen) {
 
 void gen_call_convert2(gen_t *gen) {
     mergestr(&gen->local, "CALL $int2float2\n");
+}
+
+void gen_print(gen_t *gen) {
+    printstr(&gen->header.string);
+    printstr(&gen->global.string);
+    printstr(&gen->functions.string);
 }

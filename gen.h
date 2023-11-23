@@ -9,6 +9,7 @@
 
 #include "str.h"
 #include "symtable.h"
+#include "token.h"
 
 typedef struct gen{
     mystring_t header;
@@ -53,11 +54,11 @@ void gen_while(gen_t *gen);
 
 void gen_func(gen_t *gen);
 
-void gen_func_call(gen_t *gen, char *name);
+void gen_func_call(gen_t *gen, token_t *name);
 
 void gen_return(gen_t *gen);
 
-void gen_var_definition(gen_t *gen);
+void gen_var_definition(gen_t *gen, token_t* token, bool in_function);
 
 void gen_expression(gen_t *gen, token_type_t type);
 
