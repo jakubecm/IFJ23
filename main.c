@@ -9,7 +9,6 @@
 
 // BASIC MAIN WITH CORRECT RETURN ON THE END OF PROGRAM
 #include <stdio.h>
-#include "error.h"
 #include "parser.h"
 #include "gen.h"
 
@@ -21,5 +20,5 @@ int main() {
     parser_destroy(&parser);
     gen_print(&gen);
     gen_destroy(&gen);
-    return ERR_OK;
+    return 0;
 }

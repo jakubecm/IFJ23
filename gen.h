@@ -8,7 +8,6 @@
  */
 
 #include "str.h"
-#include "symtable.h"
 #include "token.h"
 
 typedef struct gen{

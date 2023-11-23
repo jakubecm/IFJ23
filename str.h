@@ -74,7 +74,7 @@ void mergestr_float(mystring_t *str1, float input);
  *   @brief print the final string
  *   @param str string to printout
  */
-void printstr(mystring_t *str)
+void printstr(mystring_t *str);
 
 #endif
 
