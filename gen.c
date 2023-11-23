@@ -7,7 +7,6 @@
  *  @authors Norman Babiak (xbabia01)
  */
 
-#include "gen.h"
 #include "buildin.h"
 #include "symtable.h"
 
@@ -76,7 +75,7 @@ void gen_arguments(gen_t *gen, vector_t *gen_arguments) {
     mergestr(&gen->global, "CREATEFRAME\n");
 }
 
-void gen_func_call(gen_t *gen, token_t *name)
+void gen_func_call(gen_t *gen, char *name)
 {
     mergestr(&gen->global, "CALL $");
     mergestr(&gen->global, name);
@@ -177,11 +176,11 @@ void gen_push_var(gen_t *gen, char *name, bool local) {
 void gen_argdef_var(gen_t *gen, char *name, bool local)
 {
     mergestr(&gen->global, "DEFVAR TF@");
-    mergestr(&gen->global, gen->arg_counter);
+    mergestr_int(&gen->global, gen->arg_counter);
     mergestr(&gen->global, "\n");
 
     mergestr(&gen->global, "MOVE TF@");
-    mergestr(&gen->global, gen->arg_counter);
+    mergestr_int(&gen->global, gen->arg_counter);
     mergestr(&gen->global, " ");
     if (local) {
         mergestr(&gen->global, "LF@");
@@ -255,7 +254,7 @@ void gen_call_convert2(gen_t *gen) {
 }
 
 void gen_print(gen_t *gen) {
-    printstr(&gen->header.string);
-    printstr(&gen->global.string);
-    printstr(&gen->functions.string);
+    printstr(&gen->header);
+    printstr(&gen->global);
+    printstr(&gen->functions);
 }

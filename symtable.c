@@ -41,7 +41,7 @@ symbol_table_t * symbol_table_init(size_t size) {
 void symbol_table_free(symbol_table_t *table) {
     for (size_t i = 0; i < table->capacity; i++) {
         if (table->table[i] != NULL) {
-            free(table->table[i]->key);
+            free((char *)table->table[i]->key);
             free(table->table[i]);
         }
     }
@@ -72,7 +72,7 @@ void symbol_table_insert(symbol_table_t *table, htab_key_t key, data_t data) {
         free(new_symbol);
         return;
     }
-    strcpy(new_symbol->key, (char *)key);
+    strcpy((char *)new_symbol->key, (char *)key);
     new_symbol->data = data;
     table->table[hash] = new_symbol;
 

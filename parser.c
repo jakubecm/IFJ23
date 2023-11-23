@@ -132,6 +132,7 @@ bool rule_more_arguments(parser_t *parser, int argnum, int *argindex, data_t *da
 bool rule_return_statement(parser_t *parser);
 bool rule_returned_expression(parser_t *parser);
 bool rule_empty_return_statement(parser_t *parser);
+void insert_builtins_to_table(parser_t *parser);
 //================= FUNCTION DECLARATIONS END HERE ================= //
 
 //================= PARSER FUNCTIONS ================= //
