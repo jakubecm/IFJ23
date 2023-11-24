@@ -78,7 +78,7 @@ void symbol_table_insert(symbol_table_t *table, htab_key_t key, data_t data) {
 
     table->size++;
     if (table->size == table->capacity) {
-        symbol_table_resize(table, table->capacity * 2);
+        table = symbol_table_resize(table, table->capacity * 2);
     }
 }
 
@@ -95,11 +95,32 @@ void symbol_table_remove_generic(symbol_table_t *table, htab_key_t key) {
     free(table->table[hash]);
 }
 
-void symbol_table_resize(symbol_table_t *table, size_t new_size) {
-    table->table = realloc(table->table, new_size * sizeof(symbol *));
-    if (table->table == NULL) {
+symbol_table_t *symbol_table_resize(symbol_table_t *table, size_t new_size) {
+    symbol **new_table = malloc(new_size * sizeof(symbol *));
+    if (new_table == NULL) {
+        // Handle error, possibly return or exit
         return;
     }
+
+    // Initialize new table
+    for (size_t i = 0; i < new_size; i++) {
+        new_table[i] = NULL;
+    }
+
+    // Rehash symbols into the new table
+    for (size_t i = 0; i < table->capacity; i++) {
+        if (table->table[i] != NULL) {
+            size_t new_hash = htab_hash_function(table->table[i]->key) % new_size;
+            while (new_table[new_hash] != NULL) {
+                new_hash = (new_hash + 1) % new_size;
+            }
+            new_table[new_hash] = table->table[i];
+        }
+    }
+
+    // Free old table and update structure
+    free(table->table);
+    table->table = new_table;
     table->capacity = new_size;
 }
 
@@ -118,7 +139,8 @@ data_t *symbol_table_lookup_generic(symbol_table_t *table, htab_key_t key) {
 
 data_t *symbol_table_lookup_var(symbol_table_t *table, htab_key_t key) {
     size_t hash = htab_hash_function(key) % table->capacity;
-    while (table->table[hash] != NULL && table->table[hash]->data.type == VAR && strcmp(table->table[hash]->key, key) != 0) {
+    while (table->table[hash] != NULL && (!(table->table[hash]->data.type == VAR ||
+     table->table[hash]->data.type == LET) || strcmp(table->table[hash]->key, key) != 0)) {
         hash = (hash + 1) % table->capacity;
     }
 
@@ -131,7 +153,7 @@ data_t *symbol_table_lookup_var(symbol_table_t *table, htab_key_t key) {
 
 data_t *symbol_table_lookup_func(symbol_table_t *table, htab_key_t key) {
     size_t hash = htab_hash_function(key) % table->capacity;
-    while (table->table[hash] != NULL && table->table[hash]->data.type == FUNC && strcmp(table->table[hash]->key, key) != 0) {
+    while (table->table[hash] != NULL && (table->table[hash]->data.type != FUNC || strcmp(table->table[hash]->key, key) != 0)) {
         hash = (hash + 1) % table->capacity;
     }
 

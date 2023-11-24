@@ -18,6 +18,12 @@ void gen_init(gen_t *gen)
     initstr(&gen->temp);
     initstr(&gen->local);
     initstr(&gen->functions);
+
+    gen->label_counter = 0;
+    gen->arg_counter = 0;
+
+    gen_header(gen);
+    gen_main(gen);
 }
 
 void gen_free(gen_t *gen)

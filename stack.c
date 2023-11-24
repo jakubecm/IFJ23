@@ -195,6 +195,10 @@ void stack_push_table(stack_t* stack) {
     stack_push(stack, table);
 }
 
+bool is_table_global(stack_t* stack) {
+    return stack->top->right == NULL;
+}
+
 void stack_pop_table(stack_t* stack) {
     symbol_table_t* table = stack_top_table(stack);
     symbol_table_free(table);
@@ -203,6 +207,15 @@ void stack_pop_table(stack_t* stack) {
 
 symbol_table_t* stack_top_table(stack_t* stack) {
     return (stack_top(stack) != NULL) ? stack->top->data : NULL;
+}
+
+symbol_table_t* stack_bottom_table(stack_t* stack) {
+    Node* currentNode = stack->top;
+    while (currentNode->right != NULL) {
+        currentNode = currentNode->right;
+    }
+
+    return (currentNode != NULL) ? currentNode->data : NULL;
 }
 
 void stack_destroy_table(stack_t* stack) {

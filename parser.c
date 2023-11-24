@@ -10,7 +10,6 @@
  */
 
 #include "parser.h"
-
 #include "error.h"
 #include "expression.h"
 #include <string.h>
@@ -101,12 +100,12 @@ bool rule_nonvoid_function_body(parser_t *parser);
 bool rule_void_function_body(parser_t *parser);
 bool rule_statement_nonvoid_function(parser_t *parser);
 bool rule_statement_void_function(parser_t *parser);
-bool rule_parameter_list(parser_t *parser, data_t *data);
-bool rule_more_parameters(parser_t *parser, data_t *data);
-bool rule_parameter(parser_t *parser, data_t *data);
-bool rule_no_name_parameter(parser_t *parser, data_t *data);
-bool rule_identifier_parameter(parser_t *parser, data_t *data);
-bool rule_rest_of_identifier_parameter(parser_t *parser, data_t *data);
+bool rule_parameter_list(parser_t *parser, data_t *data, int *index, int *argnum);
+bool rule_more_parameters(parser_t *parser, data_t *data, int *index, int *argnum);
+bool rule_parameter(parser_t *parser, data_t *data, int *index);
+bool rule_no_name_parameter(parser_t *parser, data_t *data, int *index);
+bool rule_identifier_parameter(parser_t *parser, data_t *data, int *index);
+bool rule_rest_of_identifier_parameter(parser_t *parser, data_t *data, int *index);
 bool rule_no_id_parameter(parser_t *parser);
 bool rule_all_parameters(parser_t *parser);
 bool rule_type(parser_t *parser);
@@ -116,7 +115,7 @@ bool rule_definition_types(parser_t *parser, data_t *data);
 bool rule_type_def(parser_t *parser, data_t *data);
 bool rule_type_def_follow(parser_t *parser, data_t *data);
 bool rule_initialization(parser_t *parser, data_t *data);
-bool rule_assignment(parser_t *parser, data_t *data);
+bool rule_assignment(parser_t *parser);
 bool rule_assignment_type(parser_t *parser, data_t *data);
 bool rule_conditional_statement(parser_t *parser);
 bool rule_if_statement(parser_t *parser);
@@ -157,7 +156,7 @@ void parser_init(parser_t *parser, gen_t *gen)
 
 void parser_destroy(parser_t *parser)
 {
-    stack_destroy_table(parser->stack);
+    //stack_destroy_table(parser->stack);
     stack_free(parser->stack);
 }
 
@@ -242,7 +241,8 @@ bool rule_program(parser_t *parser){
 // Note: statement list is only used in condtional statements and loops, thats why there is a check for RCURLYBRACKET
 
 bool rule_statement_list(parser_t *parser){
-    if (is_type(parser, TOK_RCURLYBRACKET) && parser->in_function){
+    if (is_type(parser, TOK_RCURLYBRACKET) && 
+    (parser->in_function || parser->in_cycle || parser->in_if || parser->in_else)) {
         return true;
     }
 
@@ -262,7 +262,7 @@ bool rule_statement(parser_t *parser){
                 return rule_function_call(parser, NULL);
             }
             else{
-                return rule_assignment(parser, NULL);
+                return rule_assignment(parser);
             }
         case K_IF:
             return rule_conditional_statement(parser);
@@ -278,46 +278,60 @@ bool rule_statement(parser_t *parser){
 // <function_definition> -> "func" <identifier> "(" <parameter_list> ")" <function_return_type_and_body>
 
 bool rule_function_definition(parser_t *parser){
-    if (parser->in_function) {
+    if (stack_top_table(parser->stack) != stack_bottom_table(parser->stack)) {
+        error = ERR_SEM_OTHER;
         return false;   // Attempt at defining a function within a function
     }
     parser->in_function = true;
     if (!is_type(parser, K_FUNC)){
+        error = ERR_SYN;
         return false;
     }
     load_token(parser);
     if (!is_type(parser, TOK_IDENTIFIER)){
+        error = ERR_SYN;
         return false;
     }
-    data_t *symbol = symbol_table_lookup_generic(stack_top_table(parser->stack), parser->token.attribute.string);
-    if (symbol != NULL){
-        if (symbol->type == FUNC && !symbol->value.func_id.defined) {
+
+    data_t *func = symbol_table_lookup_generic(stack_top_table(parser->stack), parser->token.attribute.string);
+    int index = 0;
+    int argnum = 0;
+    if (func != NULL){
+        if (func->type != FUNC || (func->type == FUNC && func->value.func_id.defined)) {
             error = ERR_SEM_FUNCTION;
             return false;   // Attempt at defining an already existing function or global variable
         }
+        argnum = func->value.func_id.parameters->size;
+        func->value.func_id.defined = true;
+    } else {
+        data_t func;
+        func.type = FUNC;
+        func.name = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1));
+        strcpy(func.name, parser->token.attribute.string);
+        func.value.func_id.defined = true;
+        func.value.func_id.parameters = vector_init(5);
+        symbol_table_insert(stack_top_table(parser->stack), func.name, func);
     }
+    func = symbol_table_lookup_generic(stack_top_table(parser->stack), parser->token.attribute.string);
 
-    data_t func;
-    func.type = FUNC;
-    func.name = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1));
-    strcpy(func.name, parser->token.attribute.string);
-    func.value.func_id.defined = true;
     load_token(parser);
     if (!is_type(parser, TOK_LBRACKET)){
+        error = ERR_SYN;
         return false;
     }
     load_token(parser);
-    func.value.func_id.parameters = vector_init(5);
-
     stack_push_table(parser->stack);
-    if (!rule_parameter_list(parser, &func)){
+    if (!rule_parameter_list(parser, func, &index, &argnum)){
         return false;
     }
+    argnum = index;
+    func->value.func_id.arguments_defined = true;
     if (!is_type(parser, TOK_RBRACKET)){
+        error = ERR_SYN;
         return false;
     }
     load_token(parser);
-    if (!rule_function_return_type_and_body(parser, &func)){
+    if (!rule_function_return_type_and_body(parser, func)){
         return false;
     }
     stack_pop_table(parser->stack);
@@ -334,10 +348,12 @@ bool rule_function_return_type_and_body(parser_t *parser, data_t *data){
         data->value.func_id.return_type = str_to_type(parser->token);
         parser->return_type = str_to_type(parser->token);
         if (!rule_type(parser)){
+            error = ERR_SEM_OTHER;
             return false;
         }
         load_token(parser);
         if (!is_type(parser, TOK_LCURLYBRACKET)){
+            error = ERR_SYN;
             return false;
         }
         load_token(parser);
@@ -345,6 +361,7 @@ bool rule_function_return_type_and_body(parser_t *parser, data_t *data){
             return false;
         }
         if (!is_type(parser, TOK_RCURLYBRACKET)){
+            error = ERR_SYN;
             return false;
         }
 
@@ -358,6 +375,7 @@ bool rule_function_return_type_and_body(parser_t *parser, data_t *data){
     parser->func_is_void = true;
     data->value.func_id.return_type = VAL_VOID;
     if (!is_type(parser, TOK_LCURLYBRACKET)){
+        error = ERR_SYN;
         return false;
     }
     load_token(parser);
@@ -367,6 +385,7 @@ bool rule_function_return_type_and_body(parser_t *parser, data_t *data){
     }
 
     if (!is_type(parser, TOK_RCURLYBRACKET)) {
+        error = ERR_SYN;
         return false;
     }
 
@@ -381,13 +400,12 @@ bool rule_function_return_type_and_body(parser_t *parser, data_t *data){
 
 bool rule_nonvoid_function_body(parser_t *parser){
     parser->in_function = true;
-    if (rule_statement_list(parser)){
-        return true;
-    }
-    else if (is_type(parser, TOK_RCURLYBRACKET)){
+    if (is_type(parser, TOK_RCURLYBRACKET)){
         parser->in_function = false;
         return true;
-    }
+    } else if (rule_statement_list(parser)){
+        return true;
+    } 
 
     return false;
 }
@@ -396,29 +414,30 @@ bool rule_nonvoid_function_body(parser_t *parser){
 
 bool rule_void_function_body(parser_t *parser){
     parser->in_function = true;
-    if (rule_statement_list(parser)){
-        return true;
+    if (!rule_statement_list(parser)){
+        return false;
     }
     else if (is_type(parser, TOK_RCURLYBRACKET)){
         parser->in_function = false;
         return true;
     }
 
+    error = ERR_SYN;
     return false;
 }
 
 // <parameter_list> -> <parameter> <more_parameters> | ε
 
-bool rule_parameter_list(parser_t *parser, data_t *data){
+bool rule_parameter_list(parser_t *parser, data_t *data, int *index, int *argnum){
     if (is_type(parser, TOK_RBRACKET)){
         return true;
     }
-    return rule_parameter(parser, data) && rule_more_parameters(parser, data);
+    return rule_parameter(parser, data, index) && rule_more_parameters(parser, data, index, argnum);
 }
 
 // <more_parameters> -> "," <parameter> <more_parameters> | ε
 
-bool rule_more_parameters(parser_t *parser, data_t *data){
+bool rule_more_parameters(parser_t *parser, data_t *data, int *index, int *argnum){
     load_token(parser);
 
     if (is_type(parser, TOK_RBRACKET)){
@@ -426,13 +445,20 @@ bool rule_more_parameters(parser_t *parser, data_t *data){
     }
 
     if (!is_type(parser, TOK_COMMA)){
+        error = ERR_SYN;
         return false;
     }
     load_token(parser);
-    if (!rule_parameter(parser, data)){
+    if (!rule_parameter(parser, data, index)){
         return false;
     }
-    if (!rule_more_parameters(parser, data)){
+
+    if (*index > *argnum){
+        error = ERR_SEM_FUNCTION;
+        return false;  // Attempt at calling a function with too many arguments
+    }
+
+    if (!rule_more_parameters(parser, data, index, argnum)){
         return false;
     }
     return true;
@@ -440,25 +466,38 @@ bool rule_more_parameters(parser_t *parser, data_t *data){
 
 // <parameter> -> <no_name_parameter> | <identifier_parameters>
 
-bool rule_parameter(parser_t *parser, data_t *data){
-    vector_push(data->value.func_id.parameters, (htab_func_param_t){}); // Add a new parameter to the vector
-    if (rule_no_name_parameter(parser, data)){
+bool rule_parameter(parser_t *parser, data_t *data, int *index){
+    if (!data->value.func_id.arguments_defined){
+        vector_push(data->value.func_id.parameters, (htab_func_param_t){}); // Add a new parameter to the vector
+    }
+
+    if (rule_no_name_parameter(parser, data, index)){
         return true;
     }
-    return rule_identifier_parameter(parser, data);
+    return rule_identifier_parameter(parser, data, index);
 }
 
 // <no_name_parameter> -> "_" <identifier> ":" <type>
 
-bool rule_no_name_parameter(parser_t *parser, data_t *data){
+bool rule_no_name_parameter(parser_t *parser, data_t *data, int *index){
     if (!is_type(parser, TOK_UNDERSCORE)){
         return false;
     }
-    vector_top(data->value.func_id.parameters)->call_name = malloc(sizeof(char) * 2); // _
-    strcpy(vector_top(data->value.func_id.parameters)->call_name, "_");
+
+    if (data->value.func_id.arguments_defined){
+        if (strcmp(data->value.func_id.parameters->data[*index].call_name, "_")) {
+            error = ERR_SEM_CALL;
+            return false; // argument should not be named but isnt
+            // TODO
+        }
+    } else {
+        vector_top(data->value.func_id.parameters)->call_name = malloc(sizeof(char) * 2); // _
+        strcpy(vector_top(data->value.func_id.parameters)->call_name, "_");
+    }
 
     load_token(parser);
     if (!is_type(parser, TOK_IDENTIFIER)){
+        error = ERR_SYN;
         return false;
     }
 
@@ -468,47 +507,86 @@ bool rule_no_name_parameter(parser_t *parser, data_t *data){
     param.type = VAR;
     param.value.var_id.type = VAL_UNKNOWN;
 
-    vector_top(data->value.func_id.parameters)->def_name = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1)); // identifier
-    strcpy(vector_top(data->value.func_id.parameters)->def_name, parser->token.attribute.string);
+    if (data->value.func_id.arguments_defined) {
+        data->value.func_id.parameters->data[*index].def_name = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1)); // identifier
+        strcpy(data->value.func_id.parameters->data[*index].def_name, parser->token.attribute.string);
+    } else {
+        vector_top(data->value.func_id.parameters)->def_name = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1)); // identifier
+        strcpy(vector_top(data->value.func_id.parameters)->def_name, parser->token.attribute.string);
+    }
+
     load_token(parser);
     if (!is_type(parser, TOK_COLON)){
+        error = ERR_SYN;
         return false;
     }
+
     load_token(parser);
     param.value.var_id.type = str_to_type(parser->token); // type
     symbol_table_insert(stack_top_table(parser->stack), param.name, param); // push to table
-    vector_top(data->value.func_id.parameters)->parameter.type = str_to_type(parser->token); // type
+    if (data->value.func_id.arguments_defined) {
+        if (data->value.func_id.parameters->data[*index].parameter.type != str_to_type(parser->token)) {
+            error = ERR_SEM_CALL;
+            return false; // argument type doesnt match
+            // TODO
+        }
+    } else {
+        vector_top(data->value.func_id.parameters)->parameter.type = str_to_type(parser->token);
+    }
+    (*index)++;
     return rule_type(parser);
 }
 
 // <identifier_parameter> -> <identifier> <rest_of_identifier_parameter>
 
-bool rule_identifier_parameter(parser_t *parser, data_t *data){
+bool rule_identifier_parameter(parser_t *parser, data_t *data, int *index){
     if (!is_type(parser, TOK_IDENTIFIER)){
+        error = ERR_SYN;
         return false;
     }
-    vector_top(data->value.func_id.parameters)->call_name = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1));
-    strcpy(vector_top(data->value.func_id.parameters)->call_name, parser->token.attribute.string);
+
+    if (data->value.func_id.arguments_defined){
+        if (strcmp(data->value.func_id.parameters->data[*index].call_name, parser->token.attribute.string)) {
+            error = ERR_SEM_CALL;
+            return false; // argument should be named but isnt
+            // TODO
+        }
+    } else {
+        vector_top(data->value.func_id.parameters)->call_name = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1)); // identifier
+        strcpy(vector_top(data->value.func_id.parameters)->call_name, parser->token.attribute.string);
+    }
+
     load_token(parser);
-    return rule_rest_of_identifier_parameter(parser, data);
+    return rule_rest_of_identifier_parameter(parser, data, index);
 }
 
 // <rest_of_identifier_parameter> -> "_" ":" <type> |  <identifier> ":" <type>
 
-bool rule_rest_of_identifier_parameter(parser_t *parser, data_t *data){
+bool rule_rest_of_identifier_parameter(parser_t *parser, data_t *data, int *index){
     if (is_type(parser, TOK_UNDERSCORE)){
-        vector_top(data->value.func_id.parameters)->def_name = malloc(sizeof(char) * 2);
+
+        vector_top(data->value.func_id.parameters)->def_name = malloc(sizeof(char) * 2); // _
         strcpy(vector_top(data->value.func_id.parameters)->def_name, "_");
+
         load_token(parser);
         if (!is_type(parser, TOK_COLON)){
+            error = ERR_SYN;
             return false;
         }
         load_token(parser);
-        vector_top(data->value.func_id.parameters)->parameter.type = str_to_type(parser->token);
+        if (data->value.func_id.arguments_defined) {
+            if (data->value.func_id.parameters->data[*index].parameter.type != str_to_type(parser->token)) {
+                error = ERR_SEM_CALL;
+                return false; // argument type doesnt match
+                // TODO
+            }
+        } else {
+            vector_top(data->value.func_id.parameters)->parameter.type = str_to_type(parser->token);
+        }
         return rule_type(parser);
     }
     else if (is_type(parser, TOK_IDENTIFIER)){
-        vector_top(data->value.func_id.parameters)->def_name = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1));
+        vector_top(data->value.func_id.parameters)->def_name = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1)); // identifier
         strcpy(vector_top(data->value.func_id.parameters)->def_name, parser->token.attribute.string);
 
         data_t param; // symtable variable
@@ -519,15 +597,26 @@ bool rule_rest_of_identifier_parameter(parser_t *parser, data_t *data){
 
         load_token(parser);
         if (!is_type(parser, TOK_COLON)){
+            error = ERR_SYN;
             return false;
         }
         load_token(parser);
-        vector_top(data->value.func_id.parameters)->parameter.type = str_to_type(parser->token);
+        if (data->value.func_id.arguments_defined) {
+            if (data->value.func_id.parameters->data[*index].parameter.type != str_to_type(parser->token)) {
+                error = ERR_SEM_CALL;
+                return false; // argument type doesnt match
+                // TODO
+            }
+        } else {
+            vector_top(data->value.func_id.parameters)->parameter.type = str_to_type(parser->token);
+        }
         param.value.var_id.type = str_to_type(parser->token);
         symbol_table_insert(stack_top_table(parser->stack), param.name, param);
+        (*index)++;
         return rule_type(parser);
     }
 
+    error = ERR_SYN;
     return false;
         
 }
@@ -544,6 +633,7 @@ bool rule_type(parser_t *parser){
         case K_STRINGQ:
             return true;
         default:
+            error = ERR_SYN;
             return false;
     }
 }
@@ -552,10 +642,12 @@ bool rule_type(parser_t *parser){
 
 bool rule_variable_definition_let(parser_t *parser){
     if (!is_type(parser, K_LET)){
+        error = ERR_SYN;
         return false;
     }
     load_token(parser);
     if (!is_type(parser, TOK_IDENTIFIER)){
+        error = ERR_SYN;
         return false;
     }
 
@@ -572,8 +664,6 @@ bool rule_variable_definition_let(parser_t *parser){
     data.name = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1));
     strcpy(data.name, parser->token.attribute.string);
     //symbol_table_insert(stack_top_table(parser->stack), data.name, data);
-    symbol_table_lookup_var(stack_top_table(parser->stack), parser->token.attribute.string);
-
     load_token(parser);
     if(rule_definition_types(parser, &data)) {
         symbol_table_insert(stack_top_table(parser->stack), data.name, data);
@@ -586,11 +676,13 @@ bool rule_variable_definition_let(parser_t *parser){
 
 bool rule_variable_definition_var(parser_t *parser){
     if (!is_type(parser, K_VAR)){
+        error = ERR_SYN;
         return false;
     }
     load_token(parser);
 
     if(!is_type(parser, TOK_IDENTIFIER)){
+        error = ERR_SYN;
         return false;
     }
 
@@ -606,7 +698,7 @@ bool rule_variable_definition_var(parser_t *parser){
     data.type = VAR;
     data.name = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1));
     strcpy(data.name, parser->token.attribute.string);
-    symbol_table_insert(stack_top_table(parser->stack), data.name, data);
+    //symbol_table_insert(stack_top_table(parser->stack), data.name, data);
     load_token(parser);
     if(rule_definition_types(parser, &data)) {
         symbol_table_insert(stack_top_table(parser->stack), data.name, data);
@@ -635,6 +727,7 @@ bool rule_type_def(parser_t *parser, data_t *data){
     }
     load_token(parser);
     if (!rule_type(parser)){
+        error = ERR_SYN;
         return false;
     }
 
@@ -661,6 +754,7 @@ bool rule_type_def_follow(parser_t *parser, data_t *data){
 bool rule_initialization(parser_t *parser, data_t *data){
 
     if (!is_type(parser, TOK_ASSIGNMENT)){
+        error = ERR_SYN;
         return false;
     }
 
@@ -729,16 +823,23 @@ bool rule_initialization(parser_t *parser, data_t *data){
 
 // <assignment> -> <identifier> "=" <assignment_type>
 
-bool rule_assignment(parser_t *parser, data_t *data){
+bool rule_assignment(parser_t *parser){
     if (!is_type(parser, TOK_IDENTIFIER)){
+        error = ERR_SYN;
         return false;
+    }
+    data_t *var = stack_lookup_var(parser->stack, parser->token.attribute.string);
+    if (var == NULL){
+        error = ERR_SEM_FUNCTION;
+        return false;   // Attempt at assigning to a non-existing variable
     }
     load_token(parser);
     if (!is_type(parser, TOK_ASSIGNMENT)){
+        error = ERR_SYN;
         return false;
     }
     load_token(parser);
-    return rule_assignment_type(parser, data);
+    return rule_assignment_type(parser, var);
 }
 
 // <assignment_type> -> <function_call> | <expression>
@@ -752,6 +853,22 @@ bool rule_assignment_type(parser_t *parser, data_t *data){
         if (type == EXP_ERR){
             return false;
         }
+        if (data->type == LET){
+            error = ERR_SEM_FUNCTION;
+            return false;   // Attempt at assigning to a let variable
+        }
+        if (data->value.var_id.type == VAL_UNKNOWN){
+            data->value.var_id.type = type;
+        }
+        if (type != data->value.var_id.type){
+            if ((data->value.var_id.type == VAL_DOUBLEQ && type == VAL_DOUBLE) ||
+                (data->value.var_id.type == VAL_INTQ && type == VAL_INT) ||
+                (data->value.var_id.type == VAL_STRINGQ && type == VAL_STRING)){
+                return true;
+            }
+            error = ERR_SEM_TYPE; // assignment type does not match the type of the variable
+            return false;
+        }
         return true;
     }
 }
@@ -760,6 +877,7 @@ bool rule_assignment_type(parser_t *parser, data_t *data){
 
 bool rule_conditional_statement(parser_t *parser){
     if (!is_type(parser, K_IF)){
+        error = ERR_SYN;
         return false;
     }
     load_token(parser);
@@ -786,6 +904,7 @@ bool rule_classical_statement(parser_t *parser){
     gen_if(parser->gen);
 
     if (!is_type(parser, TOK_LCURLYBRACKET)){
+        error = ERR_SYN;
         return false;
     }
     parser->in_if = true;
@@ -796,11 +915,13 @@ bool rule_classical_statement(parser_t *parser){
     }
     stack_pop_table(parser->stack);
     if (!is_type(parser, TOK_RCURLYBRACKET)){
+        error = ERR_SYN;
         return false;
     }
     parser->in_if = false;
     load_token(parser);
     if (!is_type(parser, K_ELSE)){
+        error = ERR_SYN;
         return false;
     }
 
@@ -808,6 +929,7 @@ bool rule_classical_statement(parser_t *parser){
 
     load_token(parser);
     if (!is_type(parser, TOK_LCURLYBRACKET)){
+        error = ERR_SYN;
         return false;
     }
     parser->in_else = true;
@@ -818,6 +940,7 @@ bool rule_classical_statement(parser_t *parser){
     }
     stack_pop_table(parser->stack);
     if (!is_type(parser, TOK_RCURLYBRACKET)){
+        error = ERR_SYN;
         return false;
     }
     parser->in_else = false;
@@ -830,22 +953,30 @@ bool rule_classical_statement(parser_t *parser){
 
 bool rule_variable_statement(parser_t *parser){
     if (!is_type(parser, K_LET)){
+        error = ERR_SYN;
         return false;
     }
     load_token(parser);
     if (!is_type(parser, TOK_IDENTIFIER)){
+        error = ERR_SYN;
         return false;
     }
 
     data_t *data = stack_lookup_var(parser->stack, parser->token.attribute.string);
-    if (data->type != LET){
+    if (data == NULL) {
         error = ERR_SEM_FUNCTION;
+        return false;   // Attempt at defining a variable that does not exist
+    }
+
+    if (data->type != LET){
+        error = ERR_SEM_NDEF;
         return false;   // variable not found
     }
     // je promenna typ_nil?
     //gen_variable_statement(gen, typpromenne)
     load_token(parser);
     if (!is_type(parser, TOK_LCURLYBRACKET)){
+        error = ERR_SYN;
         return false;
     }
     parser->in_if = true;
@@ -856,15 +987,18 @@ bool rule_variable_statement(parser_t *parser){
     }
     stack_pop_table(parser->stack);
     if (!is_type(parser, TOK_RCURLYBRACKET)){
+        error = ERR_SYN;
         return false;
     }
     parser->in_if = false;
     load_token(parser);
     if (!is_type(parser, K_ELSE)){
+        error = ERR_SYN;
         return false;
     }
     load_token(parser);
     if (!is_type(parser, TOK_LCURLYBRACKET)){
+        error = ERR_SYN;
         return false;
     }
     parser->in_else = true;
@@ -875,6 +1009,7 @@ bool rule_variable_statement(parser_t *parser){
     }
     stack_pop_table(parser->stack);
     if (!is_type(parser, TOK_RCURLYBRACKET)){
+        error = ERR_SYN;
         return false;
     }
     parser->in_else = false;
@@ -886,6 +1021,7 @@ bool rule_variable_statement(parser_t *parser){
 
 bool rule_loop(parser_t *parser){
     if (!is_type(parser, K_WHILE)){
+        error = ERR_SYN;
         return false;
     }
     load_token(parser);
@@ -896,6 +1032,7 @@ bool rule_loop(parser_t *parser){
     }
 
     if (!is_type(parser, TOK_LCURLYBRACKET)){
+        error = ERR_SYN;
         return false;
     }
 
@@ -907,6 +1044,7 @@ bool rule_loop(parser_t *parser){
     }
     stack_pop_table(parser->stack);
     if (!is_type(parser, TOK_RCURLYBRACKET)){
+        error = ERR_SYN;
         return false;
     }
 
@@ -919,13 +1057,17 @@ bool rule_loop(parser_t *parser){
 // TODO: fix da rules
 bool rule_function_call(parser_t *parser, data_t *var){
     if (!is_type(parser, TOK_IDENTIFIER)){
+        error = ERR_SYN;
         return false;
     }
 
-    data_t *data = symbol_table_lookup_var(stack_top_table(parser->stack), parser->token.attribute.string);
-    if (data != NULL){
-        error = ERR_SEM_FUNCTION;
-        return false;   // Attempt at calling a function, that exists as a variable in the current context
+    data_t *data;
+    if (is_table_global(parser->stack)) {
+        data = symbol_table_lookup_var(stack_top_table(parser->stack), parser->token.attribute.string);
+        if (data != NULL){
+            error = ERR_SEM_FUNCTION;
+            return false;   // Attempt at calling a function, that exists as a variable in the current context
+        }
     }
 
     int argnum = 0;
@@ -942,10 +1084,12 @@ bool rule_function_call(parser_t *parser, data_t *var){
         if (var != NULL){
             data.value.func_id.return_type = var->value.var_id.type;
         }
-        symbol_table_insert(stack_top_table(parser->stack), data.name, data);
+        symbol_table_insert(stack_bottom_table(parser->stack), data.name, data);
     } else {
-        if (var != NULL){
-            if (data->value.func_id.return_type != var->value.var_id.type){
+        if (var != NULL ){
+            if (var->value.var_id.type == VAL_UNKNOWN){
+                var->value.var_id.type = data->value.func_id.return_type;
+            } else if (data->value.func_id.return_type != var->value.var_id.type){
                 error = ERR_SEM_TYPE;
                 return false;   // Attempt at calling a function with a return type that does not match the type of the variable
             }
@@ -966,6 +1110,7 @@ bool rule_function_call(parser_t *parser, data_t *var){
 
     load_token(parser);
     if (!is_type(parser, TOK_LBRACKET)){
+        error = ERR_SYN;
         return false;
     }
     load_token(parser);
@@ -977,14 +1122,15 @@ bool rule_function_call(parser_t *parser, data_t *var){
         data->value.func_id.arguments_defined = true;
     }
 
-    if (argindex < argnum){
+    if (argindex < argnum && strcmp(data->name, "write")){
+        error = ERR_SEM_CALL;
         return false;  // Attempt at calling a function with too few arguments
     }
     if (!is_type(parser, TOK_RBRACKET)){
+        error = ERR_SYN;
         return false;
     }
-
-    // todo: check if i should consume token here or in arguments
+    load_token(parser);
 
     return true;
 }
@@ -998,7 +1144,8 @@ bool rule_arguments(parser_t *parser, int argnum, int *argindex, data_t *data){
     if(!rule_argument(parser, argindex, data)){
         return false;
     }
-    if (*argindex >= argnum){
+    if (data->value.func_id.arguments_defined && *argindex > argnum){
+        error = ERR_SEM_CALL;
         return false;  // Attempt at calling a function with too many arguments
     }
 
@@ -1008,6 +1155,9 @@ bool rule_arguments(parser_t *parser, int argnum, int *argindex, data_t *data){
 // <argument> -> <arg_name> <arg_value>
 
 bool rule_argument(parser_t *parser, int *argindex, data_t *data){
+    if (!data->value.func_id.arguments_defined)  {// on funcion call before definition ve save the function params
+        vector_push(data->value.func_id.parameters, (htab_func_param_t){});
+    }
     if (!rule_arg_name(parser, argindex, data)){
         return false;
     }
@@ -1025,6 +1175,7 @@ bool rule_arg_name(parser_t *parser, int *argindex, data_t *data){
                     strcpy(vector_top(data->value.func_id.parameters)->call_name, parser->token.attribute.string);
                     load_token(parser);
                     load_token(parser);
+                    return true;
                 }
                 vector_top(data->value.func_id.parameters)->call_name = malloc(sizeof(char) * 2);
                 strcpy(vector_top(data->value.func_id.parameters)->call_name, "_");
@@ -1033,11 +1184,13 @@ bool rule_arg_name(parser_t *parser, int *argindex, data_t *data){
             // argument is named
             if (strcmp(data->value.func_id.parameters->data[*argindex].call_name, "_")) {
                 if (strcmp(parser->token.attribute.string, data->value.func_id.parameters->data[*argindex].call_name)) {
+                    error = ERR_SEM_CALL;
                     return false; // argument should be named but doesnt match
                     // TODO
                 }
                 load_token(parser);
                 if (!is_type(parser, TOK_COLON)){
+                    error = ERR_SYN;
                     return false;
                 }
                 load_token(parser);
@@ -1049,6 +1202,7 @@ bool rule_arg_name(parser_t *parser, int *argindex, data_t *data){
         default:
             // argument is named
             if (strcmp(data->value.func_id.parameters->data[*argindex].call_name, "_")) {
+                error = ERR_SEM_CALL;
                 return false; // argument should be named but isnt
                 // TODO
             }
@@ -1063,6 +1217,8 @@ bool rule_arg_name(parser_t *parser, int *argindex, data_t *data){
 bool rule_arg_value(parser_t *parser, int *argindex, data_t *data){
     variable_type_t param_type = data->value.func_id.parameters->data[*argindex].parameter.type;
     if (param_type == VAL_TERM){ // buildin write function only
+        (*argindex)++;
+        load_token(parser);
         return true;
     }
     data_t *arg = NULL;
@@ -1073,13 +1229,22 @@ bool rule_arg_value(parser_t *parser, int *argindex, data_t *data){
                 break;
             }
             // check if var exists
-            arg = symbol_table_lookup_var(stack_top_table(parser->stack), parser->token.attribute.string);
+            arg = stack_lookup_var(parser->stack, parser->token.attribute.string);
             if (arg == NULL){
-                error = ERR_SEM_FUNCTION;
+                error = ERR_SEM_NDEF;
                 return false;   // Attempt at calling a function with a non-existing variable
             }
             // check correct type
-            if (arg->value.var_id.type != param_type){
+            if (arg->value.var_id.type != param_type &&
+                !(arg->value.var_id.type == VAL_DOUBLE && param_type == VAL_DOUBLEQ) &&
+                !(arg->value.var_id.type == VAL_INT && param_type == VAL_INTQ) &&
+                !(arg->value.var_id.type == VAL_STRING && param_type == VAL_STRINGQ) &&
+                !(arg->value.var_id.type == VAL_NIL && param_type == VAL_INTQ) &&
+                !(arg->value.var_id.type == VAL_NIL && param_type == VAL_DOUBLEQ) &&
+                !(arg->value.var_id.type == VAL_NIL && param_type == VAL_STRINGQ) &&
+                !(arg->value.var_id.type == VAL_DOUBLEQ && param_type == VAL_DOUBLE) &&
+                !(arg->value.var_id.type == VAL_INTQ && param_type == VAL_INT) &&
+                !(arg->value.var_id.type == VAL_STRINGQ && param_type == VAL_STRING)){
                 error = ERR_SEM_TYPE;
                 return false;   // Attempt at calling a function with a variable of a different type than the function expects
             }
@@ -1110,6 +1275,7 @@ bool rule_arg_value(parser_t *parser, int *argindex, data_t *data){
             break;
         default:
             // TODO
+            error = ERR_SYN;
             return false;
     }
 
@@ -1130,13 +1296,15 @@ bool rule_more_arguments(parser_t *parser, int argnum, int *argindex, data_t *da
     }
 
     if (!is_type(parser, TOK_COMMA)){
+        error = ERR_SYN;
         return false;
     }
     load_token(parser);
     if (!rule_argument(parser, argindex, data)){
         return false;
     }
-    if (*argindex >= argnum){
+    if (*argindex > argnum){
+        error = ERR_SEM_CALL;
         return false;  // Attempt at calling a function with too many arguments
     }
     if (!rule_more_arguments(parser, argnum, argindex, data)){
@@ -1149,11 +1317,12 @@ bool rule_more_arguments(parser_t *parser, int argnum, int *argindex, data_t *da
 
 bool rule_return_statement(parser_t *parser){
     if (!is_type(parser, K_RETURN)){
+        error = ERR_SYN;
         return false;
     }
 
     if (!parser->in_function){
-        error = ERR_SEM_FUNCTION;
+        error = ERR_SEM_RETURN;
         return false;   // Attempt at returning from outside of a function
     }
 
@@ -1185,7 +1354,7 @@ bool rule_returned_expression(parser_t *parser){
                                     // return
                                     // x = 5
                                     // toto je validni kod, ale zpusobil by chybu, protoze nemame eol
-            error = ERR_SEM_TYPE;
+            error = ERR_SEM_RETURN;
             return false;
         }
         variable_type_t type = exp_parsing(parser);
@@ -1193,14 +1362,14 @@ bool rule_returned_expression(parser_t *parser){
             return false;
         }
         if (type != parser->return_type){
-            error = ERR_SEM_TYPE;
+            error = ERR_SEM_RETURN;
             return false;   // Attempt at returning a value of a different type than the function expects
         }
         return true;
     }
 
     if (!parser->func_is_void){
-        error = ERR_SEM_TYPE;
+        error = ERR_SEM_RETURN;
         return false;
     }
     return true;
@@ -1226,85 +1395,133 @@ bool rule_returned_expression(parser_t *parser){
 void insert_builtins_to_table(parser_t *parser) {
     data_t data;
     data.type = FUNC;
+    data.name = malloc(sizeof(char) * 11);
+    strcpy(data.name, "readString");
     data.value.func_id.defined = true;
     data.value.func_id.arguments_defined = true;
     data.value.func_id.return_type = VAL_STRINGQ;
     data.value.func_id.parameters = vector_init(0);
     symbol_table_insert(stack_top_table(parser->stack), "readString", data);
 
+    data.name = malloc(sizeof(char) * 7);
+    strcpy(data.name, "readInt");
     data.value.func_id.return_type = VAL_INTQ;
     symbol_table_insert(stack_top_table(parser->stack), "readInt", data);
 
+    data.name  = malloc(sizeof(char) * 10);
+    strcpy(data.name, "readDouble");
     data.value.func_id.return_type = VAL_DOUBLEQ;
     symbol_table_insert(stack_top_table(parser->stack), "readDouble", data);
 
-    data.value.func_id.return_type = VAL_VOID;
-    data.value.func_id.parameters = vector_init(99);
+    data_t write;
+    write.type = FUNC;
+    write.name = malloc(sizeof(char) * 6);
+    strcpy(write.name, "write");
+    write.value.func_id.defined = true;
+    write.value.func_id.arguments_defined = true;
+    write.value.func_id.return_type = VAL_VOID;
+    write.value.func_id.parameters = vector_init(99);
     for (int i = 0; i < 99; i++) {
         htab_func_param_t p;
-        vector_push(data.value.func_id.parameters, p);
-        vector_top(data.value.func_id.parameters)->call_name = malloc(sizeof(char) * 2);
-        strcpy(vector_top(data.value.func_id.parameters)->call_name, "_");
-        vector_top(data.value.func_id.parameters)->parameter.type = VAL_TERM;
+        vector_push(write.value.func_id.parameters, p);
+        vector_top(write.value.func_id.parameters)->call_name = malloc(sizeof(char) * 2);
+        strcpy(vector_top(write.value.func_id.parameters)->call_name, "_");
+        vector_top(write.value.func_id.parameters)->parameter.type = VAL_TERM;
     }
-    symbol_table_insert(stack_top_table(parser->stack), "write", data);
+    symbol_table_insert(stack_top_table(parser->stack), "write", write);
 
-    data.value.func_id.return_type = VAL_DOUBLE;
-    data.value.func_id.parameters = vector_init(1);
-    vector_push(data.value.func_id.parameters, (htab_func_param_t){});
-    vector_top(data.value.func_id.parameters)->call_name = malloc(sizeof(char) * 2);
-    strcpy(vector_top(data.value.func_id.parameters)->call_name, "_");
-    vector_top(data.value.func_id.parameters)->parameter.type = VAL_INT;
-    symbol_table_insert(stack_top_table(parser->stack), "Int2Double", data);
+    data_t int2double;
+    int2double.type = FUNC;
+    int2double.name = malloc(sizeof(char) * 11);
+    strcpy(int2double.name, "Int2Double");
+    int2double.value.func_id.defined = true;
+    int2double.value.func_id.arguments_defined = true;
+    int2double.value.func_id.return_type = VAL_DOUBLE;
+    int2double.value.func_id.parameters = vector_init(1);
+    vector_push(int2double.value.func_id.parameters, (htab_func_param_t){});
+    vector_top(int2double.value.func_id.parameters)->call_name = malloc(sizeof(char) * 2);
+    strcpy(vector_top(int2double.value.func_id.parameters)->call_name, "_");
+    vector_top(int2double.value.func_id.parameters)->parameter.type = VAL_INT;
+    symbol_table_insert(stack_top_table(parser->stack), "Int2Double", int2double);
 
-    data.value.func_id.return_type = VAL_INT;
-    data.value.func_id.parameters = vector_init(1);
-    vector_push(data.value.func_id.parameters, (htab_func_param_t){});
-    vector_top(data.value.func_id.parameters)->call_name = malloc(sizeof(char) * 2);
-    strcpy(vector_top(data.value.func_id.parameters)->call_name, "_");
-    vector_top(data.value.func_id.parameters)->parameter.type = VAL_DOUBLE;
-    symbol_table_insert(stack_top_table(parser->stack), "Double2Int", data);
+    data_t double2int;
+    double2int.type = FUNC;
+    double2int.name = malloc(sizeof(char) * 11);
+    strcpy(double2int.name, "Double2Int");
+    double2int.value.func_id.defined = true;
+    double2int.value.func_id.arguments_defined = true;
+    double2int.value.func_id.return_type = VAL_INT;
+    double2int.value.func_id.parameters = vector_init(1);
+    vector_push(double2int.value.func_id.parameters, (htab_func_param_t){});
+    vector_top(double2int.value.func_id.parameters)->call_name = malloc(sizeof(char) * 2);
+    strcpy(vector_top(double2int.value.func_id.parameters)->call_name, "_");
+    vector_top(double2int.value.func_id.parameters)->parameter.type = VAL_DOUBLE;
+    symbol_table_insert(stack_top_table(parser->stack), "Double2Int", double2int);
 
-    data.value.func_id.return_type = VAL_INT;
-    data.value.func_id.parameters = vector_init(1);
-    vector_push(data.value.func_id.parameters, (htab_func_param_t){});
-    vector_top(data.value.func_id.parameters)->call_name = malloc(sizeof(char) * 2);
-    strcpy(vector_top(data.value.func_id.parameters)->call_name, "_");
-    vector_top(data.value.func_id.parameters)->parameter.type = VAL_STRING;
-    symbol_table_insert(stack_top_table(parser->stack), "length", data);
+    data_t length;
+    length.type = FUNC;
+    length.name = malloc(sizeof(char) * 7);
+    strcpy(length.name, "length");
+    length.value.func_id.defined = true;
+    length.value.func_id.arguments_defined = true;
+    length.value.func_id.return_type = VAL_INT;
+    length.value.func_id.parameters = vector_init(1);
+    vector_push(length.value.func_id.parameters, (htab_func_param_t){});
+    vector_top(length.value.func_id.parameters)->call_name = malloc(sizeof(char) * 2);
+    strcpy(vector_top(length.value.func_id.parameters)->call_name, "_");
+    vector_top(length.value.func_id.parameters)->parameter.type = VAL_STRING;
+    symbol_table_insert(stack_top_table(parser->stack), "length", length);
 
-    data.value.func_id.return_type = VAL_STRINGQ;
-    data.value.func_id.parameters = vector_init(3);
-    vector_push(data.value.func_id.parameters, (htab_func_param_t){});
-    vector_top(data.value.func_id.parameters)->call_name = malloc(sizeof(char) * 3);
-    strcpy(vector_top(data.value.func_id.parameters)->call_name, "of");
-    vector_top(data.value.func_id.parameters)->parameter.type = VAL_STRING;
+    data_t substring;
+    substring.type = FUNC;
+    substring.name = malloc(sizeof(char) * 10);
+    strcpy(substring.name, "substring");
+    substring.value.func_id.defined = true;
+    substring.value.func_id.arguments_defined = true;
+    substring.value.func_id.return_type = VAL_STRINGQ;
+    substring.value.func_id.parameters = vector_init(3);
+    vector_push(substring.value.func_id.parameters, (htab_func_param_t){});
+    vector_top(substring.value.func_id.parameters)->call_name = malloc(sizeof(char) * 3);
+    strcpy(vector_top(substring.value.func_id.parameters)->call_name, "of");
+    vector_top(substring.value.func_id.parameters)->parameter.type = VAL_STRING;
 
-    vector_push(data.value.func_id.parameters, (htab_func_param_t){});
-    vector_top(data.value.func_id.parameters)->call_name = malloc(sizeof(char) * 11);
-    strcpy(vector_top(data.value.func_id.parameters)->call_name, "startingAt");
-    vector_top(data.value.func_id.parameters)->parameter.type = VAL_INT;
+    vector_push(substring.value.func_id.parameters, (htab_func_param_t){});
+    vector_top(substring.value.func_id.parameters)->call_name = malloc(sizeof(char) * 11);
+    strcpy(vector_top(substring.value.func_id.parameters)->call_name, "startingAt");
+    vector_top(substring.value.func_id.parameters)->parameter.type = VAL_INT;
 
-    vector_push(data.value.func_id.parameters, (htab_func_param_t){});
-    vector_top(data.value.func_id.parameters)->call_name = malloc(sizeof(char) * 13);
-    strcpy(vector_top(data.value.func_id.parameters)->call_name, "endingBefore");
-    vector_top(data.value.func_id.parameters)->parameter.type = VAL_INT;
-    symbol_table_insert(stack_top_table(parser->stack), "substring", data);
 
-    data.value.func_id.return_type = VAL_INT;
-    data.value.func_id.parameters = vector_init(1);
-    vector_push(data.value.func_id.parameters, (htab_func_param_t){});
-    vector_top(data.value.func_id.parameters)->call_name = malloc(sizeof(char) * 2);
-    strcpy(vector_top(data.value.func_id.parameters)->call_name, "_");
-    vector_top(data.value.func_id.parameters)->parameter.type = VAL_STRING;
-    symbol_table_insert(stack_top_table(parser->stack), "ord", data);
+    vector_push(substring.value.func_id.parameters, (htab_func_param_t){});
+    vector_top(substring.value.func_id.parameters)->call_name = malloc(sizeof(char) * 13);
+    strcpy(vector_top(substring.value.func_id.parameters)->call_name, "endingBefore");
+    vector_top(substring.value.func_id.parameters)->parameter.type = VAL_INT;
+    symbol_table_insert(stack_top_table(parser->stack), "substring", substring);
 
-    data.value.func_id.return_type = VAL_STRINGQ;
-    data.value.func_id.parameters = vector_init(1);
-    vector_push(data.value.func_id.parameters, (htab_func_param_t){});
-    vector_top(data.value.func_id.parameters)->call_name = malloc(sizeof(char) * 2);
-    strcpy(vector_top(data.value.func_id.parameters)->call_name, "_");
-    vector_top(data.value.func_id.parameters)->parameter.type = VAL_INT;
-    symbol_table_insert(stack_top_table(parser->stack), "chr", data);
+    data_t ord;
+    ord.type = FUNC;
+    ord.name = malloc(sizeof(char) * 4);
+    strcpy(ord.name, "ord");
+    ord.value.func_id.defined = true;
+    ord.value.func_id.arguments_defined = true;
+    ord.value.func_id.return_type = VAL_INT;
+    ord.value.func_id.parameters = vector_init(1);
+    vector_push(ord.value.func_id.parameters, (htab_func_param_t){});
+    vector_top(ord.value.func_id.parameters)->call_name = malloc(sizeof(char) * 2);
+    strcpy(vector_top(ord.value.func_id.parameters)->call_name, "_");
+    vector_top(ord.value.func_id.parameters)->parameter.type = VAL_STRING;
+    symbol_table_insert(stack_top_table(parser->stack), "ord", ord);
 
+    data_t chr;
+    chr.type = FUNC;
+    chr.name = malloc(sizeof(char) * 4);
+    strcpy(chr.name, "chr");
+    chr.value.func_id.defined = true;
+    chr.value.func_id.arguments_defined = true;
+    chr.value.func_id.return_type = VAL_STRINGQ;
+    chr.value.func_id.parameters = vector_init(1);
+    vector_push(chr.value.func_id.parameters, (htab_func_param_t){});
+    vector_top(chr.value.func_id.parameters)->call_name = malloc(sizeof(char) * 2);
+    strcpy(vector_top(chr.value.func_id.parameters)->call_name, "_");
+    vector_top(chr.value.func_id.parameters)->parameter.type = VAL_INT;
+    symbol_table_insert(stack_top_table(parser->stack), "chr", chr);
 }

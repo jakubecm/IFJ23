@@ -121,6 +121,10 @@ void stack_pop_table(stack_t* stack);
 */
 symbol_table_t* stack_top_table(stack_t* stack);
 
+symbol_table_t* stack_bottom_table(stack_t* stack);
+
+bool is_table_global(stack_t* stack);
+
 /**
  * @brief Looks through the symtable stack to find a variable with the given key
 */

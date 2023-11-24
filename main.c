@@ -8,7 +8,6 @@
  */
 
 // BASIC MAIN WITH CORRECT RETURN ON THE END OF PROGRAM
-#include <stdio.h>
 #include "parser.h"
 #include "gen.h"
 
@@ -19,6 +18,7 @@ int main() {
     run_parser(&parser);
     parser_destroy(&parser);
     gen_print(&gen);
-    gen_destroy(&gen);
+    gen_free(&gen);
+
     return 0;
 }

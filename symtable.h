@@ -147,7 +147,7 @@ void symbol_table_remove(symbol_table_t *table, htab_key_t key);
 /**
  * @brief Resizes the symbol table
 */
-void symbol_table_resize(symbol_table_t *table, size_t new_size);
+symbol_table_t *symbol_table_resize(symbol_table_t *table, size_t new_size);
 
 void symbol_table_print(symbol_table_t *table);
 
