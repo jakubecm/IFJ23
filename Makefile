@@ -1,21 +1,23 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c11
+CFLAGS =
 DEBUG_FLAGS = -DDEBUG -g
-SOURCES = error.c expression.c stack.c exp_semantic.c token.c scanner.c str.c symtable.c parser.c main.c buildin.c gen.c 
+SOURCES = parser.c symtable.c expression.c stack.c exp_semantic.c error.c scanner.c gen.c buildin.c str.c token.c main.c
 OBJECTS = $(SOURCES:.c=.o)
 
-.PHONY: all debug exp clean
+.PHONY: all debug clean
 
 all: main
 
 debug: CFLAGS += $(DEBUG_FLAGS)
-debug: exp
 
-exp: $(OBJECTS)
+main: $(OBJECTS)
 	$(CC) $(CFLAGS) -o $@ $^
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJECTS) exp
+	rm -f $(OBJECTS) xjakub41.zip main
+
+pack:
+	zip xjakub41.zip *.c *.h Makefile

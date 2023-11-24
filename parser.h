@@ -34,8 +34,6 @@ typedef struct parser
     variable_type_t return_type;
 } parser_t;
 
-#endif // PARSER_H
-
 /**
  * @brief Initializes parser
  *
@@ -56,3 +54,5 @@ void run_parser(parser_t *parser);
 void parser_destroy(parser_t *parser);
 
 void load_token(parser_t *parser);
+
+#endif // PARSER_H

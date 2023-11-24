@@ -9,7 +9,6 @@
 
 // BASIC MAIN WITH CORRECT RETURN ON THE END OF PROGRAM
 #include "parser.h"
-#include "gen.h"
 
 int main() {
     gen_t gen;

@@ -56,6 +56,10 @@ void gen_func_write(gen_t *gen);
  */
 void gen_func_Int2Double(gen_t *gen);
 
+void gen_func_Int2Double2(gen_t *gen);
+
+void gen_func_nil_check(gen_t *gen);
+
 /**
  * @brief function Double2Int(_ term: Double) -> Int
  * Returns an integer representation of the given double/float by cutting the decimal part.

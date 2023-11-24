@@ -10,6 +10,30 @@
 #include "buildin.h"
 #include "symtable.h"
 
+void gen_init(gen_t *gen);
+void gen_free(gen_t *gen);
+void gen_header(gen_t *gen);
+void gen_main(gen_t *gen);
+void gen_var_definition(gen_t *gen, token_t* token, bool in_function);
+void gen_func(gen_t *gen, token_t *name);
+void gen_arguments(gen_t *gen, vector_t *gen_arguments);
+void gen_func_call(gen_t *gen, char *name);
+void gen_if(gen_t *gen);
+void gen_else(gen_t *gen);
+void gen_endif(gen_t *gen);
+void gen_while(gen_t *gen);
+void gen_while_exit(gen_t *gen);
+void gen_while_end(gen_t *gen);
+void gen_push_int(gen_t *gen, int value);
+void gen_push_float(gen_t *gen, double value);
+void gen_push_string(gen_t *gen, char *value);
+void gen_push_nil(gen_t *gen);
+void gen_push_var(gen_t *gen, char *name, bool local);
+void gen_argdef_var(gen_t *gen, char *name, bool local);
+void gen_expression(gen_t *gen, token_type_t operator);
+void gen_call_convert(gen_t *gen);
+void gen_call_convert2(gen_t *gen);
+void gen_print(gen_t *gen);
 
 void gen_init(gen_t *gen)
 {

@@ -99,7 +99,7 @@ symbol_table_t *symbol_table_resize(symbol_table_t *table, size_t new_size) {
     symbol **new_table = malloc(new_size * sizeof(symbol *));
     if (new_table == NULL) {
         // Handle error, possibly return or exit
-        return;
+        return NULL;
     }
 
     // Initialize new table
