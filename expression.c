@@ -104,6 +104,13 @@ void handle_upcoming(parser_t* parserData, stack_t* stack, bool* end, bool* end2
 
 
 /** Helping functions for main of the exp parser **/
+
+/**
+ * @brief Function to check the precedence of the top token and the input token
+ * @param top - top token of the stack 
+ * @param input - input token (next token from get_next_token)
+ * @return return the precedence of the two tokens
+ */
 int precedence(stack_terminal_t* top, token_t* input) {
     token_t tmpInput = *input;
     stack_terminal_t tmpTop = *top;
@@ -130,6 +137,12 @@ int precedence(stack_terminal_t* top, token_t* input) {
     return precedence_tab[tmpTop.type][tmpInput.type];
 }
 
+/**
+ * @brief Function to handle the shifting of the input token
+ * @param stack - stack we are working with
+ * @param parserData - parser structure given by core parser
+ * @param input_type - data type received of the input token
+ */
 void shift(stack_t* stack, parser_t* parserData, sem_data_type_t input_type) {
     if(!stack_push_after(stack, SEM_UNDEF, TOK_ENDMARKER)) {
         error = ERR_INTERNAL;
@@ -170,6 +183,13 @@ void shift(stack_t* stack, parser_t* parserData, sem_data_type_t input_type) {
     load_token(parserData);
 }
 
+/**
+ * @brief Function to handle the reducing of the stack
+ * @param stack - stack we are working with
+ * @param num - number of tokens after endmarker
+ * @param analysis - structure with the tokens to reduce
+ * @param parserData - parser structure given by core parser
+ */
 void reduce(stack_t* stack, int num, analysis_t* analysis, parser_t* parserData) {
     switch(num) {
         case 1:
@@ -220,6 +240,13 @@ void reduce(stack_t* stack, int num, analysis_t* analysis, parser_t* parserData)
     } 
 }
 
+/**
+ * @brief Function to decide what to do with the next token
+ * @param stack - stack we are working with
+ * @param parserData - parser structure given by core parser
+ * @param tmp - top token of the stack
+ * @param analysis - structure with the tokens to reduce
+ */
 void prec_analysis(stack_t *stack, parser_t* parserData, stack_terminal_t* tmp, analysis_t* analysis) {
     int prec = precedence(tmp, &parserData->token);
     sem_data_type_t input_type = tok_type(parserData);
@@ -281,6 +308,10 @@ void prec_analysis(stack_t *stack, parser_t* parserData, stack_terminal_t* tmp, 
         }
 }
 
+/**
+ * @brief Function to convert data types to types used in core parser
+ * @param type - Data type from semantic analysis
+ */
 variable_type_t convert_type(sem_data_type_t type) {
     switch(type) {
         case SEM_INT:
@@ -295,7 +326,7 @@ variable_type_t convert_type(sem_data_type_t type) {
             return VAL_UNKNOWN;
     }
 }
-//
+
 /** Main expression parser **/
 variable_type_t exp_parsing(parser_t* parserData)  {
     /** Structure declarations **/
@@ -359,21 +390,3 @@ variable_type_t exp_parsing(parser_t* parserData)  {
     CLEANUP_RESOURCES(stack, analysis);
     return return_type;
 }
-
-#ifdef DEBUG
-int main() {
-    error = ERR_OK;
-
-    parser_t* parserData = malloc(sizeof(parser_t));
-    parserData->token = get_next_token();
-    parserData->next_token = get_next_token();
-    DEBUG_PRINT("Parser next token: %d\n", parserData->token.type);
-    DEBUG_PRINT("Parser next token: %d\n", parserData->next_token.type);
-
-    variable_type_t test = exp_parsing(parserData);
-
-    DEBUG_PRINT("Variable for core: %d\n", test);
-    DEBUG_PRINT("Parser next token: %d\n", parserData->token.type);
-    DEBUG_PRINT("exit: %d\n", error);
-}
-#endif

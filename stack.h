@@ -12,6 +12,9 @@
 #include <stdbool.h>
 #include "symtable.h"
 
+/**
+ *  @brief All the possible semantic data types
+ */
 typedef enum sem_data_type {
     SEM_OPERATOR,
     SEM_INT,
@@ -23,16 +26,17 @@ typedef enum sem_data_type {
 } sem_data_type_t;
 
 /**
- *  @brief Struct to represent nodes in a tree. Each has a token, type of it,
- *         pointer to children if they exist.
+ *  @brief Struct for tokens in the stack
  */
-
 typedef struct stack_terminal {
     sem_data_type_t data;
     token_type_t type;
     struct stack_terminal* right;
 } stack_terminal_t;
 
+/**
+ *  @brief Struct for semantic analysis of expressions
+ */
 typedef struct analysis {
     stack_terminal_t* tok1;
     stack_terminal_t* tok2;
@@ -40,6 +44,10 @@ typedef struct analysis {
     sem_data_type_t end_type;
 } analysis_t;
 
+/**
+ *  @brief Struct to represent nodes in a tree. Each has a token, type of it,
+ *         pointer to children if they exist.
+ */
 typedef struct Node {
     void *data;
     struct Node *right;
@@ -73,6 +81,11 @@ void stack_push_token(stack_t* stack, sem_data_type_t data_type, token_type_t to
  */ 
 bool stack_push_after(stack_t* stack, sem_data_type_t data_type, token_type_t token_type);
 
+/**
+ *  @brief Counts the amount of tokens after endmarker on the stack
+ *  @param stack - stack we are working with
+ *  @param analysis - Tokens to work with
+ */
 int stack_count_after(stack_t* stack, analysis_t* analysis);
 
 /**
@@ -102,8 +115,16 @@ stack_terminal_t* stack_top_terminal(stack_t* stack);
  */
 stack_terminal_t* stack_pop_token(stack_t* stack);
 
+/**
+ *  @brief Frees tokens and the nodes on stack
+ *  @param stack - stack_t to be freed
+ */
 void stack_free_token(stack_t* stack);
 
+/**
+ *  @brief Prints the stack for debugging purposes
+ *  @param stack - stack to be printed
+ */
 void print_stack_contents(stack_t *stack);
 
 /**

@@ -5,13 +5,16 @@
  *  @authors Norman Babiak (xbabia01)
  */
 
-//TODO: ADDING GENERATORS
-
 #include "exp_semantic.h"
 #include "error.h"
 
 extern error_t error;
 
+/**
+ * @brief Function to check the semantic of the token given to expression parser
+ * @param parserData - Core parser struct with all the data
+ * @return Data type of the token
+ */
 sem_data_type_t tok_type(parser_t* parserData) { 
     data_t *tmpData;
 
@@ -73,30 +76,67 @@ sem_data_type_t tok_type(parser_t* parserData) {
     }
 }
 
+/**
+ * @brief Function to check if the token is a string
+ * @param data - Data type of the token
+ * @return True if the token is a string, false otherwise
+ */
 bool is_string(sem_data_type_t data) {
     return (data == SEM_STRING);
 }
 
+/**
+ * @brief Function to check if the token is an int
+ * @param data - Data type of the token
+ * @return True if the token is an int, false otherwise
+ */
 bool is_int(sem_data_type_t data) {
     return (data == SEM_INT);
 }
 
+/**
+ * @brief Function to check if the token is a float
+ * @param data - Data type of the token
+ * @return True if the token is a float, false otherwise
+ */
 bool is_float(sem_data_type_t data) {
     return (data == SEM_FLOAT);
 }
 
+/**
+ * @brief Function to check if the token is a nil
+ * @param data - Data type of the token
+ * @return True if the token is a nil, false otherwise
+ */
 bool is_nil(sem_data_type_t data) {
     return (data == SEM_NIL);
 }
 
+/**
+ * @brief Function to check if the token is an operator
+ * @param data - Data type of the token
+ * @return True if the token is an operator, false otherwise
+ */
 bool is_operator(sem_data_type_t data) {
     return (data = SEM_OPERATOR);
 }
 
+/**
+ * @brief Function to check if the token is an int or float
+ * @param data - Data type of the token
+ * @return True if the token is an int or float, false otherwise
+ */
 bool is_number(sem_data_type_t data) {
     return (is_float(data) || is_int(data));
 }
 
+/**
+ * @brief Function to check the compatibility of the operator and operands
+ * @param operator - Operator token
+ * @param left - Left operand token
+ * @param right - Right operand token
+ * @return True if the operator and operands are compatible, false otherwise
+ */
 bool check_operator_compatibility(stack_terminal_t* operator, stack_terminal_t* left, stack_terminal_t* right) {
     switch(operator->type) {
         case TOK_PLUS:
@@ -133,6 +173,14 @@ bool check_operator_compatibility(stack_terminal_t* operator, stack_terminal_t* 
     return false;
 }
 
+/**
+ * @brief Function to get the result type of the operator and operands
+ * @param operator - Operator token
+ * @param left - Left operand token
+ * @param right - Right operand token
+ * @param parserData - Parser data
+ * @return Result type of the operator and operands
+ */
 int get_result_type(stack_terminal_t* operator, stack_terminal_t* left, stack_terminal_t* right, parser_t* parserData) {
     if(operator->type == TOK_PLUS) {
         if(is_number(left->data) && is_number(right->data)) {
