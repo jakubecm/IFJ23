@@ -148,15 +148,20 @@ void shift(stack_t* stack, parser_t* parserData, sem_data_type_t input_type) {
     if(is_literal(tmpTok)) {
         switch(tmpTok) {
             case TOK_INT:
-                //gen_push_int(parserData->gen, parserData->token.attribute.number);
+                gen_push_int(parserData->gen, parserData->token.attribute.number);
+                break;
             case TOK_DOUBLE:
-                //gen_push_float(parserData->gen, parserData->token.attribute.decimal);
+                gen_push_float(parserData->gen, parserData->token.attribute.decimal);
+                break;
             case TOK_STRING:
-                //gen_push_string(parserData->gen, parserData->token.attribute.string);
+                gen_push_string(parserData->gen, parserData->token.attribute.string);
+                break;
             case K_NIL:
-                //gen_push_nil(parserData->gen);
+                gen_push_nil(parserData->gen);
+                break;
             case TOK_IDENTIFIER:
-                //gen_push_var(parserData->gen, parserData->token.attribute.string, parserData->in_function);
+                gen_push_var(parserData->gen, parserData->token.attribute.string, parserData->in_function);
+                break;
             default:
                 break;
         }
@@ -196,12 +201,12 @@ void reduce(stack_t* stack, int num, analysis_t* analysis, parser_t* parserData)
 
             } else if(analysis->tok1->type == TOK_NTERM && analysis->tok3->type == TOK_NTERM) {
                 //Sem check if there are 3 tokens on the top of stack
-                if(!sem_analysis(analysis)) {
+                if(!sem_analysis(analysis, parserData)) {
                     return;
                 }
                 handle_other(stack, analysis->end_type);
                 DEBUG_PRINT("END TYPE: %d\n", analysis->end_type);
-                //gen_expression(parserData->gen, analysis->tok2->type);
+                gen_expression(parserData->gen, analysis->tok2->type);
 
             } else {
                 error = ERR_SYN;

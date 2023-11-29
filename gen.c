@@ -223,51 +223,51 @@ void gen_argdef_var(gen_t *gen, char *name, bool local)
 void gen_expression(gen_t *gen, token_type_t operator) {
     switch(operator) {
         case TOK_PLUS:
-            mergestr(&gen->local, "ADDS\n");
+            mergestr(&gen->global, "ADDS\n");
             break;
             
         case TOK_MINUS:
-            mergestr(&gen->local, "SUBS\n");
+            mergestr(&gen->global, "SUBS\n");
             break;
 
         case TOK_DIV:
-            mergestr(&gen->local, "POPS GF@op1\n");
-            mergestr(&gen->local, "POPS GF@op2\n");
+            mergestr(&gen->global, "POPS GF@op1\n");
+            mergestr(&gen->global, "POPS GF@op2\n");
             //JUMP IF op1 IS 0
-            mergestr(&gen->local, "DIV GF@op1 GF@op2 GF@op1\n");
-            mergestr(&gen->local, "PUSHS GF@op1\n");
+            mergestr(&gen->global, "DIV GF@op1 GF@op2 GF@op1\n");
+            mergestr(&gen->global, "PUSHS GF@op1\n");
             break;
             
         case TOK_MUL:
-            mergestr(&gen->local, "MULS\n");
+            mergestr(&gen->global, "MULS\n");
             break;
 
         case TOK_EQUAL:
-            mergestr(&gen->local, "EQS\n");
+            mergestr(&gen->global, "EQS\n");
             break;
 
         case TOK_NOTEQUAL:
-            mergestr(&gen->local, "EQS\nNOTS\n");
+            mergestr(&gen->global, "EQS\nNOTS\n");
             break;
 
         case TOK_GREATER:
-            mergestr(&gen->local, "GTS\n");
+            mergestr(&gen->global, "GTS\n");
             break;
 
         case TOK_LESS:
-            mergestr(&gen->local, "LTS\n");
+            mergestr(&gen->global, "LTS\n");
             break;
 
         case TOK_GREATEREQ:
-            mergestr(&gen->local, "LTS\nNOTS\n");
+            mergestr(&gen->global, "LTS\nNOTS\n");
             break;
 
         case TOK_LESSEQ:
-            mergestr(&gen->local, "GTS\nNOTS\n");
+            mergestr(&gen->global, "GTS\nNOTS\n");
             break;
         
         case TOK_DQUESTMK:
-            mergestr(&gen->local, "CALL $nilCheck\n");
+            mergestr(&gen->global, "CALL $nilCheck\n");
             break;
 
         default:
@@ -276,11 +276,11 @@ void gen_expression(gen_t *gen, token_type_t operator) {
 }
 
 void gen_call_convert(gen_t *gen) {
-    mergestr(&gen->local, "CALL $int2float\n");
+    mergestr(&gen->global, "CALL $int2float\n");
 }
 
 void gen_call_convert2(gen_t *gen) {
-    mergestr(&gen->local, "CALL $int2float2\n");
+    mergestr(&gen->global, "CALL $int2float2\n");
 }
 
 void gen_print(gen_t *gen) {

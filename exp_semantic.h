@@ -24,7 +24,7 @@ sem_data_type_t tok_term_type(stack_terminal_t* token);
  *  @param rule - Rule given to sem. analysis by expression parser
  *  @param end_type - the final type of the expression (including generator changes)
  */
-bool sem_analysis(analysis_t* analysis);
+bool sem_analysis(analysis_t* analysis, parser_t* parserData);
 
 
 #endif // EXP_SEMANTIC_H
