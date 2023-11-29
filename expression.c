@@ -11,7 +11,7 @@
 
 #define TABLE_SIZE 20
 
-error_t error;
+extern error_t error;
 
 static char precedence_tab[TABLE_SIZE][TABLE_SIZE] =
 {

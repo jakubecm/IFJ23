@@ -14,6 +14,8 @@
 #include "expression.h"
 #include <string.h>
 
+error_t error;
+
 /** ================== LL GRAMMAR ==================
 
 <program> -> <statement> <program> | <function_definition> <program> | ε
@@ -138,6 +140,7 @@ void insert_builtins_to_table(parser_t *parser);
 
 void parser_init(parser_t *parser, gen_t *gen)
 {
+    error = ERR_OK;
     parser->stack = malloc(sizeof(stack_t));
     stack_init(parser->stack);
     parser->function = NULL;
@@ -309,6 +312,7 @@ bool rule_function_definition(parser_t *parser){
         func.name = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1));
         strcpy(func.name, parser->token.attribute.string);
         func.value.func_id.defined = true;
+        func.value.func_id.arguments_defined = false;
         func.value.func_id.parameters = vector_init(5);
         symbol_table_insert(stack_top_table(parser->stack), func.name, func);
     }
@@ -453,7 +457,7 @@ bool rule_more_parameters(parser_t *parser, data_t *data, int *index, int *argnu
         return false;
     }
 
-    if (*index > *argnum){
+    if (data->value.func_id.arguments_defined && *index > *argnum){
         error = ERR_SEM_FUNCTION;
         return false;  // Attempt at calling a function with too many arguments
     }
@@ -771,10 +775,13 @@ bool rule_initialization(parser_t *parser, data_t *data){
 
     switch (type) {
     case VAL_INT:
-        if (data->value.var_id.type != VAL_INT && data->value.var_id.type != VAL_INTQ && data->value.var_id.type != VAL_UNKNOWN){
+        if (type == VAL_INT && (data->value.var_id.type == VAL_DOUBLE || data->value.var_id.type == VAL_DOUBLEQ)) {
+            gen_call_convert(parser->gen); // evil int2float hacks
+        } else if (data->value.var_id.type != VAL_INT && data->value.var_id.type != VAL_INTQ && data->value.var_id.type != VAL_UNKNOWN){
             error = ERR_SEM_TYPE;
             return false;
         }
+
         if (data->value.var_id.type == VAL_UNKNOWN){
             data->value.var_id.type = VAL_INT;
         }
@@ -907,6 +914,7 @@ bool rule_classical_statement(parser_t *parser){
         error = ERR_SYN;
         return false;
     }
+    bool was_in_if = parser->in_if;
     parser->in_if = true;
     load_token(parser);
     stack_push_table(parser->stack);
@@ -918,7 +926,9 @@ bool rule_classical_statement(parser_t *parser){
         error = ERR_SYN;
         return false;
     }
-    parser->in_if = false;
+    if (!was_in_if){
+        parser->in_if = false;
+    }
     load_token(parser);
     if (!is_type(parser, K_ELSE)){
         error = ERR_SYN;
@@ -932,6 +942,7 @@ bool rule_classical_statement(parser_t *parser){
         error = ERR_SYN;
         return false;
     }
+    bool was_in_else = parser->in_else;
     parser->in_else = true;
     load_token(parser);
     stack_push_table(parser->stack);
@@ -943,7 +954,9 @@ bool rule_classical_statement(parser_t *parser){
         error = ERR_SYN;
         return false;
     }
-    parser->in_else = false;
+    if (!was_in_else){
+        parser->in_else = false;
+    }
     gen_endif(parser->gen);
     load_token(parser);
     return true;
@@ -979,6 +992,7 @@ bool rule_variable_statement(parser_t *parser){
         error = ERR_SYN;
         return false;
     }
+    bool was_in_if = parser->in_if;
     parser->in_if = true;
     load_token(parser);
     stack_push_table(parser->stack);
@@ -990,7 +1004,9 @@ bool rule_variable_statement(parser_t *parser){
         error = ERR_SYN;
         return false;
     }
-    parser->in_if = false;
+    if (!was_in_if){
+        parser->in_if = false;
+    }
     load_token(parser);
     if (!is_type(parser, K_ELSE)){
         error = ERR_SYN;
@@ -1001,6 +1017,7 @@ bool rule_variable_statement(parser_t *parser){
         error = ERR_SYN;
         return false;
     }
+    bool was_in_else = parser->in_else;
     parser->in_else = true;
     load_token(parser);
     stack_push_table(parser->stack);
@@ -1012,7 +1029,9 @@ bool rule_variable_statement(parser_t *parser){
         error = ERR_SYN;
         return false;
     }
-    parser->in_else = false;
+    if (!was_in_else){
+        parser->in_else = false;
+    }
     load_token(parser);
     return true;
 }
@@ -1035,7 +1054,7 @@ bool rule_loop(parser_t *parser){
         error = ERR_SYN;
         return false;
     }
-
+    bool was_in_cycle = parser->in_cycle;
     parser->in_cycle = true;
     load_token(parser);
     stack_push_table(parser->stack);
@@ -1047,8 +1066,9 @@ bool rule_loop(parser_t *parser){
         error = ERR_SYN;
         return false;
     }
-
-    parser->in_cycle = false;
+    if (!was_in_cycle){
+        parser->in_cycle = false;
+    }
     load_token(parser);
     return true;
 }
