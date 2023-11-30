@@ -23,16 +23,17 @@ void gen_endif(gen_t *gen, bool in_function);
 void gen_while(gen_t *gen);
 void gen_while_exit(gen_t *gen);
 void gen_while_end(gen_t *gen);
-void gen_push_int(gen_t *gen, int value);
-void gen_push_float(gen_t *gen, double value);
-void gen_push_string(gen_t *gen, char *value);
-void gen_push_nil(gen_t *gen);
+void gen_push_int(gen_t *gen, int value, bool in_function);
+void gen_push_float(gen_t *gen, double valu, bool in_function);
+void gen_push_string(gen_t *gen, char *value, bool in_function);
+void gen_push_nil(gen_t *gen, bool in_function);
 void gen_push_var(gen_t *gen, char *name, bool local);
 void gen_argdef_var(gen_t *gen, char *name, bool local);
-void gen_expression(gen_t *gen, token_type_t operator);
+void gen_expression(gen_t *gen, token_type_t operator, bool in_function);
 void gen_call_convert(gen_t *gen);
 void gen_call_convert2(gen_t *gen);
 void gen_print(gen_t *gen);
+void gen_pop_value(gen_t* gen, char* name, bool in_function);
 
 void gen_init(gen_t *gen)
 {
@@ -226,90 +227,177 @@ void gen_while_end(gen_t *gen)
     gen->label_counter++;
 }
 
-void gen_push_int(gen_t *gen, int value)
+void gen_push_int(gen_t *gen, int value, bool in_function)
 {
-    mergestr(&gen->global, "PUSHS int@");
-    mergestr_int(&gen->global, value);
-    mergestr(&gen->global, "\n");
+    if(in_function){
+        mergestr(&gen->functions, "PUSHS int@");
+        mergestr_int(&gen->functions, value);
+        mergestr(&gen->functions, "\n");
+    }
+    else{
+        mergestr(&gen->global, "PUSHS int@");
+        mergestr_int(&gen->global, value);
+        mergestr(&gen->global, "\n");
+    }
 }
 
-void gen_push_float(gen_t *gen, double value)
+void gen_push_float(gen_t *gen, double value, bool in_function)
 {
-    mergestr(&gen->global, "PUSHS float@");
-    mergestr_float(&gen->global, value);
-    mergestr(&gen->global, "\n");
+    if(in_function){
+        mergestr(&gen->functions, "PUSHS float@");
+        mergestr_float(&gen->functions, value);
+        mergestr(&gen->functions, "\n");
+    }
+    else{
+        mergestr(&gen->global, "PUSHS float@");
+        mergestr_float(&gen->global, value);
+        mergestr(&gen->global, "\n");
+    }
 }
 
-void gen_push_string(gen_t *gen, char *value)
+void gen_push_string(gen_t *gen, char *value, bool in_function)
 {
-    mergestr(&gen->global, "PUSHS string@");
-    mergestr(&gen->global, value);
-    mergestr(&gen->global, "\n");
+    if(in_function){
+        mergestr(&gen->functions, "PUSHS string@");
+        mergestr(&gen->functions, value);
+        mergestr(&gen->functions, "\n");
+    }
+    else{
+        mergestr(&gen->global, "PUSHS string@");
+        mergestr(&gen->global, value);
+        mergestr(&gen->global, "\n");
+    }
 }
 
-void gen_push_nil(gen_t *gen)
+void gen_push_nil(gen_t *gen, bool in_function)
 {
-    mergestr(&gen->global, "PUSHS nil@nil\n");
+    if(in_function){
+        mergestr(&gen->functions, "PUSHS nil@nil\n");
+    }
+    else{
+        mergestr(&gen->global, "PUSHS nil@nil\n");
+    }
 }
 
 void gen_push_var(gen_t *gen, char *name, bool local) {
-    if (local) {
-        mergestr(&gen->global, "PUSHS LF@");
-    } else {
-        mergestr(&gen->global, "PUSHS GF@");
+    if(local) {
+        mergestr(&gen->functions, "PUSHS LF@");
+        mergestr(&gen->functions, name);
+        mergestr(&gen->functions, "\n");
     }
-    mergestr(&gen->global, name);
-    mergestr(&gen->global, "\n");
+    else {
+        mergestr(&gen->global, "PUSHS GF@");
+        mergestr(&gen->global, name);
+        mergestr(&gen->global, "\n");
+    }
 }
 
-void gen_expression(gen_t *gen, token_type_t operator) {
+void gen_expression(gen_t *gen, token_type_t operator, bool in_function) {
     switch(operator) {
         case TOK_PLUS:
-            mergestr(&gen->global, "ADDS\n");
+            if(in_function){
+                mergestr(&gen->functions, "ADDS\n");
+            }
+            else{
+                mergestr(&gen->global, "ADDS\n");
+            }
             break;
             
         case TOK_MINUS:
-            mergestr(&gen->global, "SUBS\n");
+            if(in_function){
+                mergestr(&gen->functions, "SUBS\n");
+            }
+            else{
+                mergestr(&gen->global, "SUBS\n");
+            }
             break;
 
         case TOK_DIV:
-            mergestr(&gen->global, "POPS GF@op1\n");
-            mergestr(&gen->global, "POPS GF@op2\n");
-            //JUMP IF op1 IS 0
-            mergestr(&gen->global, "DIV GF@op1 GF@op2 GF@op1\n");
-            mergestr(&gen->global, "PUSHS GF@op1\n");
+            if(in_function){
+                mergestr(&gen->functions, "POPS GF@op1\n");
+                mergestr(&gen->functions, "POPS GF@op2\n");
+                //JUMP IF op1 IS 0
+                mergestr(&gen->functions, "DIV GF@op1 GF@op2 GF@op1\n");
+                mergestr(&gen->functions, "PUSHS GF@op1\n");
+            }
+            else{
+                mergestr(&gen->global, "POPS GF@op1\n");
+                mergestr(&gen->global, "POPS GF@op2\n");
+                //JUMP IF op1 IS 0
+                mergestr(&gen->global, "DIV GF@op1 GF@op2 GF@op1\n");
+                mergestr(&gen->global, "PUSHS GF@op1\n");
+            }
             break;
             
         case TOK_MUL:
-            mergestr(&gen->global, "MULS\n");
+            if(in_function){
+                mergestr(&gen->functions, "MULS\n");
+            }
+            else{
+                mergestr(&gen->global, "MULS\n");
+            }
             break;
 
         case TOK_EQUAL:
-            mergestr(&gen->global, "EQS\n");
+            if(in_function){
+                mergestr(&gen->functions, "EQS\n");
+            }
+            else{
+                mergestr(&gen->global, "EQS\n");
+            }
             break;
 
         case TOK_NOTEQUAL:
-            mergestr(&gen->global, "EQS\nNOTS\n");
+            if(in_function){
+                mergestr(&gen->functions, "EQS\nNOTS\n");
+            }
+            else{
+                mergestr(&gen->global, "EQS\nNOTS\n");
+            }
             break;
 
         case TOK_GREATER:
-            mergestr(&gen->global, "GTS\n");
+            if(in_function){
+                mergestr(&gen->functions, "GTS\n");
+            }
+            else{
+                mergestr(&gen->global, "GTS\n");
+            }
             break;
 
         case TOK_LESS:
-            mergestr(&gen->global, "LTS\n");
+            if(in_function){
+                mergestr(&gen->functions, "LTS\n");
+            }
+            else{
+                mergestr(&gen->global, "LTS\n");
+            }
             break;
 
         case TOK_GREATEREQ:
-            mergestr(&gen->global, "LTS\nNOTS\n");
+            if(in_function){
+                mergestr(&gen->functions, "LTS\nNOTS\n");
+            }
+            else{
+                mergestr(&gen->global, "LTS\nNOTS\n");
+            }
             break;
 
         case TOK_LESSEQ:
-            mergestr(&gen->global, "GTS\nNOTS\n");
+            if(in_function){
+                mergestr(&gen->functions, "GTS\nNOTS\n");
+            }
+            else{
+                mergestr(&gen->global, "GTS\nNOTS\n");
+            }
             break;
         
         case TOK_DQUESTMK:
-            mergestr(&gen->global, "CALL $nilCheck\n");
+            if(in_function) {
+                mergestr(&gen->functions, "CALL $nilCheck\n");
+            } else {
+                mergestr(&gen->global, "CALL $nilCheck\n");
+            }
             break;
 
         default:
@@ -323,6 +411,18 @@ void gen_call_convert(gen_t *gen) {
 
 void gen_call_convert2(gen_t *gen) {
     mergestr(&gen->global, "CALL $int2float2\n");
+}
+
+void gen_pop_value(gen_t* gen, char* name, bool in_function) {
+    if (in_function) {
+        mergestr(&gen->functions, "POPS LF@");
+        mergestr(&gen->functions, name);
+        mergestr(&gen->functions, "\n");
+    } else {
+        mergestr(&gen->global, "POPS GF@");
+        mergestr(&gen->global, name);
+        mergestr(&gen->global, "\n");
+    }
 }
 
 void gen_print(gen_t *gen) {

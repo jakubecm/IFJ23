@@ -68,19 +68,19 @@ void gen_func_call(gen_t *gen, char *name);
 
 void gen_return(gen_t *gen);
 
-void gen_push_int(gen_t *gen, int value);
+void gen_push_int(gen_t *gen, int value, bool in_function);
 
-void gen_push_float(gen_t *gen, double value);
+void gen_push_float(gen_t *gen, double value, bool in_function);
 
-void gen_push_string(gen_t *gen, char *value);
+void gen_push_string(gen_t *gen, char *value, bool in_function);
 
-void gen_push_nil(gen_t *gen);
+void gen_push_nil(gen_t *gen, bool in_function);
 
 void gen_push_var(gen_t *gen, char *name, bool local);
 
 void gen_var_definition(gen_t *gen, token_t* token, bool in_function);
 
-void gen_expression(gen_t *gen, token_type_t type);
+void gen_expression(gen_t *gen, token_type_t type, bool in_function);
 
 void gen_assign(gen_t *gen);
 
@@ -89,3 +89,5 @@ void gen_footer(gen_t *gen);
 void gen_call_convert(gen_t *gen);
 
 void gen_call_convert2(gen_t *gen);
+
+void gen_pop_value(gen_t* gen, char* name, bool in_function);

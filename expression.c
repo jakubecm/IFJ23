@@ -161,16 +161,16 @@ void shift(stack_t* stack, parser_t* parserData, sem_data_type_t input_type) {
     if(is_literal(tmpTok)) {
         switch(tmpTok) {
             case TOK_INT:
-                gen_push_int(parserData->gen, parserData->token.attribute.number);
+                gen_push_int(parserData->gen, parserData->token.attribute.number, parserData->in_function);
                 break;
             case TOK_DOUBLE:
-                gen_push_float(parserData->gen, parserData->token.attribute.decimal);
+                gen_push_float(parserData->gen, parserData->token.attribute.decimal, parserData->in_function);
                 break;
             case TOK_STRING:
-                gen_push_string(parserData->gen, parserData->token.attribute.string);
+                gen_push_string(parserData->gen, parserData->token.attribute.string, parserData->in_function);
                 break;
             case K_NIL:
-                gen_push_nil(parserData->gen);
+                gen_push_nil(parserData->gen, parserData->in_function);
                 break;
             case TOK_IDENTIFIER:
                 gen_push_var(parserData->gen, parserData->token.attribute.string, parserData->in_function);
@@ -226,7 +226,7 @@ void reduce(stack_t* stack, int num, analysis_t* analysis, parser_t* parserData)
                 }
                 handle_other(stack, analysis->end_type);
                 DEBUG_PRINT("END TYPE: %d\n", analysis->end_type);
-                gen_expression(parserData->gen, analysis->tok2->type);
+                gen_expression(parserData->gen, analysis->tok2->type, parserData->in_function);
 
             } else {
                 error = ERR_SYN;

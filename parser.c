@@ -809,6 +809,8 @@ bool rule_initialization(parser_t *parser, data_t *data){
 
     variable_type_t type = exp_parsing(parser);
 
+    gen_pop_value(parser->gen, data->name, parser->in_function);
+
     switch (type) {
     case VAL_INT:
         if (type == VAL_INT && (data->value.var_id.type == VAL_DOUBLE || data->value.var_id.type == VAL_DOUBLEQ)) {
@@ -902,6 +904,8 @@ bool rule_assignment_type(parser_t *parser, data_t *data){
     else{
 
         variable_type_t type = exp_parsing(parser);
+
+        gen_pop_value(parser->gen, data->name, parser->in_function);
 
         if (data->type == LET){
             error = ERR_SEM_FUNCTION;
