@@ -303,6 +303,8 @@ bool rule_function_definition(parser_t *parser){
         return false;
     }
 
+    gen_func(parser->gen, &parser->token);
+
     data_t *func = symbol_table_lookup_generic(stack_top_table(parser->stack), parser->token.attribute.string);
     int index = 0;
     int argnum = 0;
@@ -337,6 +339,7 @@ bool rule_function_definition(parser_t *parser){
     if (!rule_parameter_list(parser, func, &index, &argnum)){
         return false;
     }
+    gen_parameters(parser->gen, func->value.func_id.parameters);
     argnum = index;
     func->value.func_id.arguments_defined = true;
     if (!is_type(parser, TOK_RBRACKET)){
@@ -949,7 +952,7 @@ bool rule_classical_statement(parser_t *parser){
 
     variable_type_t type = exp_parsing(parser);
 
-    gen_if(parser->gen);
+    gen_if(parser->gen, parser->in_function);
 
     if (!is_type(parser, TOK_LCURLYBRACKET)){
         error = ERR_SYN;
@@ -979,7 +982,7 @@ bool rule_classical_statement(parser_t *parser){
         return false;
     }
 
-    gen_else(parser->gen);
+    gen_else(parser->gen, parser->in_function);
 
     load_token(parser);
     if (!is_type(parser, TOK_LCURLYBRACKET)){
@@ -1003,7 +1006,7 @@ bool rule_classical_statement(parser_t *parser){
     if (!was_in_else){
         parser->in_else = false;
     }
-    gen_endif(parser->gen);
+    gen_endif(parser->gen, parser->in_function);
     load_token(parser);
     return true;
 }

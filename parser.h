@@ -11,7 +11,6 @@
 #define PARSER_H
 
 #include "scanner.h"
-#include "stack.h"
 #include <stdbool.h>
 #include "gen.h"
 

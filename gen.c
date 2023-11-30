@@ -8,7 +8,6 @@
  */
 
 #include "buildin.h"
-#include "symtable.h"
 
 void gen_init(gen_t *gen);
 void gen_free(gen_t *gen);
@@ -18,9 +17,9 @@ void gen_var_definition(gen_t *gen, token_t* token, bool in_function);
 void gen_func(gen_t *gen, token_t *name);
 void gen_arguments(gen_t *gen, vector_t *gen_arguments);
 void gen_func_call(gen_t *gen, char *name);
-void gen_if(gen_t *gen);
-void gen_else(gen_t *gen);
-void gen_endif(gen_t *gen);
+void gen_if(gen_t *gen, bool in_function);
+void gen_else(gen_t *gen, bool in_function);
+void gen_endif(gen_t *gen, bool in_function);
 void gen_while(gen_t *gen);
 void gen_while_exit(gen_t *gen);
 void gen_while_end(gen_t *gen);
@@ -84,9 +83,9 @@ void gen_main(gen_t *gen)
 void gen_var_definition(gen_t *gen, token_t* token, bool in_function)
 {
     if (in_function) {
-        mergestr(&gen->local, "DEFVAR LF@");
-        mergestr(&gen->local, token->attribute.string);
-        mergestr(&gen->local, "\n");
+        mergestr(&gen->functions, "DEFVAR LF@");
+        mergestr(&gen->functions, token->attribute.string);
+        mergestr(&gen->functions, "\n");
     } else {
         mergestr(&gen->global, "DEFVAR GF@");
         mergestr(&gen->global, token->attribute.string);
@@ -94,15 +93,48 @@ void gen_var_definition(gen_t *gen, token_t* token, bool in_function)
     }
 }
 
-// Paremeter return type??
-void gen_func(gen_t *gen, token_t *name){
+void gen_func(gen_t *gen, token_t *token){
     mergestr(&gen->functions, "LABEL $");
-    mergestr(&gen->functions, name->attribute.string);
+    mergestr(&gen->functions, token->attribute.string);
     mergestr(&gen->functions, "\n");
+    mergestr(&gen->functions, "CREATEFRAME\n");
+    mergestr(&gen->functions, "PUSHFRAME\n");
+    // DEFVAR LF@prdel
+    // POPS LF@prdel
+    // DEFVAR LF@par2
+    // POPS LF@par2
+    // DEFVAR LF@par3
+
+    // IF NECO NECO
+    // WHILE NECO NECO 
+
+    // Napad: separatni funkce gen_func_parameters
+    // Funkce by se zavolala na adekvatnim miste v parseru
+    // Vygenerovala by parametry, coz by v realite bylo v kodu presne tady za tim vytvorenim framu
+    // Vsechny parametry by se ulozily do lokalniho ramce
+
+    // Potom kdyz se pushnou argumenty, tak si to tady budu muset vypopovat do lokalnich promennych
+    // Za nima uz klasika a ukonceni funkce
+}
+
+void gen_parameters(gen_t *gen, vector_t *parameters) {
+    
+    for(int i = 0; i < parameters->size; i++) {
+        mergestr(&gen->functions, "DEFVAR LF@");
+        mergestr(&gen->functions, parameters->data[i].def_name);
+        mergestr(&gen->functions, "\n");
+
+        mergestr(&gen->functions, "POPS LF@");
+        mergestr(&gen->functions, parameters->data[i].def_name);
+        mergestr(&gen->functions, "\n");
+    }
 }
 
 void gen_arguments(gen_t *gen, vector_t *gen_arguments) {    
     mergestr(&gen->global, "CREATEFRAME\n");
+    // Napad: vytvoreni docasneho ramce, do ktereho se nasypou argumenty
+    // Tahle funkce se musi volat na korektnim miste v parseru na to si musime dat pozor
+    // 
 }
 
 void gen_func_call(gen_t *gen, char *name)
@@ -112,32 +144,59 @@ void gen_func_call(gen_t *gen, char *name)
     mergestr(&gen->global, "\n");
 }
 
-void gen_if(gen_t *gen)
+void gen_if(gen_t *gen, bool in_function)
 {
-    mergestr(&gen->global, "POPS GF@return_exp\n");
     // funkce predpoklada ze v globalni promenne GF@return_exp je vysledek vyrazu ktery se ma vyhodnocovat (true nebo false)
-    mergestr(&gen->global, "JUMPIFNEQ $else$");
-    mergestr_int(&gen->global, gen->label_counter);
-    mergestr(&gen->global, " GF@return_exp bool@false\n");
+    if(in_function){
+        mergestr(&gen->functions, "POPS GF@return_exp\n");
+        mergestr(&gen->functions, "JUMPIFNEQ $else$");
+        mergestr_int(&gen->functions, gen->label_counter);
+        mergestr(&gen->functions, " GF@return_exp bool@false\n");
+    }
+    else{
+        mergestr(&gen->global, "POPS GF@return_exp\n");
+        mergestr(&gen->global, "JUMPIFNEQ $else$");
+        mergestr_int(&gen->global, gen->label_counter);
+        mergestr(&gen->global, " GF@return_exp bool@false\n");
+    }
 }
 
-void gen_else(gen_t *gen)
+void gen_else(gen_t *gen, bool in_function)
 {
-    mergestr(&gen->global, "JUMP $endif$");
-    mergestr_int(&gen->global, gen->label_counter);
-    mergestr(&gen->global, "\n");
+    if(in_function){
+        mergestr(&gen->functions, "JUMP $endif$");
+        mergestr_int(&gen->functions, gen->label_counter);
+        mergestr(&gen->functions, "\n");
 
-    mergestr(&gen->global, "LABEL $else$");
-    mergestr_int(&gen->global, gen->label_counter);
-    mergestr(&gen->global, "\n");
+        mergestr(&gen->functions, "LABEL $else$");
+        mergestr_int(&gen->functions, gen->label_counter);
+        mergestr(&gen->functions, "\n");
+    }
+    else{
+        mergestr(&gen->global, "JUMP $endif$");
+        mergestr_int(&gen->global, gen->label_counter);
+        mergestr(&gen->global, "\n");
+
+        mergestr(&gen->global, "LABEL $else$");
+        mergestr_int(&gen->global, gen->label_counter);
+        mergestr(&gen->global, "\n");
+    }
 }
 
-void gen_endif(gen_t *gen)
+void gen_endif(gen_t *gen, bool in_function)
 {
-    mergestr(&gen->global, "LABEL $endif$");
-    mergestr_int(&gen->global, gen->label_counter);
-    mergestr(&gen->global, "\n");
-    gen->label_counter++;
+    if(in_function){
+        mergestr(&gen->functions, "LABEL $endif$");
+        mergestr_int(&gen->functions, gen->label_counter);
+        mergestr(&gen->functions, "\n");
+        gen->label_counter++;
+    }
+    else{
+        mergestr(&gen->global, "LABEL $endif$");
+        mergestr_int(&gen->global, gen->label_counter);
+        mergestr(&gen->global, "\n");
+        gen->label_counter++;
+    }
 }
 
 void gen_while(gen_t *gen)
@@ -201,23 +260,6 @@ void gen_push_var(gen_t *gen, char *name, bool local) {
     }
     mergestr(&gen->global, name);
     mergestr(&gen->global, "\n");
-}
-
-void gen_argdef_var(gen_t *gen, char *name, bool local)
-{
-    mergestr(&gen->global, "DEFVAR TF@");
-    mergestr_int(&gen->global, gen->arg_counter);
-    mergestr(&gen->global, "\n");
-
-    mergestr(&gen->global, "MOVE TF@");
-    mergestr_int(&gen->global, gen->arg_counter);
-    mergestr(&gen->global, " ");
-    if (local) {
-        mergestr(&gen->global, "LF@");
-    } else {
-        mergestr(&gen->global, "GF@");
-    }
-    mergestr(&gen->global, name);
 }
 
 void gen_expression(gen_t *gen, token_type_t operator) {
