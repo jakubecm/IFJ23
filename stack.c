@@ -38,6 +38,7 @@ bool stack_pop(stack_t *s) {
     Node *topNode = s->top;
     s->top = topNode->right;
     free(topNode);
+    topNode = NULL;
     return true;
 }
 
@@ -216,12 +217,6 @@ symbol_table_t* stack_bottom_table(stack_t* stack) {
     }
 
     return (currentNode != NULL) ? currentNode->data : NULL;
-}
-
-void stack_destroy_table(stack_t* stack) {
-    symbol_table_t* table = stack_top(stack);
-    symbol_table_free(table);
-    stack_pop(stack);
 }
 
 data_t *stack_lookup_var(stack_t* stack, htab_key_t key) {

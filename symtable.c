@@ -42,11 +42,16 @@ void symbol_table_free(symbol_table_t *table) {
     for (size_t i = 0; i < table->capacity; i++) {
         if (table->table[i] != NULL) {
             free((char *)table->table[i]->key);
+            table->table[i]->key = NULL;
             free(table->table[i]);
+            table->table[i] = NULL;
+
         }
     }
     free(table->table);
+    table->table = NULL;
     free(table);
+    table = NULL;
 }
 
 void symbol_table_insert(symbol_table_t *table, htab_key_t key, data_t data) {

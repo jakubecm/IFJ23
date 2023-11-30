@@ -1,9 +1,9 @@
 /**
  *  @file parser.c
  *
- *  @todo FIX FUNCTION CALL LL GRAMMAR
+ *  @todo RUN TESTS
  *  @todo CHECK ERROR CODES
- *  @todo CHECK IN WITH PSYCHIATRIST
+ *  @todo CHECK IN WITH PSYCHIATRIST AND PSYCHOLOGIST
  *
  *  @authors Milan Jakubec (xjakub41)
  *  @authors Jakub Ráček (xracek12)
@@ -132,7 +132,6 @@ bool rule_arg_value(parser_t *parser, int *argindex, data_t *data);
 bool rule_more_arguments(parser_t *parser, int argnum, int *argindex, data_t *data);
 bool rule_return_statement(parser_t *parser);
 bool rule_returned_expression(parser_t *parser);
-bool rule_empty_return_statement(parser_t *parser);
 void insert_builtins_to_table(parser_t *parser);
 //================= FUNCTION DECLARATIONS END HERE ================= //
 
@@ -159,7 +158,7 @@ void parser_init(parser_t *parser, gen_t *gen)
 
 void parser_destroy(parser_t *parser)
 {
-    //stack_destroy_table(parser->stack);
+    stack_pop_table(parser->stack);
     stack_free(parser->stack);
 }
 
