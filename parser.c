@@ -272,7 +272,12 @@ bool rule_statement(parser_t *parser){
             return rule_loop(parser);
         case K_RETURN:
             return rule_return_statement(parser);
+        case K_FUNC:
+            return false; // function definition has a separate rule not under statement
         default:
+            // Got a token that does not start a statement, syntax error
+            error = ERR_SYN;
+            print_error_and_exit(error);
             return false;
     }
 }
@@ -282,16 +287,19 @@ bool rule_statement(parser_t *parser){
 bool rule_function_definition(parser_t *parser){
     if (stack_top_table(parser->stack) != stack_bottom_table(parser->stack)) {
         error = ERR_SEM_OTHER;
+        print_error_and_exit(error);
         return false;   // Attempt at defining a function within a function
     }
     parser->in_function = true;
     if (!is_type(parser, K_FUNC)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
     load_token(parser);
     if (!is_type(parser, TOK_IDENTIFIER)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
 
@@ -301,6 +309,7 @@ bool rule_function_definition(parser_t *parser){
     if (func != NULL){
         if (func->type != FUNC || (func->type == FUNC && func->value.func_id.defined)) {
             error = ERR_SEM_FUNCTION;
+            print_error_and_exit(error);
             return false;   // Attempt at defining an already existing function or global variable
         }
         argnum = func->value.func_id.parameters->size;
@@ -320,6 +329,7 @@ bool rule_function_definition(parser_t *parser){
     load_token(parser);
     if (!is_type(parser, TOK_LBRACKET)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
     load_token(parser);
@@ -331,6 +341,7 @@ bool rule_function_definition(parser_t *parser){
     func->value.func_id.arguments_defined = true;
     if (!is_type(parser, TOK_RBRACKET)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
     load_token(parser);
@@ -352,11 +363,13 @@ bool rule_function_return_type_and_body(parser_t *parser, data_t *data){
         parser->return_type = str_to_type(parser->token);
         if (!rule_type(parser)){
             error = ERR_SEM_OTHER;
+            print_error_and_exit(error);
             return false;
         }
         load_token(parser);
         if (!is_type(parser, TOK_LCURLYBRACKET)){
             error = ERR_SYN;
+            print_error_and_exit(error);
             return false;
         }
         load_token(parser);
@@ -365,6 +378,7 @@ bool rule_function_return_type_and_body(parser_t *parser, data_t *data){
         }
         if (!is_type(parser, TOK_RCURLYBRACKET)){
             error = ERR_SYN;
+            print_error_and_exit(error);
             return false;
         }
 
@@ -379,6 +393,7 @@ bool rule_function_return_type_and_body(parser_t *parser, data_t *data){
     data->value.func_id.return_type = VAL_VOID;
     if (!is_type(parser, TOK_LCURLYBRACKET)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
     load_token(parser);
@@ -389,6 +404,7 @@ bool rule_function_return_type_and_body(parser_t *parser, data_t *data){
 
     if (!is_type(parser, TOK_RCURLYBRACKET)) {
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
 
@@ -426,6 +442,7 @@ bool rule_void_function_body(parser_t *parser){
     }
 
     error = ERR_SYN;
+    print_error_and_exit(error);
     return false;
 }
 
@@ -449,6 +466,7 @@ bool rule_more_parameters(parser_t *parser, data_t *data, int *index, int *argnu
 
     if (!is_type(parser, TOK_COMMA)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
     load_token(parser);
@@ -458,6 +476,7 @@ bool rule_more_parameters(parser_t *parser, data_t *data, int *index, int *argnu
 
     if (data->value.func_id.arguments_defined && *index > *argnum){
         error = ERR_SEM_FUNCTION;
+        print_error_and_exit(error);
         return false;  // Attempt at calling a function with too many arguments
     }
 
@@ -490,6 +509,7 @@ bool rule_no_name_parameter(parser_t *parser, data_t *data, int *index){
     if (data->value.func_id.arguments_defined){
         if (strcmp(data->value.func_id.parameters->data[*index].call_name, "_")) {
             error = ERR_SEM_CALL;
+            print_error_and_exit(error);
             return false; // argument should not be named but isnt
             // TODO
         }
@@ -501,6 +521,7 @@ bool rule_no_name_parameter(parser_t *parser, data_t *data, int *index){
     load_token(parser);
     if (!is_type(parser, TOK_IDENTIFIER)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
 
@@ -521,6 +542,7 @@ bool rule_no_name_parameter(parser_t *parser, data_t *data, int *index){
     load_token(parser);
     if (!is_type(parser, TOK_COLON)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
 
@@ -530,6 +552,7 @@ bool rule_no_name_parameter(parser_t *parser, data_t *data, int *index){
     if (data->value.func_id.arguments_defined) {
         if (data->value.func_id.parameters->data[*index].parameter.type != str_to_type(parser->token)) {
             error = ERR_SEM_CALL;
+            print_error_and_exit(error);
             return false; // argument type doesnt match
             // TODO
         }
@@ -545,12 +568,14 @@ bool rule_no_name_parameter(parser_t *parser, data_t *data, int *index){
 bool rule_identifier_parameter(parser_t *parser, data_t *data, int *index){
     if (!is_type(parser, TOK_IDENTIFIER)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
 
     if (data->value.func_id.arguments_defined){
         if (strcmp(data->value.func_id.parameters->data[*index].call_name, parser->token.attribute.string)) {
             error = ERR_SEM_CALL;
+            print_error_and_exit(error);
             return false; // argument should be named but isnt
             // TODO
         }
@@ -574,12 +599,14 @@ bool rule_rest_of_identifier_parameter(parser_t *parser, data_t *data, int *inde
         load_token(parser);
         if (!is_type(parser, TOK_COLON)){
             error = ERR_SYN;
+            print_error_and_exit(error);
             return false;
         }
         load_token(parser);
         if (data->value.func_id.arguments_defined) {
             if (data->value.func_id.parameters->data[*index].parameter.type != str_to_type(parser->token)) {
                 error = ERR_SEM_CALL;
+                print_error_and_exit(error);
                 return false; // argument type doesnt match
                 // TODO
             }
@@ -601,12 +628,14 @@ bool rule_rest_of_identifier_parameter(parser_t *parser, data_t *data, int *inde
         load_token(parser);
         if (!is_type(parser, TOK_COLON)){
             error = ERR_SYN;
+            print_error_and_exit(error);
             return false;
         }
         load_token(parser);
         if (data->value.func_id.arguments_defined) {
             if (data->value.func_id.parameters->data[*index].parameter.type != str_to_type(parser->token)) {
                 error = ERR_SEM_CALL;
+                print_error_and_exit(error);
                 return false; // argument type doesnt match
                 // TODO
             }
@@ -620,6 +649,7 @@ bool rule_rest_of_identifier_parameter(parser_t *parser, data_t *data, int *inde
     }
 
     error = ERR_SYN;
+    print_error_and_exit(error);
     return false;
         
 }
@@ -637,6 +667,7 @@ bool rule_type(parser_t *parser){
             return true;
         default:
             error = ERR_SYN;
+            print_error_and_exit(error);
             return false;
     }
 }
@@ -646,11 +677,13 @@ bool rule_type(parser_t *parser){
 bool rule_variable_definition_let(parser_t *parser){
     if (!is_type(parser, K_LET)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
     load_token(parser);
     if (!is_type(parser, TOK_IDENTIFIER)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
 
@@ -659,6 +692,7 @@ bool rule_variable_definition_let(parser_t *parser){
     data_t *var = symbol_table_lookup_generic(stack_top_table(parser->stack), parser->token.attribute.string);
     if (var != NULL){
         error = ERR_SEM_FUNCTION;
+        print_error_and_exit(error);
         return false;   // Attempt at defining an already existing variable or function within the current context
     }
 
@@ -680,12 +714,14 @@ bool rule_variable_definition_let(parser_t *parser){
 bool rule_variable_definition_var(parser_t *parser){
     if (!is_type(parser, K_VAR)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
     load_token(parser);
 
     if(!is_type(parser, TOK_IDENTIFIER)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
 
@@ -694,6 +730,7 @@ bool rule_variable_definition_var(parser_t *parser){
     data_t *var = symbol_table_lookup_generic(stack_top_table(parser->stack), parser->token.attribute.string);
     if (var != NULL){
         error = ERR_SEM_FUNCTION;
+        print_error_and_exit(error);
         return false;   // Attempt at defining an already existing variable or function withing the current context
     }
 
@@ -730,7 +767,6 @@ bool rule_type_def(parser_t *parser, data_t *data){
     }
     load_token(parser);
     if (!rule_type(parser)){
-        error = ERR_SYN;
         return false;
     }
 
@@ -758,6 +794,7 @@ bool rule_initialization(parser_t *parser, data_t *data){
 
     if (!is_type(parser, TOK_ASSIGNMENT)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
 
@@ -768,9 +805,6 @@ bool rule_initialization(parser_t *parser, data_t *data){
     }
 
     variable_type_t type = exp_parsing(parser);
-    if (type == EXP_ERR) {
-        return false;
-    }
 
     switch (type) {
     case VAL_INT:
@@ -778,6 +812,7 @@ bool rule_initialization(parser_t *parser, data_t *data){
             gen_call_convert(parser->gen); // evil int2float hacks
         } else if (data->value.var_id.type != VAL_INT && data->value.var_id.type != VAL_INTQ && data->value.var_id.type != VAL_UNKNOWN){
             error = ERR_SEM_TYPE;
+            print_error_and_exit(error);
             return false;
         }
 
@@ -789,6 +824,7 @@ bool rule_initialization(parser_t *parser, data_t *data){
     case VAL_DOUBLE:
         if (data->value.var_id.type != VAL_DOUBLE && data->value.var_id.type != VAL_DOUBLEQ && data->value.var_id.type != VAL_UNKNOWN){
             error = ERR_SEM_TYPE;
+            print_error_and_exit(error);
             return false;
         }
         if (data->value.var_id.type == VAL_UNKNOWN){
@@ -799,6 +835,7 @@ bool rule_initialization(parser_t *parser, data_t *data){
     case VAL_STRING:
         if (data->value.var_id.type != VAL_STRING && data->value.var_id.type != VAL_STRINGQ && data->value.var_id.type != VAL_UNKNOWN){
             error = ERR_SEM_TYPE;
+            print_error_and_exit(error);
             return false;
         }
         if (data->value.var_id.type == VAL_UNKNOWN){
@@ -809,12 +846,14 @@ bool rule_initialization(parser_t *parser, data_t *data){
     case VAL_NIL:
         if (data->value.var_id.type != VAL_INTQ && data->value.var_id.type != VAL_DOUBLEQ && data->value.var_id.type != VAL_STRINGQ){
             error = ERR_SEM_TYPE;
+            print_error_and_exit(error);
             return false;
         }
         break;
     case VAL_UNKNOWN:
         if (data->value.var_id.type == VAL_UNKNOWN){
             error = ERR_SEM_TYPE;
+            print_error_and_exit(error);
             return false;
         }
         break;
@@ -832,16 +871,19 @@ bool rule_initialization(parser_t *parser, data_t *data){
 bool rule_assignment(parser_t *parser){
     if (!is_type(parser, TOK_IDENTIFIER)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
     data_t *var = stack_lookup_var(parser->stack, parser->token.attribute.string);
     if (var == NULL){
         error = ERR_SEM_FUNCTION;
+        print_error_and_exit(error);
         return false;   // Attempt at assigning to a non-existing variable
     }
     load_token(parser);
     if (!is_type(parser, TOK_ASSIGNMENT)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
     load_token(parser);
@@ -855,12 +897,12 @@ bool rule_assignment_type(parser_t *parser, data_t *data){
         return rule_function_call(parser, data);
     }
     else{
+
         variable_type_t type = exp_parsing(parser);
-        if (type == EXP_ERR){
-            return false;
-        }
+
         if (data->type == LET){
             error = ERR_SEM_FUNCTION;
+            print_error_and_exit(error);
             return false;   // Attempt at assigning to a let variable
         }
         if (data->value.var_id.type == VAL_UNKNOWN){
@@ -873,6 +915,7 @@ bool rule_assignment_type(parser_t *parser, data_t *data){
                 return true;
             }
             error = ERR_SEM_TYPE; // assignment type does not match the type of the variable
+            print_error_and_exit(error);
             return false;
         }
         return true;
@@ -884,6 +927,7 @@ bool rule_assignment_type(parser_t *parser, data_t *data){
 bool rule_conditional_statement(parser_t *parser){
     if (!is_type(parser, K_IF)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
     load_token(parser);
@@ -904,13 +948,12 @@ bool rule_if_statement(parser_t *parser){
 bool rule_classical_statement(parser_t *parser){
 
     variable_type_t type = exp_parsing(parser);
-    if (type == EXP_ERR){
-        return false;
-    }
+
     gen_if(parser->gen);
 
     if (!is_type(parser, TOK_LCURLYBRACKET)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
     bool was_in_if = parser->in_if;
@@ -923,6 +966,7 @@ bool rule_classical_statement(parser_t *parser){
     stack_pop_table(parser->stack);
     if (!is_type(parser, TOK_RCURLYBRACKET)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
     if (!was_in_if){
@@ -931,6 +975,7 @@ bool rule_classical_statement(parser_t *parser){
     load_token(parser);
     if (!is_type(parser, K_ELSE)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
 
@@ -939,6 +984,7 @@ bool rule_classical_statement(parser_t *parser){
     load_token(parser);
     if (!is_type(parser, TOK_LCURLYBRACKET)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
     bool was_in_else = parser->in_else;
@@ -951,6 +997,7 @@ bool rule_classical_statement(parser_t *parser){
     stack_pop_table(parser->stack);
     if (!is_type(parser, TOK_RCURLYBRACKET)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
     if (!was_in_else){
@@ -966,22 +1013,26 @@ bool rule_classical_statement(parser_t *parser){
 bool rule_variable_statement(parser_t *parser){
     if (!is_type(parser, K_LET)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
     load_token(parser);
     if (!is_type(parser, TOK_IDENTIFIER)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
 
     data_t *data = stack_lookup_var(parser->stack, parser->token.attribute.string);
     if (data == NULL) {
         error = ERR_SEM_FUNCTION;
+        print_error_and_exit(error);
         return false;   // Attempt at defining a variable that does not exist
     }
 
     if (data->type != LET){
         error = ERR_SEM_NDEF;
+        print_error_and_exit(error);
         return false;   // variable not found
     }
     // je promenna typ_nil?
@@ -989,6 +1040,7 @@ bool rule_variable_statement(parser_t *parser){
     load_token(parser);
     if (!is_type(parser, TOK_LCURLYBRACKET)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
     bool was_in_if = parser->in_if;
@@ -1001,6 +1053,7 @@ bool rule_variable_statement(parser_t *parser){
     stack_pop_table(parser->stack);
     if (!is_type(parser, TOK_RCURLYBRACKET)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
     if (!was_in_if){
@@ -1009,11 +1062,13 @@ bool rule_variable_statement(parser_t *parser){
     load_token(parser);
     if (!is_type(parser, K_ELSE)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
     load_token(parser);
     if (!is_type(parser, TOK_LCURLYBRACKET)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
     bool was_in_else = parser->in_else;
@@ -1026,6 +1081,7 @@ bool rule_variable_statement(parser_t *parser){
     stack_pop_table(parser->stack);
     if (!is_type(parser, TOK_RCURLYBRACKET)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
     if (!was_in_else){
@@ -1040,17 +1096,16 @@ bool rule_variable_statement(parser_t *parser){
 bool rule_loop(parser_t *parser){
     if (!is_type(parser, K_WHILE)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
     load_token(parser);
     
     variable_type_t type = exp_parsing(parser);
-    if (type == EXP_ERR){
-        return false;
-    }
 
     if (!is_type(parser, TOK_LCURLYBRACKET)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
     bool was_in_cycle = parser->in_cycle;
@@ -1063,6 +1118,7 @@ bool rule_loop(parser_t *parser){
     stack_pop_table(parser->stack);
     if (!is_type(parser, TOK_RCURLYBRACKET)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
     if (!was_in_cycle){
@@ -1077,6 +1133,7 @@ bool rule_loop(parser_t *parser){
 bool rule_function_call(parser_t *parser, data_t *var){
     if (!is_type(parser, TOK_IDENTIFIER)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
 
@@ -1085,6 +1142,7 @@ bool rule_function_call(parser_t *parser, data_t *var){
         data = symbol_table_lookup_var(stack_top_table(parser->stack), parser->token.attribute.string);
         if (data != NULL){
             error = ERR_SEM_FUNCTION;
+            print_error_and_exit(error);
             return false;   // Attempt at calling a function, that exists as a variable in the current context
         }
     }
@@ -1110,6 +1168,7 @@ bool rule_function_call(parser_t *parser, data_t *var){
                 var->value.var_id.type = data->value.func_id.return_type;
             } else if (data->value.func_id.return_type != var->value.var_id.type){
                 error = ERR_SEM_TYPE;
+                print_error_and_exit(error);
                 return false;   // Attempt at calling a function with a return type that does not match the type of the variable
             }
         }
@@ -1122,6 +1181,7 @@ bool rule_function_call(parser_t *parser, data_t *var){
         if (variable_assignent == NULL) {
             if (data->name == var->name) {
                 error = ERR_SEM_FUNCTION;
+                print_error_and_exit(error);
                 return false;   // Attempt at calling a function that is not defined yet, but is being defined as a variable in the current context
             }
         }
@@ -1130,6 +1190,7 @@ bool rule_function_call(parser_t *parser, data_t *var){
     load_token(parser);
     if (!is_type(parser, TOK_LBRACKET)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
     load_token(parser);
@@ -1143,10 +1204,12 @@ bool rule_function_call(parser_t *parser, data_t *var){
 
     if (argindex < argnum && strcmp(data->name, "write")){
         error = ERR_SEM_CALL;
+        print_error_and_exit(error);
         return false;  // Attempt at calling a function with too few arguments
     }
     if (!is_type(parser, TOK_RBRACKET)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
     load_token(parser);
@@ -1165,6 +1228,7 @@ bool rule_arguments(parser_t *parser, int argnum, int *argindex, data_t *data){
     }
     if (data->value.func_id.arguments_defined && *argindex > argnum){
         error = ERR_SEM_CALL;
+        print_error_and_exit(error);
         return false;  // Attempt at calling a function with too many arguments
     }
 
@@ -1204,12 +1268,14 @@ bool rule_arg_name(parser_t *parser, int *argindex, data_t *data){
             if (strcmp(data->value.func_id.parameters->data[*argindex].call_name, "_")) {
                 if (strcmp(parser->token.attribute.string, data->value.func_id.parameters->data[*argindex].call_name)) {
                     error = ERR_SEM_CALL;
+                    print_error_and_exit(error);
                     return false; // argument should be named but doesnt match
                     // TODO
                 }
                 load_token(parser);
                 if (!is_type(parser, TOK_COLON)){
                     error = ERR_SYN;
+                    print_error_and_exit(error);
                     return false;
                 }
                 load_token(parser);
@@ -1222,6 +1288,7 @@ bool rule_arg_name(parser_t *parser, int *argindex, data_t *data){
             // argument is named
             if (strcmp(data->value.func_id.parameters->data[*argindex].call_name, "_")) {
                 error = ERR_SEM_CALL;
+                print_error_and_exit(error);
                 return false; // argument should be named but isnt
                 // TODO
             }
@@ -1251,6 +1318,7 @@ bool rule_arg_value(parser_t *parser, int *argindex, data_t *data){
             arg = stack_lookup_var(parser->stack, parser->token.attribute.string);
             if (arg == NULL){
                 error = ERR_SEM_NDEF;
+                print_error_and_exit(error);
                 return false;   // Attempt at calling a function with a non-existing variable
             }
             // check correct type
@@ -1265,36 +1333,42 @@ bool rule_arg_value(parser_t *parser, int *argindex, data_t *data){
                 !(arg->value.var_id.type == VAL_INTQ && param_type == VAL_INT) &&
                 !(arg->value.var_id.type == VAL_STRINGQ && param_type == VAL_STRING)){
                 error = ERR_SEM_TYPE;
+                print_error_and_exit(error);
                 return false;   // Attempt at calling a function with a variable of a different type than the function expects
             }
             break;
         case TOK_INT:
             if (param_type != VAL_INT && param_type != VAL_INTQ){
                 error = ERR_SEM_TYPE;
+                print_error_and_exit(error);
                 return false;   // Attempt at calling a function with an int argument, where the function expects a different type
             }
             break;
         case TOK_DOUBLE:
             if (param_type != VAL_DOUBLE && param_type != VAL_DOUBLEQ){
                 error = ERR_SEM_TYPE;
+                print_error_and_exit(error);
                 return false;   // Attempt at calling a function with a double argument, where the function expects a different type
             }
             break;
         case TOK_STRING:
             if (param_type != VAL_STRING && param_type != VAL_STRINGQ){
                 error = ERR_SEM_TYPE;
+                print_error_and_exit(error);
                 return false;   // Attempt at calling a function with a string argument, where the function expects a different type
             }
             break;
         case K_NIL:
             if (param_type != VAL_INTQ && param_type != VAL_DOUBLEQ && param_type != VAL_STRINGQ){
                 error = ERR_SEM_TYPE;
+                print_error_and_exit(error);
                 return false;   // Attempt at calling a function with a nil argument, where the function expects a different type
             }
             break;
         default:
             // TODO
             error = ERR_SYN;
+            print_error_and_exit(error);
             return false;
     }
 
@@ -1316,6 +1390,7 @@ bool rule_more_arguments(parser_t *parser, int argnum, int *argindex, data_t *da
 
     if (!is_type(parser, TOK_COMMA)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
     load_token(parser);
@@ -1324,6 +1399,7 @@ bool rule_more_arguments(parser_t *parser, int argnum, int *argindex, data_t *da
     }
     if (*argindex > argnum){
         error = ERR_SEM_CALL;
+        print_error_and_exit(error);
         return false;  // Attempt at calling a function with too many arguments
     }
     if (!rule_more_arguments(parser, argnum, argindex, data)){
@@ -1337,11 +1413,13 @@ bool rule_more_arguments(parser_t *parser, int argnum, int *argindex, data_t *da
 bool rule_return_statement(parser_t *parser){
     if (!is_type(parser, K_RETURN)){
         error = ERR_SYN;
+        print_error_and_exit(error);
         return false;
     }
 
     if (!parser->in_function){
         error = ERR_SEM_RETURN;
+        print_error_and_exit(error);
         return false;   // Attempt at returning from outside of a function
     }
 
@@ -1374,14 +1452,14 @@ bool rule_returned_expression(parser_t *parser){
                                     // x = 5
                                     // toto je validni kod, ale zpusobil by chybu, protoze nemame eol
             error = ERR_SEM_RETURN;
+            print_error_and_exit(error);
             return false;
         }
         variable_type_t type = exp_parsing(parser);
-        if (type == EXP_ERR){
-            return false;
-        }
+
         if (type != parser->return_type){
             error = ERR_SEM_RETURN;
+            print_error_and_exit(error);
             return false;   // Attempt at returning a value of a different type than the function expects
         }
         return true;
@@ -1389,6 +1467,7 @@ bool rule_returned_expression(parser_t *parser){
 
     if (!parser->func_is_void){
         error = ERR_SEM_RETURN;
+        print_error_and_exit(error);
         return false;
     }
     return true;
