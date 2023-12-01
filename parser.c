@@ -955,6 +955,11 @@ bool rule_if_statement(parser_t *parser){
 bool rule_classical_statement(parser_t *parser){
 
     variable_type_t type = exp_parsing(parser);
+    if (type != VAL_BOOL){
+        error = ERR_SEM_TYPE;
+        print_error_and_exit(error);
+        return false;   // non-bool expression in if statement
+    }
 
     gen_if(parser->gen, parser->in_function);
 
@@ -1109,6 +1114,11 @@ bool rule_loop(parser_t *parser){
     load_token(parser);
     
     variable_type_t type = exp_parsing(parser);
+    if (type != VAL_BOOL){
+        error = ERR_SEM_TYPE;
+        print_error_and_exit(error);
+        return false;   // non-bool expression in while loop
+    }
 
     if (!is_type(parser, TOK_LCURLYBRACKET)){
         error = ERR_SYN;
