@@ -125,11 +125,11 @@ bool rule_classical_statement(parser_t *parser);
 bool rule_variable_statement(parser_t *parser);
 bool rule_loop(parser_t *parser);
 bool rule_function_call(parser_t *parser, data_t *data);
-bool rule_arguments(parser_t *parser, int argnum, int *argindex, data_t *data);
-bool rule_argument(parser_t *parser, int *argindex, data_t *data);
+bool rule_arguments(parser_t *parser, int argnum, int *argindex, data_t *data, vector_t *params);
+bool rule_argument(parser_t *parser, int *argindex, data_t *data, vector_t *params);
 bool rule_arg_name(parser_t *parser, int *argindex, data_t *data);
-bool rule_arg_value(parser_t *parser, int *argindex, data_t *data);
-bool rule_more_arguments(parser_t *parser, int argnum, int *argindex, data_t *data);
+bool rule_arg_value(parser_t *parser, int *argindex, data_t *data, vector_t *params);
+bool rule_more_arguments(parser_t *parser, int argnum, int *argindex, data_t *data, vector_t *params);
 bool rule_return_statement(parser_t *parser);
 bool rule_returned_expression(parser_t *parser);
 void insert_builtins_to_table(parser_t *parser);
@@ -1221,7 +1221,8 @@ bool rule_function_call(parser_t *parser, data_t *var){
     }
     load_token(parser);
     int argindex = 0;
-    if (!rule_arguments(parser, argnum, &argindex, data)){
+    vector_t *call_args = vector_init(5);
+    if (!rule_arguments(parser, argnum, &argindex, data, call_args)){
         return false;
     }
     if (!data->value.func_id.arguments_defined) {
@@ -1245,11 +1246,11 @@ bool rule_function_call(parser_t *parser, data_t *var){
 
 // <arguments> -> <argument> <more_arguments> | ε
 
-bool rule_arguments(parser_t *parser, int argnum, int *argindex, data_t *data){
+bool rule_arguments(parser_t *parser, int argnum, int *argindex, data_t *data, vector_t *call_args){
     if (is_type(parser, TOK_RBRACKET)){
         return true;
     }
-    if(!rule_argument(parser, argindex, data)){
+    if(!rule_argument(parser, argindex, data, call_args)){
         return false;
     }
     if (data->value.func_id.arguments_defined && *argindex > argnum){
@@ -1258,19 +1259,20 @@ bool rule_arguments(parser_t *parser, int argnum, int *argindex, data_t *data){
         return false;  // Attempt at calling a function with too many arguments
     }
 
-    return rule_more_arguments(parser, argnum, argindex, data);
+    return rule_more_arguments(parser, argnum, argindex, data, call_args);
 }
 
 // <argument> -> <arg_name> <arg_value>
 
-bool rule_argument(parser_t *parser, int *argindex, data_t *data){
+bool rule_argument(parser_t *parser, int *argindex, data_t *data, vector_t *call_args){
     if (!data->value.func_id.arguments_defined)  {// on funcion call before definition ve save the function params
         vector_push(data->value.func_id.parameters, (htab_func_param_t){});
+        vector_push(call_args, (htab_func_param_t){});
     }
     if (!rule_arg_name(parser, argindex, data)){
         return false;
     }
-    return rule_arg_value(parser, argindex, data);
+    return rule_arg_value(parser, argindex, data, call_args);
 }
 
 // <arg_name> -> <identifier> ":" | ε
@@ -1326,7 +1328,7 @@ bool rule_arg_name(parser_t *parser, int *argindex, data_t *data){
 
 // <arg_value> -> <identifier> | <int> | <double> | <string> | <nil>
 
-bool rule_arg_value(parser_t *parser, int *argindex, data_t *data){
+bool rule_arg_value(parser_t *parser, int *argindex, data_t *data, vector_t *call_args){
     variable_type_t param_type = data->value.func_id.parameters->data[*argindex].parameter.type;
     if (param_type == VAL_TERM){ // buildin write function only
         if (parser->token.type == TOK_IDENTIFIER) {
@@ -1418,7 +1420,7 @@ bool rule_arg_value(parser_t *parser, int *argindex, data_t *data){
 
 // <more_arguments> -> "," <argument> <more_arguments> | ε
 
-bool rule_more_arguments(parser_t *parser, int argnum, int *argindex, data_t *data){
+bool rule_more_arguments(parser_t *parser, int argnum, int *argindex, data_t *data, vector_t *call_args){
     if(is_type(parser, TOK_RBRACKET)){
         return true;
     }
@@ -1429,7 +1431,7 @@ bool rule_more_arguments(parser_t *parser, int argnum, int *argindex, data_t *da
         return false;
     }
     load_token(parser);
-    if (!rule_argument(parser, argindex, data)){
+    if (!rule_argument(parser, argindex, data, call_args)){
         return false;
     }
     if (*argindex > argnum){
@@ -1437,7 +1439,7 @@ bool rule_more_arguments(parser_t *parser, int argnum, int *argindex, data_t *da
         print_error_and_exit(error);
         return false;  // Attempt at calling a function with too many arguments
     }
-    if (!rule_more_arguments(parser, argnum, argindex, data)){
+    if (!rule_more_arguments(parser, argnum, argindex, data, call_args)){
         return false;
     }
     return true;
