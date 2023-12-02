@@ -54,11 +54,11 @@ void gen_else(gen_t *gen, bool in_function);
 
 void gen_endif(gen_t *gen, bool in_function);
 
-void gen_while(gen_t *gen);
+void gen_while(gen_t *gen, bool in_function);
 
-void gen_while_exit(gen_t *gen);
+void gen_while_exit(gen_t *gen, bool in_function);
 
-void gen_while_end(gen_t *gen);
+void gen_while_end(gen_t *gen, bool in_function);
 
 void gen_func(gen_t *gen, token_t *name);
 
