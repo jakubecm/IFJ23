@@ -328,6 +328,8 @@ variable_type_t convert_type(sem_data_type_t type) {
             return VAL_STRING;
         case SEM_BOOL:
             return VAL_BOOL;
+        case SEM_NIL:
+            return VAL_NIL;
         default:
             return VAL_UNKNOWN;
     }
