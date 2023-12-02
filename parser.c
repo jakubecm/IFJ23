@@ -1270,8 +1270,9 @@ bool rule_arguments(parser_t *parser, int argnum, int *argindex, data_t *data, v
 bool rule_argument(parser_t *parser, int *argindex, data_t *data, vector_t *call_args){
     if (!data->value.func_id.arguments_defined)  {// on funcion call before definition ve save the function params
         vector_push(data->value.func_id.parameters, (htab_func_param_t){});
-        vector_push(call_args, (htab_func_param_t){});
     }
+
+    vector_push(call_args, (htab_func_param_t){});
     if (!rule_arg_name(parser, argindex, data)){
         return false;
     }
