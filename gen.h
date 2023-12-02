@@ -62,6 +62,8 @@ void gen_while_end(gen_t *gen, bool in_function);
 
 void gen_func(gen_t *gen, token_t *name);
 
+void gen_func_end(gen_t *gen);
+
 void gen_parameters(gen_t *gen, vector_t *parameters);
 
 void gen_func_call(gen_t *gen, char *name);

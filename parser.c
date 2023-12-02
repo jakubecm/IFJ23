@@ -352,6 +352,7 @@ bool rule_function_definition(parser_t *parser){
         return false;
     }
     stack_pop_table(parser->stack);
+    gen_func_end(parser->gen);
 
     return true;
 }
