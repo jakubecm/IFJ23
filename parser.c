@@ -1235,13 +1235,15 @@ bool rule_function_call(parser_t *parser, data_t *var){
         print_error_and_exit(error);
         return false;  // Attempt at calling a function with too few arguments
     }
+    call_args->size = argindex;
+    // gen funkce zde
+    vector_destroy(call_args);
     if (!is_type(parser, TOK_RBRACKET)){
         error = ERR_SYN;
         print_error_and_exit(error);
         return false;
     }
     load_token(parser);
-
     return true;
 }
 
@@ -1332,13 +1334,39 @@ bool rule_arg_name(parser_t *parser, int *argindex, data_t *data){
 bool rule_arg_value(parser_t *parser, int *argindex, data_t *data, vector_t *call_args){
     variable_type_t param_type = data->value.func_id.parameters->data[*argindex].parameter.type;
     if (param_type == VAL_TERM){ // buildin write function only
-        if (parser->token.type == TOK_IDENTIFIER) {
-            data_t *arg = stack_lookup_var(parser->stack, parser->token.attribute.string);
-            if (arg == NULL){
-                error = ERR_SEM_NDEF;
+        switch (parser->token.type) {
+            case TOK_IDENTIFIER:
+                // check if var exists
+                data_t *arg = stack_lookup_var(parser->stack, parser->token.attribute.string);
+                if (arg == NULL){
+                    error = ERR_SEM_NDEF;
+                    print_error_and_exit(error);
+                    return false;   // Attempt at calling a function with a non-existing variable
+                }
+                vector_top(call_args)->parameter.type = parser->token.type;
+                vector_top(call_args)->parameter.value.string = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1));
+                strcpy(vector_top(call_args)->parameter.value.string, parser->token.attribute.string);
+                break;
+            case TOK_INT:
+                vector_top(call_args)->parameter.type = parser->token.type;
+                vector_top(call_args)->parameter.value.number = parser->token.attribute.number;
+                break;
+            case TOK_DOUBLE:
+                vector_top(call_args)->parameter.type = parser->token.type;
+                vector_top(call_args)->parameter.value.decimal = parser->token.attribute.decimal;
+                break;
+            case TOK_STRING:
+                vector_top(call_args)->parameter.type = parser->token.type;
+                vector_top(call_args)->parameter.value.string = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1));
+                strcpy(vector_top(call_args)->parameter.value.string, parser->token.attribute.string);
+                break;
+            case K_NIL:
+                vector_top(call_args)->parameter.type = parser->token.type;
+                break;
+            default:
+                error = ERR_SYN;
                 print_error_and_exit(error);
-                return false;   // Attempt at calling a function with a non-existing variable
-            }
+                return false;
         }
 
         (*argindex)++;
@@ -1374,6 +1402,9 @@ bool rule_arg_value(parser_t *parser, int *argindex, data_t *data, vector_t *cal
                 print_error_and_exit(error);
                 return false;   // Attempt at calling a function with a variable of a different type than the function expects
             }
+            vector_top(call_args)->parameter.type = parser->token.type;
+            vector_top(call_args)->parameter.value.string = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1));
+            strcpy(vector_top(call_args)->parameter.value.string, parser->token.attribute.string);
             break;
         case TOK_INT:
             if (param_type != VAL_INT && param_type != VAL_INTQ){
@@ -1381,6 +1412,8 @@ bool rule_arg_value(parser_t *parser, int *argindex, data_t *data, vector_t *cal
                 print_error_and_exit(error);
                 return false;   // Attempt at calling a function with an int argument, where the function expects a different type
             }
+            vector_top(call_args)->parameter.type = parser->token.type;
+            vector_top(call_args)->parameter.value.number = parser->token.attribute.number;
             break;
         case TOK_DOUBLE:
             if (param_type != VAL_DOUBLE && param_type != VAL_DOUBLEQ){
@@ -1388,6 +1421,8 @@ bool rule_arg_value(parser_t *parser, int *argindex, data_t *data, vector_t *cal
                 print_error_and_exit(error);
                 return false;   // Attempt at calling a function with a double argument, where the function expects a different type
             }
+            vector_top(call_args)->parameter.type = parser->token.type;
+            vector_top(call_args)->parameter.value.decimal = parser->token.attribute.decimal;
             break;
         case TOK_STRING:
             if (param_type != VAL_STRING && param_type != VAL_STRINGQ){
@@ -1395,6 +1430,9 @@ bool rule_arg_value(parser_t *parser, int *argindex, data_t *data, vector_t *cal
                 print_error_and_exit(error);
                 return false;   // Attempt at calling a function with a string argument, where the function expects a different type
             }
+            vector_top(call_args)->parameter.type = parser->token.type;
+            vector_top(call_args)->parameter.value.string = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1));
+            strcpy(vector_top(call_args)->parameter.value.string, parser->token.attribute.string);
             break;
         case K_NIL:
             if (param_type != VAL_INTQ && param_type != VAL_DOUBLEQ && param_type != VAL_STRINGQ){
@@ -1402,6 +1440,7 @@ bool rule_arg_value(parser_t *parser, int *argindex, data_t *data, vector_t *cal
                 print_error_and_exit(error);
                 return false;   // Attempt at calling a function with a nil argument, where the function expects a different type
             }
+            vector_top(call_args)->parameter.type = parser->token.type;
             break;
         default:
             // TODO
@@ -1517,7 +1556,7 @@ bool rule_returned_expression(parser_t *parser){
 //================= BUILT IN FUNCTIONS ================= //
 
 /*
-   func readString() -> String?
+    func readString() -> String?
     func readInt() -> Int?
     func readDouble() -> Double?
     func write ( term1 , term2 , …, term𝑛 )
