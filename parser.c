@@ -552,6 +552,7 @@ bool rule_no_name_parameter(parser_t *parser, data_t *data, int *index){
 
     load_token(parser);
     param.value.var_id.type = str_to_type(parser->token); // type
+    param.value.var_id.initialized = true;
     symbol_table_insert(stack_top_table(parser->stack), param.name, param); // push to table
     if (data->value.func_id.arguments_defined) {
         if (data->value.func_id.parameters->data[*index].parameter.type != str_to_type(parser->token)) {
@@ -647,6 +648,7 @@ bool rule_rest_of_identifier_parameter(parser_t *parser, data_t *data, int *inde
             vector_top(data->value.func_id.parameters)->parameter.type = str_to_type(parser->token);
         }
         param.value.var_id.type = str_to_type(parser->token);
+        param.value.var_id.initialized = true;
         symbol_table_insert(stack_top_table(parser->stack), param.name, param);
         (*index)++;
         return rule_type(parser);
@@ -707,6 +709,7 @@ bool rule_variable_definition_let(parser_t *parser){
     //symbol_table_insert(stack_top_table(parser->stack), data.name, data);
     load_token(parser);
     if(rule_definition_types(parser, &data)) {
+        data.value.var_id.initialized = true;
         symbol_table_insert(stack_top_table(parser->stack), data.name, data);
         return true;
     }
@@ -745,6 +748,7 @@ bool rule_variable_definition_var(parser_t *parser){
     //symbol_table_insert(stack_top_table(parser->stack), data.name, data);
     load_token(parser);
     if(rule_definition_types(parser, &data)) {
+        data.value.var_id.initialized = true;
         symbol_table_insert(stack_top_table(parser->stack), data.name, data);
         return true;
     }
@@ -873,6 +877,7 @@ bool rule_initialization(parser_t *parser, data_t *data){
         break;
     }
 
+    data->value.var_id.initialized = true; 
     return true;
 }
 
@@ -1347,7 +1352,7 @@ bool rule_arg_value(parser_t *parser, int *argindex, data_t *data, vector_t *cal
             case TOK_IDENTIFIER:
                 // check if var exists
                 data_t *arg = stack_lookup_var(parser->stack, parser->token.attribute.string);
-                if (arg == NULL){
+                if (arg == NULL || !arg->value.var_id.initialized){
                     error = ERR_SEM_NDEF;
                     print_error_and_exit(error);
                     return false;   // Attempt at calling a function with a non-existing variable

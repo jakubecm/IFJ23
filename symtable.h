@@ -39,6 +39,7 @@ typedef enum symbol_type {
 typedef struct htab_var {
     htab_attribute_t        value;
     variable_type_t         type;
+    bool initialized;
 } htab_var_t;
 
 typedef struct htab_func_param {
