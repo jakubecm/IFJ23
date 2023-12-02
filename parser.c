@@ -1240,8 +1240,11 @@ bool rule_function_call(parser_t *parser, data_t *var){
     }
     call_args->size = argindex;
     // gen funkce zde
-    gen_arguments(parser->gen, call_args);
-    gen_func_call(parser->gen, data->name);
+    gen_arguments(parser->gen, call_args, parser->in_function);
+    if(strcmp(data->name, "write") == 0){
+        gen_push_int(parser->gen, call_args->size, parser->in_function);
+    }
+    gen_func_call(parser->gen, data->name, parser->in_function);
     vector_destroy(call_args);
     if (!is_type(parser, TOK_RBRACKET)){
         error = ERR_SYN;

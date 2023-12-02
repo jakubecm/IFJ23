@@ -68,9 +68,9 @@ void gen_func_return_to_var(gen_t *gen, char *name, bool in_function);
 
 void gen_parameters(gen_t *gen, vector_t *parameters);
 
-void gen_func_call(gen_t *gen, char *name);
+void gen_func_call(gen_t *gen, char *name, bool in_function);
 
-void gen_arguments(gen_t *gen, vector_t *arguments);
+void gen_arguments(gen_t *gen, vector_t *arguments, bool in_function);
 
 void gen_return(gen_t *gen);
 

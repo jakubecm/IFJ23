@@ -17,8 +17,8 @@ void gen_var_definition(gen_t *gen, token_t* token, bool in_function);
 void gen_func(gen_t *gen, token_t *name);
 void gen_func_end(gen_t *gen);
 void gen_func_return_to_var(gen_t *gen, char *name, bool in_function);
-void gen_arguments(gen_t *gen, vector_t *gen_arguments);
-void gen_func_call(gen_t *gen, char *name);
+void gen_arguments(gen_t *gen, vector_t *gen_arguments, bool in_function);
+void gen_func_call(gen_t *gen, char *name, bool in_function);
 void gen_if(gen_t *gen, bool in_function);
 void gen_else(gen_t *gen, bool in_function);
 void gen_endif(gen_t *gen, bool in_function);
@@ -148,13 +148,46 @@ void gen_parameters(gen_t *gen, vector_t *parameters) {
     }
 }
 
-void gen_arguments(gen_t *gen, vector_t *gen_arguments) {
+void gen_arguments(gen_t *gen, vector_t *gen_arguments, bool in_function) {
 
-    mergestr(&gen->global, "CREATEFRAME\n");
-    
-    for(int i = gen_arguments->size - 1; i >= 0; i--){
-
-        switch(gen_arguments->data[i].parameter.type){
+    if(in_function){
+        mergestr(&gen->functions, "CREATEFRAME\n");
+        for (int i = gen_arguments->size - 1; i >= 0; i--)
+        {
+            switch (gen_arguments->data[i].parameter.type)
+            {
+            case VAL_INT:
+                mergestr(&gen->functions, "PUSHS int@");
+                mergestr_int(&gen->functions, gen_arguments->data[i].parameter.value.number);
+                mergestr(&gen->functions, "\n");
+                break;
+            case VAL_DOUBLE:
+                mergestr(&gen->functions, "PUSHS float@");
+                mergestr_float(&gen->functions, gen_arguments->data[i].parameter.value.decimal);
+                mergestr(&gen->functions, "\n");
+                break;
+            case VAL_STRING:
+                mergestr(&gen->functions, "PUSHS string@");
+                mergestr(&gen->functions, gen_arguments->data[i].parameter.value.string);
+                mergestr(&gen->functions, "\n");
+                break;
+            case VAL_NIL:
+                mergestr(&gen->functions, "PUSHS nil@nil\n");
+                break;
+            case VAL_ID:
+                mergestr(&gen->functions, "PUSHS LF@");
+                mergestr(&gen->functions, gen_arguments->data[i].parameter.value.string);
+                mergestr(&gen->functions, "\n");
+                break;
+            }
+        }
+    }
+    else{
+        mergestr(&gen->global, "CREATEFRAME\n");
+        for (int i = gen_arguments->size - 1; i >= 0; i--)
+        {
+            switch (gen_arguments->data[i].parameter.type)
+            {
             case VAL_INT:
                 mergestr(&gen->global, "PUSHS int@");
                 mergestr_int(&gen->global, gen_arguments->data[i].parameter.value.number);
@@ -178,15 +211,24 @@ void gen_arguments(gen_t *gen, vector_t *gen_arguments) {
                 mergestr(&gen->global, gen_arguments->data[i].parameter.value.string);
                 mergestr(&gen->global, "\n");
                 break;
+            }
         }
     }
+
 }
 
-void gen_func_call(gen_t *gen, char *name)
+void gen_func_call(gen_t *gen, char *name, bool in_function)
 {
-    mergestr(&gen->global, "CALL $");
-    mergestr(&gen->global, name);
-    mergestr(&gen->global, "\n");
+    if(in_function){
+        mergestr(&gen->functions, "CALL $");
+        mergestr(&gen->functions, name);
+        mergestr(&gen->functions, "\n");
+    }
+    else{
+        mergestr(&gen->global, "CALL $");
+        mergestr(&gen->global, name);
+        mergestr(&gen->global, "\n");
+    }
 }
 
 void gen_if(gen_t *gen, bool in_function)
