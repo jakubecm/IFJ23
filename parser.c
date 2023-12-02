@@ -805,6 +805,7 @@ bool rule_initialization(parser_t *parser, data_t *data){
     load_token(parser);
 
     if (is_type(parser, TOK_IDENTIFIER) && is_type_next(parser, TOK_LBRACKET)){
+        gen_func_return_to_var(parser->gen, data->name, parser->in_function);
         return rule_function_call(parser, data); // init type in function call
     }
 

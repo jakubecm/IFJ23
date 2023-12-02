@@ -16,6 +16,7 @@ void gen_main(gen_t *gen);
 void gen_var_definition(gen_t *gen, token_t* token, bool in_function);
 void gen_func(gen_t *gen, token_t *name);
 void gen_func_end(gen_t *gen);
+void gen_func_return_to_var(gen_t *gen, char *name, bool in_function);
 void gen_arguments(gen_t *gen, vector_t *gen_arguments);
 void gen_func_call(gen_t *gen, char *name);
 void gen_if(gen_t *gen, bool in_function);
@@ -99,7 +100,6 @@ void gen_func(gen_t *gen, token_t *token){
     mergestr(&gen->functions, "LABEL $");
     mergestr(&gen->functions, token->attribute.string);
     mergestr(&gen->functions, "\n");
-    mergestr(&gen->functions, "CREATEFRAME\n");
     mergestr(&gen->functions, "PUSHFRAME\n");
 }
 
@@ -107,6 +107,20 @@ void gen_func_end(gen_t *gen){
     mergestr(&gen->functions, "POPS GF@return_func\n");
     mergestr(&gen->functions, "POPFRAME\n");
     mergestr(&gen->functions, "RETURN\n");
+}
+
+void gen_func_return_to_var(gen_t *gen, char *name, bool in_function){
+    if(in_function){
+        mergestr(&gen->functions, "MOVE LF@");
+        mergestr(&gen->functions, name);
+        mergestr(&gen->functions, " GF@return_func\n");
+
+    }
+    else{
+        mergestr(&gen->global, "MOVE GF@");
+        mergestr(&gen->global, name);
+        mergestr(&gen->global, " GF@return_func\n");
+    }
 }
 
 void gen_parameters(gen_t *gen, vector_t *parameters) {
@@ -122,11 +136,15 @@ void gen_parameters(gen_t *gen, vector_t *parameters) {
     }
 }
 
-void gen_arguments(gen_t *gen, vector_t *gen_arguments) {    
+void gen_arguments(gen_t *gen, vector_t *gen_arguments) {
+
     mergestr(&gen->global, "CREATEFRAME\n");
-    // Napad: vytvoreni docasneho ramce, do ktereho se nasypou argumenty
-    // Tahle funkce se musi volat na korektnim miste v parseru na to si musime dat pozor
-    // 
+    
+    
+    for(int i = gen_arguments->size - 1; i >= 0; i--){
+
+
+    }
 }
 
 void gen_func_call(gen_t *gen, char *name)

@@ -30,6 +30,7 @@ void gen_func_readstring(gen_t *gen)
     mergestr(&gen->functions, "PUSHFRAME\n");
     mergestr(&gen->functions, "DEFVAR LF@retval\n");
     mergestr(&gen->functions, "READ LF@retval string\n");
+    mergestr(&gen->functions, "POPS GF@return_func\n");
     mergestr(&gen->functions, "POPFRAME\n");
     mergestr(&gen->functions, "RETURN\n");
 }
@@ -42,6 +43,7 @@ void gen_func_readint(gen_t *gen)
     mergestr(&gen->functions, "DEFVAR LF@retval\n");
     mergestr(&gen->functions, "READ LF@retval int\n");
     mergestr(&gen->functions, "PUSHS LF@retval\n");
+    mergestr(&gen->functions, "POPS GF@return_func\n");
     mergestr(&gen->functions, "POPFRAME\n");
     mergestr(&gen->functions, "RETURN\n");
 }
@@ -54,6 +56,7 @@ void gen_func_readdouble(gen_t *gen)
     mergestr(&gen->functions, "DEFVAR LF@retval\n");
     mergestr(&gen->functions, "READ LF@retval float\n");
     mergestr(&gen->functions, "PUSHS LF@retval\n");
+    mergestr(&gen->functions, "POPS GF@return_func\n");
     mergestr(&gen->functions, "POPFRAME\n");
     mergestr(&gen->functions, "RETURN\n");
 }
@@ -61,7 +64,6 @@ void gen_func_readdouble(gen_t *gen)
 void gen_func_write(gen_t *gen)
 {
     mergestr(&gen->functions, "LABEL $write\n");
-    mergestr(&gen->functions, "CREATEFRAME\n");
     mergestr(&gen->functions, "PUSHFRAME\n");
     mergestr(&gen->functions, "DEFVAR LF@index\n");
     mergestr(&gen->functions, "DEFVAR LF@currterm\n");
@@ -81,7 +83,6 @@ void gen_func_write(gen_t *gen)
 void gen_func_Int2Double(gen_t *gen)
 {
     mergestr(&gen->functions, "LABEL $int2float\n");
-    mergestr(&gen->functions, "CREATEFRAME\n");
     mergestr(&gen->functions, "PUSHFRAME\n");
     mergestr(&gen->functions, "DEFVAR LF@temp\n");
     mergestr(&gen->functions, "POPS LF@temp\n");
@@ -94,7 +95,6 @@ void gen_func_Int2Double(gen_t *gen)
 void gen_func_Int2Double2(gen_t *gen)
 {
     mergestr(&gen->functions, "LABEL $int2float2\n");
-    mergestr(&gen->functions, "CREATEFRAME\n");
     mergestr(&gen->functions, "PUSHFRAME\n");
     mergestr(&gen->functions, "DEFVAR LF@temp1\n");
     mergestr(&gen->functions, "DEFVAR LF@temp2\n");
@@ -110,7 +110,6 @@ void gen_func_Int2Double2(gen_t *gen)
 void gen_func_Double2Int(gen_t *gen)
 {
     mergestr(&gen->functions, "LABEL $float2int\n");
-    mergestr(&gen->functions, "CREATEFRAME\n");
     mergestr(&gen->functions, "PUSHFRAME\n");
     mergestr(&gen->functions, "DEFVAR LF@temp\n");
     mergestr(&gen->functions, "POPS LF@temp\n");
@@ -123,20 +122,19 @@ void gen_func_Double2Int(gen_t *gen)
 void gen_func_length(gen_t *gen)
 {
     mergestr(&gen->functions, "LABEL $length\n");
-    mergestr(&gen->functions, "CREATEFRAME\n");
     mergestr(&gen->functions, "PUSHFRAME\n");
     mergestr(&gen->functions, "DEFVAR LF@temp\n");
     mergestr(&gen->functions, "POPS LF@temp\n");
     mergestr(&gen->functions, "STRLEN LF@temp LF@temp\n");
     mergestr(&gen->functions, "PUSHS LF@temp\n");
     mergestr(&gen->functions, "POPFRAME\n");
+    mergestr(&gen->functions, "POPS GF@return_func\n");
     mergestr(&gen->functions, "RETURN\n");
 }
 
 void gen_func_substr(gen_t *gen)
 {
     mergestr(&gen->functions, "LABEL $substr\n");
-    mergestr(&gen->functions, "CREATEFRAME\n");
     mergestr(&gen->functions, "PUSHFRAME\n");
     mergestr(&gen->functions, "DEFVAR LF@index1\n");
     mergestr(&gen->functions, "DEFVAR LF@index2\n");
@@ -170,10 +168,12 @@ void gen_func_substr(gen_t *gen)
     mergestr(&gen->functions, "JUMP $substrLoop\n");
     mergestr(&gen->functions, "LABEL $substrLoopEnd\n");
     mergestr(&gen->functions, "PUSHS LF@result\n");
+    mergestr(&gen->functions, "POPS GF@return_func\n");
     mergestr(&gen->functions, "POPFRAME\n");
     mergestr(&gen->functions, "RETURN\n");
     mergestr(&gen->functions, "LABEL $returnNull\n");
     mergestr(&gen->functions, "PUSHS nil@nil\n");
+    mergestr(&gen->functions, "POPS GF@return_func\n");
     mergestr(&gen->functions, "POPFRAME\n");
     mergestr(&gen->functions, "RETURN\n");
 }
@@ -181,7 +181,6 @@ void gen_func_substr(gen_t *gen)
 void gen_func_ord(gen_t *gen)
 {
     mergestr(&gen->functions, "LABEL $ord\n");
-    mergestr(&gen->functions, "CREATEFRAME\n");
     mergestr(&gen->functions, "PUSHFRAME\n");
     mergestr(&gen->functions, "DEFVAR LF@temp\n");
     mergestr(&gen->functions, "POPS LF@temp\n");
@@ -190,10 +189,12 @@ void gen_func_ord(gen_t *gen)
     mergestr(&gen->functions, "JUMPIFEQ $ord0 string@ LF@tmp\n");
     mergestr(&gen->functions, "STRI2INT LF@temp LF@temp int@0\n");
     mergestr(&gen->functions, "PUSHS LF@temp\n");
+    mergestr(&gen->functions, "POPS GF@return_func\n");
     mergestr(&gen->functions, "POPFRAME\n");
     mergestr(&gen->functions, "RETURN\n");
     mergestr(&gen->functions, "LABEL $ord0\n");
     mergestr(&gen->functions, "PUSHS int@0\n");
+    mergestr(&gen->functions, "POPS GF@return_func\n");
     mergestr(&gen->functions, "POPFRAME\n");
     mergestr(&gen->functions, "RETURN\n");
 }
@@ -201,7 +202,6 @@ void gen_func_ord(gen_t *gen)
 void gen_func_chr(gen_t *gen)
 {
     mergestr(&gen->functions, "LABEL $chr\n");
-    mergestr(&gen->functions, "CREATEFRAME\n");
     mergestr(&gen->functions, "PUSHFRAME\n");
     mergestr(&gen->functions, "DEFVAR LF@temp\n");
     mergestr(&gen->functions, "POPS LF@temp\n");
@@ -209,13 +209,13 @@ void gen_func_chr(gen_t *gen)
     mergestr(&gen->functions, "JUMPIFNEQ $ERR_SEM_CALL string@int GF@tmp\n"); // nesedi typ
     mergestr(&gen->functions, "INT2CHAR LF@temp LF@temp\n");
     mergestr(&gen->functions, "PUSHS LF@temp\n");
+    mergestr(&gen->functions, "POPS GF@return_func\n");
     mergestr(&gen->functions, "POPFRAME\n");
     mergestr(&gen->functions, "RETURN\n");
 }
 
 void gen_func_nil_check(gen_t *gen) {
     mergestr(&gen->functions, "LABEL $nil_check\n");
-    mergestr(&gen->functions, "CREATEFRAME\n");
     mergestr(&gen->functions, "PUSHFRAME\n");
     mergestr(&gen->functions, "DEFVAR LF@op1\n");
     mergestr(&gen->functions, "DEFVAR LF@op2\n");
