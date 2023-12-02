@@ -224,9 +224,15 @@ void reduce(stack_t* stack, int num, analysis_t* analysis, parser_t* parserData)
                 if(!sem_analysis(analysis, parserData)) {
                     return;
                 }
+        
                 handle_other(stack, analysis->end_type);
                 DEBUG_PRINT("END TYPE: %d\n", analysis->end_type);
-                gen_expression(parserData->gen, analysis->tok2->type, parserData->in_function);
+
+                if(analysis->tok1->data == SEM_INT && analysis->tok3->data == SEM_INT && analysis->tok2->type == TOK_DIV) {
+                    gen_expression(parserData->gen, TOK_IDIV, parserData->in_function);
+                } else {
+                    gen_expression(parserData->gen, analysis->tok2->type, parserData->in_function);
+                }
 
             } else {
                 error = ERR_SYN;

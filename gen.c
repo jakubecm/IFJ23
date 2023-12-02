@@ -15,14 +15,15 @@ void gen_header(gen_t *gen);
 void gen_main(gen_t *gen);
 void gen_var_definition(gen_t *gen, token_t* token, bool in_function);
 void gen_func(gen_t *gen, token_t *name);
+void gen_func_end(gen_t *gen);
 void gen_arguments(gen_t *gen, vector_t *gen_arguments);
 void gen_func_call(gen_t *gen, char *name);
 void gen_if(gen_t *gen, bool in_function);
 void gen_else(gen_t *gen, bool in_function);
 void gen_endif(gen_t *gen, bool in_function);
-void gen_while(gen_t *gen);
-void gen_while_exit(gen_t *gen);
-void gen_while_end(gen_t *gen);
+void gen_while(gen_t *gen, bool in_function);
+void gen_while_exit(gen_t *gen, bool in_function);
+void gen_while_end(gen_t *gen, bool in_function);
 void gen_push_int(gen_t *gen, int value, bool in_function);
 void gen_push_float(gen_t *gen, double valu, bool in_function);
 void gen_push_string(gen_t *gen, char *value, bool in_function);
@@ -100,22 +101,12 @@ void gen_func(gen_t *gen, token_t *token){
     mergestr(&gen->functions, "\n");
     mergestr(&gen->functions, "CREATEFRAME\n");
     mergestr(&gen->functions, "PUSHFRAME\n");
-    // DEFVAR LF@prdel
-    // POPS LF@prdel
-    // DEFVAR LF@par2
-    // POPS LF@par2
-    // DEFVAR LF@par3
+}
 
-    // IF NECO NECO
-    // WHILE NECO NECO 
-
-    // Napad: separatni funkce gen_func_parameters
-    // Funkce by se zavolala na adekvatnim miste v parseru
-    // Vygenerovala by parametry, coz by v realite bylo v kodu presne tady za tim vytvorenim framu
-    // Vsechny parametry by se ulozily do lokalniho ramce
-
-    // Potom kdyz se pushnou argumenty, tak si to tady budu muset vypopovat do lokalnich promennych
-    // Za nima uz klasika a ukonceni funkce
+void gen_func_end(gen_t *gen){
+    mergestr(&gen->functions, "POPS GF@return_func\n");
+    mergestr(&gen->functions, "POPFRAME\n");
+    mergestr(&gen->functions, "RETURN\n");
 }
 
 void gen_parameters(gen_t *gen, vector_t *parameters) {
@@ -200,31 +191,58 @@ void gen_endif(gen_t *gen, bool in_function)
     }
 }
 
-void gen_while(gen_t *gen)
+void gen_while(gen_t *gen, bool in_function)
 {
-    mergestr(&gen->global, "LABEL $while$");
-    mergestr_int(&gen->global, gen->label_counter);
-    mergestr(&gen->global, "\n");
+    if(in_function){
+        mergestr(&gen->functions, "LABEL $while$");
+        mergestr_int(&gen->functions, gen->label_counter);
+        mergestr(&gen->functions, "\n");
+    }
+    else{
+        mergestr(&gen->global, "LABEL $while$");
+        mergestr_int(&gen->global, gen->label_counter);
+        mergestr(&gen->global, "\n");
+    }
 }
 
-void gen_while_exit(gen_t *gen)
+void gen_while_exit(gen_t *gen, bool in_function)
 {
-    mergestr(&gen->global, "POPS GF@return_exp\n"); // beru ze zasobniku vysledek vyrazu
-    mergestr(&gen->global, "JUMPIFEQ $whileEnd$");
-    mergestr_int(&gen->global, gen->label_counter);
-    mergestr(&gen->global, " GF@return_exp bool@false\n");
+    if(in_function){
+        mergestr(&gen->functions, "POPS GF@return_exp\n"); // beru ze zasobniku vysledek vyrazu
+        mergestr(&gen->functions, "JUMPIFEQ $whileEnd$");
+        mergestr_int(&gen->functions, gen->label_counter);
+        mergestr(&gen->functions, " GF@return_exp bool@false\n");
+    }
+    else{
+        mergestr(&gen->global, "POPS GF@return_exp\n"); // beru ze zasobniku vysledek vyrazu
+        mergestr(&gen->global, "JUMPIFEQ $whileEnd$");
+        mergestr_int(&gen->global, gen->label_counter);
+        mergestr(&gen->global, " GF@return_exp bool@false\n");
+    }
 }
 
-void gen_while_end(gen_t *gen)
+void gen_while_end(gen_t *gen, bool in_function)
 {
-    mergestr(&gen->global, "JUMP $while$");
-    mergestr_int(&gen->global, gen->label_counter);
-    mergestr(&gen->global, "\n");
+    if(in_function){
+        mergestr(&gen->functions, "JUMP $while$");
+        mergestr_int(&gen->functions, gen->label_counter);
+        mergestr(&gen->functions, "\n");
 
-    mergestr(&gen->global, "LABEL $whileEnd$");
-    mergestr_int(&gen->global, gen->label_counter);
-    mergestr(&gen->global, "\n");
-    gen->label_counter++;
+        mergestr(&gen->functions, "LABEL $whileEnd$");
+        mergestr_int(&gen->functions, gen->label_counter);
+        mergestr(&gen->functions, "\n");
+        gen->label_counter++;
+    }
+    else{
+        mergestr(&gen->global, "JUMP $while$");
+        mergestr_int(&gen->global, gen->label_counter);
+        mergestr(&gen->global, "\n");
+
+        mergestr(&gen->global, "LABEL $whileEnd$");
+        mergestr_int(&gen->global, gen->label_counter);
+        mergestr(&gen->global, "\n");
+        gen->label_counter++;
+    }
 }
 
 void gen_push_int(gen_t *gen, int value, bool in_function)

@@ -352,6 +352,7 @@ bool rule_function_definition(parser_t *parser){
         return false;
     }
     stack_pop_table(parser->stack);
+    gen_func_end(parser->gen);
 
     return true;
 }
@@ -1106,6 +1107,9 @@ bool rule_variable_statement(parser_t *parser){
 // <loop> -> "while" <expression> "{" <statement_list> "}"
 
 bool rule_loop(parser_t *parser){
+
+    gen_while(parser->gen, parser->in_function);
+
     if (!is_type(parser, K_WHILE)){
         error = ERR_SYN;
         print_error_and_exit(error);
@@ -1113,12 +1117,16 @@ bool rule_loop(parser_t *parser){
     }
     load_token(parser);
     
+    
     variable_type_t type = exp_parsing(parser);
     if (type != VAL_BOOL){
         error = ERR_SEM_TYPE;
         print_error_and_exit(error);
         return false;   // non-bool expression in while loop
     }
+
+    gen_while_exit(parser->gen, parser->in_function);
+
 
     if (!is_type(parser, TOK_LCURLYBRACKET)){
         error = ERR_SYN;
@@ -1142,6 +1150,7 @@ bool rule_loop(parser_t *parser){
         parser->in_cycle = false;
     }
     load_token(parser);
+    gen_while_end(parser->gen, parser->in_function);
     return true;
 }
 
