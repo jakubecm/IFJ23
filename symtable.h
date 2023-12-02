@@ -25,7 +25,8 @@ typedef enum variable_type {
     VAL_NIL,     // Nil
     VAL_UNKNOWN,  // Type not provided yet
     VAL_VOID,     // Void
-    VAL_TERM    // Term - Used for write function
+    VAL_TERM,    // Term - Used for write function
+    VAL_ID      // ID
 } variable_type_t;
 
 typedef enum symbol_type {

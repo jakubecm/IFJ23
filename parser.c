@@ -1343,25 +1343,25 @@ bool rule_arg_value(parser_t *parser, int *argindex, data_t *data, vector_t *cal
                     print_error_and_exit(error);
                     return false;   // Attempt at calling a function with a non-existing variable
                 }
-                vector_top(call_args)->parameter.type = parser->token.type;
+                vector_top(call_args)->parameter.type = VAL_ID;
                 vector_top(call_args)->parameter.value.string = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1));
                 strcpy(vector_top(call_args)->parameter.value.string, parser->token.attribute.string);
                 break;
             case TOK_INT:
-                vector_top(call_args)->parameter.type = parser->token.type;
+                vector_top(call_args)->parameter.type = VAL_INT;
                 vector_top(call_args)->parameter.value.number = parser->token.attribute.number;
                 break;
             case TOK_DOUBLE:
-                vector_top(call_args)->parameter.type = parser->token.type;
+                vector_top(call_args)->parameter.type = VAL_DOUBLE;
                 vector_top(call_args)->parameter.value.decimal = parser->token.attribute.decimal;
                 break;
             case TOK_STRING:
-                vector_top(call_args)->parameter.type = parser->token.type;
+                vector_top(call_args)->parameter.type = VAL_STRING;
                 vector_top(call_args)->parameter.value.string = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1));
                 strcpy(vector_top(call_args)->parameter.value.string, parser->token.attribute.string);
                 break;
             case K_NIL:
-                vector_top(call_args)->parameter.type = parser->token.type;
+                vector_top(call_args)->parameter.type = VAL_NIL;
                 break;
             default:
                 error = ERR_SYN;
@@ -1402,7 +1402,7 @@ bool rule_arg_value(parser_t *parser, int *argindex, data_t *data, vector_t *cal
                 print_error_and_exit(error);
                 return false;   // Attempt at calling a function with a variable of a different type than the function expects
             }
-            vector_top(call_args)->parameter.type = parser->token.type;
+            vector_top(call_args)->parameter.type = VAL_ID;
             vector_top(call_args)->parameter.value.string = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1));
             strcpy(vector_top(call_args)->parameter.value.string, parser->token.attribute.string);
             break;
@@ -1412,7 +1412,7 @@ bool rule_arg_value(parser_t *parser, int *argindex, data_t *data, vector_t *cal
                 print_error_and_exit(error);
                 return false;   // Attempt at calling a function with an int argument, where the function expects a different type
             }
-            vector_top(call_args)->parameter.type = parser->token.type;
+            vector_top(call_args)->parameter.type = VAL_INT;
             vector_top(call_args)->parameter.value.number = parser->token.attribute.number;
             break;
         case TOK_DOUBLE:
@@ -1421,7 +1421,7 @@ bool rule_arg_value(parser_t *parser, int *argindex, data_t *data, vector_t *cal
                 print_error_and_exit(error);
                 return false;   // Attempt at calling a function with a double argument, where the function expects a different type
             }
-            vector_top(call_args)->parameter.type = parser->token.type;
+            vector_top(call_args)->parameter.type = VAL_DOUBLE;
             vector_top(call_args)->parameter.value.decimal = parser->token.attribute.decimal;
             break;
         case TOK_STRING:
@@ -1430,7 +1430,7 @@ bool rule_arg_value(parser_t *parser, int *argindex, data_t *data, vector_t *cal
                 print_error_and_exit(error);
                 return false;   // Attempt at calling a function with a string argument, where the function expects a different type
             }
-            vector_top(call_args)->parameter.type = parser->token.type;
+            vector_top(call_args)->parameter.type = VAL_STRING;
             vector_top(call_args)->parameter.value.string = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1));
             strcpy(vector_top(call_args)->parameter.value.string, parser->token.attribute.string);
             break;
@@ -1440,7 +1440,7 @@ bool rule_arg_value(parser_t *parser, int *argindex, data_t *data, vector_t *cal
                 print_error_and_exit(error);
                 return false;   // Attempt at calling a function with a nil argument, where the function expects a different type
             }
-            vector_top(call_args)->parameter.type = parser->token.type;
+            vector_top(call_args)->parameter.type = VAL_NIL;
             break;
         default:
             // TODO
