@@ -15,7 +15,7 @@ typedef struct gen{
     mystring_t header;
     mystring_t global;
     mystring_t temp;
-    mystring_t local;
+    mystring_t footer;
     mystring_t functions;
 
     int label_counter;

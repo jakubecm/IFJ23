@@ -42,7 +42,7 @@ void gen_init(gen_t *gen)
     initstr(&gen->header);
     initstr(&gen->global);
     initstr(&gen->temp);
-    initstr(&gen->local);
+    initstr(&gen->footer);
     initstr(&gen->functions);
 
     gen->label_counter = 0;
@@ -50,7 +50,7 @@ void gen_init(gen_t *gen)
 
     gen_header(gen);
     gen_main(gen);
-    //gen_footer(gen);
+    gen_footer(gen);
 }
 
 void gen_free(gen_t *gen)
@@ -58,7 +58,7 @@ void gen_free(gen_t *gen)
     destroy(&gen->header);
     destroy(&gen->global);
     destroy(&gen->temp);
-    destroy(&gen->local);
+    destroy(&gen->footer);
     destroy(&gen->functions);
 }
 
@@ -86,10 +86,11 @@ void gen_main(gen_t *gen)
 
 void gen_footer(gen_t *gen)
 {
-    mergestr(&gen->global, "LABEL !ERR_DIV\n");
-    mergestr(&gen->global, "EXIT int@9\n");
-    mergestr(&gen->global, "POPFRAME\n");
-    mergestr(&gen->global, "EXIT int@0");
+    mergestr(&gen->footer, "POPFRAME\n");
+    mergestr(&gen->footer, "EXIT int@0\n");
+    mergestr(&gen->footer, "LABEL !ERR_DIV\n");
+    mergestr(&gen->footer, "POPFRAME\n");
+    mergestr(&gen->footer, "EXIT int@9\n");
 }
 
 
@@ -498,5 +499,6 @@ void gen_pop_value(gen_t* gen, char* name, bool in_function) {
 void gen_print(gen_t *gen) {
     printstr(&gen->header);
     printstr(&gen->global);
+    printstr(&gen->footer);
     printstr(&gen->functions);
 }

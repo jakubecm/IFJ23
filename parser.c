@@ -853,6 +853,9 @@ bool rule_initialization(parser_t *parser, data_t *data){
     case VAL_NIL:
         if (data->value.var_id.type != VAL_INTQ && data->value.var_id.type != VAL_DOUBLEQ && data->value.var_id.type != VAL_STRINGQ){
             error = ERR_SEM_TYPE;
+            if (data->value.var_id.type == VAL_UNKNOWN){
+                error = ERR_SEM_INCOMPATIBLE;
+            }
             print_error_and_exit(error);
             return false;
         }
