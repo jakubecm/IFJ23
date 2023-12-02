@@ -50,6 +50,7 @@ void gen_init(gen_t *gen)
 
     gen_header(gen);
     gen_main(gen);
+    //gen_footer(gen);
 }
 
 void gen_free(gen_t *gen)
@@ -82,6 +83,16 @@ void gen_main(gen_t *gen)
 
     gen_buildin_funcs(gen); // Generates all buildin functions at once (check buildin.c to see)
 }
+
+void gen_footer(gen_t *gen)
+{
+    mergestr(&gen->global, "LABEL !ERR_DIV\n");
+    mergestr(&gen->global, "EXIT int@9\n");
+    mergestr(&gen->global, "POPFRAME\n");
+    mergestr(&gen->global, "EXIT int@0");
+}
+
+
 
 void gen_var_definition(gen_t *gen, token_t* token, bool in_function)
 {
@@ -140,10 +151,33 @@ void gen_arguments(gen_t *gen, vector_t *gen_arguments) {
 
     mergestr(&gen->global, "CREATEFRAME\n");
     
-    
     for(int i = gen_arguments->size - 1; i >= 0; i--){
 
-
+        switch(gen_arguments->data[i].parameter.type){
+            case VAL_INT:
+                mergestr(&gen->global, "PUSHS int@");
+                mergestr_int(&gen->global, gen_arguments->data[i].parameter.value.number);
+                mergestr(&gen->global, "\n");
+                break;
+            case VAL_DOUBLE:
+                mergestr(&gen->global, "PUSHS float@");
+                mergestr_float(&gen->global, gen_arguments->data[i].parameter.value.decimal);
+                mergestr(&gen->global, "\n");
+                break;
+            case VAL_STRING:
+                mergestr(&gen->global, "PUSHS string@");
+                mergestr(&gen->global, gen_arguments->data[i].parameter.value.string);
+                mergestr(&gen->global, "\n");
+                break;
+            case VAL_NIL:
+                mergestr(&gen->global, "PUSHS nil@nil\n");
+                break;
+            case VAL_ID:
+                mergestr(&gen->global, "PUSHS TF@");
+                mergestr(&gen->global, gen_arguments->data[i].parameter.value.string);
+                mergestr(&gen->global, "\n");
+                break;
+        }
     }
 }
 

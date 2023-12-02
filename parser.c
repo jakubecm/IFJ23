@@ -1237,6 +1237,8 @@ bool rule_function_call(parser_t *parser, data_t *var){
     }
     call_args->size = argindex;
     // gen funkce zde
+    gen_arguments(parser->gen, call_args);
+    gen_func_call(parser->gen, data->name);
     vector_destroy(call_args);
     if (!is_type(parser, TOK_RBRACKET)){
         error = ERR_SYN;
