@@ -1320,6 +1320,15 @@ bool rule_arg_name(parser_t *parser, int *argindex, data_t *data){
 bool rule_arg_value(parser_t *parser, int *argindex, data_t *data){
     variable_type_t param_type = data->value.func_id.parameters->data[*argindex].parameter.type;
     if (param_type == VAL_TERM){ // buildin write function only
+        if (parser->token.type == TOK_IDENTIFIER) {
+            data_t *arg = stack_lookup_var(parser->stack, parser->token.attribute.string);
+            if (arg == NULL){
+                error = ERR_SEM_NDEF;
+                print_error_and_exit(error);
+                return false;   // Attempt at calling a function with a non-existing variable
+            }
+        }
+
         (*argindex)++;
         load_token(parser);
         return true;
