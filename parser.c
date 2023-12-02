@@ -709,7 +709,6 @@ bool rule_variable_definition_let(parser_t *parser){
     //symbol_table_insert(stack_top_table(parser->stack), data.name, data);
     load_token(parser);
     if(rule_definition_types(parser, &data)) {
-        data.value.var_id.initialized = true;
         symbol_table_insert(stack_top_table(parser->stack), data.name, data);
         return true;
     }
@@ -748,7 +747,6 @@ bool rule_variable_definition_var(parser_t *parser){
     //symbol_table_insert(stack_top_table(parser->stack), data.name, data);
     load_token(parser);
     if(rule_definition_types(parser, &data)) {
-        data.value.var_id.initialized = true;
         symbol_table_insert(stack_top_table(parser->stack), data.name, data);
         return true;
     }
