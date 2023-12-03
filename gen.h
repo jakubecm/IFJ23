@@ -70,7 +70,7 @@ void gen_parameters(gen_t *gen, vector_t *parameters);
 
 void gen_func_call(gen_t *gen, char *name, bool in_function);
 
-void gen_arguments(gen_t *gen, vector_t *arguments, bool in_function);
+void gen_arguments(gen_t *gen, vector_t *arguments, bool in_function, bool in_if);
 
 void gen_return(gen_t *gen);
 
@@ -84,7 +84,7 @@ void gen_push_nil(gen_t *gen, bool in_function);
 
 void gen_push_var(gen_t *gen, char *name, bool local);
 
-void gen_var_definition(gen_t *gen, token_t* token, bool in_function);
+void gen_var_definition(gen_t *gen, token_t* token, bool in_function, bool in_if);
 
 void gen_expression(gen_t *gen, token_type_t type, bool in_function);
 
@@ -96,4 +96,4 @@ void gen_call_convert(gen_t *gen);
 
 void gen_call_convert2(gen_t *gen);
 
-void gen_pop_value(gen_t* gen, char* name, bool in_function);
+void gen_pop_value(gen_t* gen, char* name, bool in_function, bool in_if);

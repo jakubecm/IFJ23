@@ -693,7 +693,7 @@ bool rule_variable_definition_let(parser_t *parser){
         return false;
     }
 
-    gen_var_definition(parser->gen, &parser->token, parser->in_function);
+    gen_var_definition(parser->gen, &parser->token, parser->in_function, parser->in_if);
 
     data_t *var = symbol_table_lookup_generic(stack_top_table(parser->stack), parser->token.attribute.string);
     if (var != NULL){
@@ -731,7 +731,7 @@ bool rule_variable_definition_var(parser_t *parser){
         return false;
     }
 
-    gen_var_definition(parser->gen, &parser->token, parser->in_function);
+    gen_var_definition(parser->gen, &parser->token, parser->in_function, parser->in_if);
 
     data_t *var = symbol_table_lookup_generic(stack_top_table(parser->stack), parser->token.attribute.string);
     if (var != NULL){
@@ -813,7 +813,7 @@ bool rule_initialization(parser_t *parser, data_t *data){
 
     variable_type_t type = exp_parsing(parser);
 
-    gen_pop_value(parser->gen, data->name, parser->in_function);
+    gen_pop_value(parser->gen, data->name, parser->in_function, parser->in_if);
 
     switch (type) {
     case VAL_INT:
@@ -913,7 +913,7 @@ bool rule_assignment_type(parser_t *parser, data_t *data){
 
         variable_type_t type = exp_parsing(parser);
 
-        gen_pop_value(parser->gen, data->name, parser->in_function);
+        gen_pop_value(parser->gen, data->name, parser->in_function, parser->in_if);
 
         if (data->type == LET){
             error = ERR_SEM_FUNCTION;
@@ -1243,7 +1243,7 @@ bool rule_function_call(parser_t *parser, data_t *var){
     }
     call_args->size = argindex;
     // gen funkce zde
-    gen_arguments(parser->gen, call_args, parser->in_function);
+    gen_arguments(parser->gen, call_args, parser->in_function, parser->in_if);
     if(strcmp(data->name, "write") == 0){
         gen_push_int(parser->gen, call_args->size, parser->in_function);
     }

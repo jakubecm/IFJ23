@@ -13,11 +13,11 @@ void gen_init(gen_t *gen);
 void gen_free(gen_t *gen);
 void gen_header(gen_t *gen);
 void gen_main(gen_t *gen);
-void gen_var_definition(gen_t *gen, token_t* token, bool in_function);
+void gen_var_definition(gen_t *gen, token_t* token, bool in_function, bool in_if);
 void gen_func(gen_t *gen, token_t *name);
 void gen_func_end(gen_t *gen);
 void gen_func_return_to_var(gen_t *gen, char *name, bool in_function);
-void gen_arguments(gen_t *gen, vector_t *gen_arguments, bool in_function);
+void gen_arguments(gen_t *gen, vector_t *gen_arguments, bool in_function, bool in_if);
 void gen_func_call(gen_t *gen, char *name, bool in_function);
 void gen_if(gen_t *gen, bool in_function);
 void gen_else(gen_t *gen, bool in_function);
@@ -35,7 +35,7 @@ void gen_expression(gen_t *gen, token_type_t operator, bool in_function);
 void gen_call_convert(gen_t *gen);
 void gen_call_convert2(gen_t *gen);
 void gen_print(gen_t *gen);
-void gen_pop_value(gen_t* gen, char* name, bool in_function);
+void gen_pop_value(gen_t* gen, char* name, bool in_function, bool in_if);
 
 void gen_init(gen_t *gen)
 {
@@ -95,12 +95,16 @@ void gen_footer(gen_t *gen)
 
 
 
-void gen_var_definition(gen_t *gen, token_t* token, bool in_function)
+void gen_var_definition(gen_t *gen, token_t* token, bool in_function, bool in_if)
 {
     if (in_function) {
         mergestr(&gen->functions, "DEFVAR LF@");
         mergestr(&gen->functions, token->attribute.string);
         mergestr(&gen->functions, "\n");
+    } else if (!in_function && in_if){
+        mergestr(&gen->global, "DEFVAR LF@");
+        mergestr(&gen->global, token->attribute.string);
+        mergestr(&gen->global, "\n");
     } else {
         mergestr(&gen->global, "DEFVAR GF@");
         mergestr(&gen->global, token->attribute.string);
@@ -148,7 +152,7 @@ void gen_parameters(gen_t *gen, vector_t *parameters) {
     }
 }
 
-void gen_arguments(gen_t *gen, vector_t *gen_arguments, bool in_function) {
+void gen_arguments(gen_t *gen, vector_t *gen_arguments, bool in_function, bool in_if) {
 
     if(in_function){
         mergestr(&gen->functions, "CREATEFRAME\n");
@@ -207,7 +211,12 @@ void gen_arguments(gen_t *gen, vector_t *gen_arguments, bool in_function) {
                 mergestr(&gen->global, "PUSHS nil@nil\n");
                 break;
             case VAL_ID:
-                mergestr(&gen->global, "PUSHS TF@");
+                if(in_if){
+                    mergestr(&gen->global, "PUSHS LF@");
+                }
+                else{
+                    mergestr(&gen->global, "PUSHS GF@");
+                }
                 mergestr(&gen->global, gen_arguments->data[i].parameter.value.string);
                 mergestr(&gen->global, "\n");
                 break;
@@ -236,13 +245,13 @@ void gen_if(gen_t *gen, bool in_function)
     // funkce predpoklada ze v globalni promenne GF@return_exp je vysledek vyrazu ktery se ma vyhodnocovat (true nebo false)
     if(in_function){
         mergestr(&gen->functions, "POPS GF@return_exp\n");
-        mergestr(&gen->functions, "JUMPIFNEQ $else$");
+        mergestr(&gen->functions, "JUMPIFEQ $else$");
         mergestr_int(&gen->functions, gen->label_counter);
         mergestr(&gen->functions, " GF@return_exp bool@false\n");
     }
     else{
         mergestr(&gen->global, "POPS GF@return_exp\n");
-        mergestr(&gen->global, "JUMPIFNEQ $else$");
+        mergestr(&gen->global, "JUMPIFEQ $else$");
         mergestr_int(&gen->global, gen->label_counter);
         mergestr(&gen->global, " GF@return_exp bool@false\n");
     }
@@ -526,12 +535,16 @@ void gen_call_convert2(gen_t *gen) {
     mergestr(&gen->global, "CALL $int2float2\n");
 }
 
-void gen_pop_value(gen_t* gen, char* name, bool in_function) {
+void gen_pop_value(gen_t* gen, char* name, bool in_function, bool in_if) {
     if (in_function) {
         mergestr(&gen->functions, "POPS LF@");
         mergestr(&gen->functions, name);
         mergestr(&gen->functions, "\n");
-    } else {
+    } else if (!in_function && in_if){
+        mergestr(&gen->global, "POPS LF@");
+        mergestr(&gen->global, name);
+        mergestr(&gen->global, "\n");
+    }else {
         mergestr(&gen->global, "POPS GF@");
         mergestr(&gen->global, name);
         mergestr(&gen->global, "\n");
