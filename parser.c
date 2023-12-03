@@ -147,7 +147,6 @@ void parser_init(parser_t *parser, gen_t *gen)
     parser->in_function = false;
     parser->func_is_void = false;
     parser->returned = false;
-    parser->in_assignment = false;
 
     stack_push_table(parser->stack);
     insert_builtins_to_table(parser);
@@ -826,7 +825,7 @@ bool rule_initialization(parser_t *parser, data_t *data){
 
     variable_type_t type = exp_parsing(parser);
 
-    gen_pop_value(parser->gen, data->name, parser->in_function, parser->in_if, parser->in_assignment);
+    gen_pop_value(parser->gen, data->name, parser->in_function, parser->in_if);
 
     switch (type) {
     case VAL_INT:
@@ -926,16 +925,13 @@ bool rule_assignment(parser_t *parser){
 
 bool rule_assignment_type(parser_t *parser, data_t *data){
     if(is_type(parser, TOK_IDENTIFIER) && is_type_next(parser, TOK_LBRACKET)){
-        gen_func_return_to_var(parser->gen, data->name, parser->in_function);
         return rule_function_call(parser, data);
     }
     else{
 
-        parser->in_assignment = true;
         variable_type_t type = exp_parsing(parser);
 
-        gen_pop_value(parser->gen, data->name, parser->in_function, parser->in_if, parser->in_assignment);
-        parser->in_assignment = false;
+        gen_pop_value(parser->gen, data->name, parser->in_function, parser->in_if);
 
         if (data->type == LET){
             error = ERR_SEM_FUNCTION;

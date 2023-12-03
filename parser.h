@@ -30,7 +30,6 @@ typedef struct parser
     bool in_cycle;
     bool in_if;
     bool in_else;
-    bool in_assignment;
     variable_type_t return_type;
 } parser_t;
 
