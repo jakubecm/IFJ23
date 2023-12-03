@@ -1428,7 +1428,7 @@ bool rule_arg_value(parser_t *parser, int *argindex, data_t *data, vector_t *cal
                 !(arg->value.var_id.type == VAL_DOUBLEQ && param_type == VAL_DOUBLE) &&
                 !(arg->value.var_id.type == VAL_INTQ && param_type == VAL_INT) &&
                 !(arg->value.var_id.type == VAL_STRINGQ && param_type == VAL_STRING)){
-                error = ERR_SEM_TYPE;
+                error = ERR_SEM_CALL;
                 print_error_and_exit(error);
                 return false;   // Attempt at calling a function with a variable of a different type than the function expects
             }
@@ -1438,7 +1438,7 @@ bool rule_arg_value(parser_t *parser, int *argindex, data_t *data, vector_t *cal
             break;
         case TOK_INT:
             if (param_type != VAL_INT && param_type != VAL_INTQ){
-                error = ERR_SEM_TYPE;
+                error = ERR_SEM_CALL;
                 print_error_and_exit(error);
                 return false;   // Attempt at calling a function with an int argument, where the function expects a different type
             }
@@ -1447,7 +1447,7 @@ bool rule_arg_value(parser_t *parser, int *argindex, data_t *data, vector_t *cal
             break;
         case TOK_DOUBLE:
             if (param_type != VAL_DOUBLE && param_type != VAL_DOUBLEQ){
-                error = ERR_SEM_TYPE;
+                error = ERR_SEM_CALL;
                 print_error_and_exit(error);
                 return false;   // Attempt at calling a function with a double argument, where the function expects a different type
             }
@@ -1456,7 +1456,7 @@ bool rule_arg_value(parser_t *parser, int *argindex, data_t *data, vector_t *cal
             break;
         case TOK_STRING:
             if (param_type != VAL_STRING && param_type != VAL_STRINGQ){
-                error = ERR_SEM_TYPE;
+                error = ERR_SEM_CALL;
                 print_error_and_exit(error);
                 return false;   // Attempt at calling a function with a string argument, where the function expects a different type
             }
@@ -1466,7 +1466,7 @@ bool rule_arg_value(parser_t *parser, int *argindex, data_t *data, vector_t *cal
             break;
         case K_NIL:
             if (param_type != VAL_INTQ && param_type != VAL_DOUBLEQ && param_type != VAL_STRINGQ){
-                error = ERR_SEM_TYPE;
+                error = ERR_SEM_CALL;
                 print_error_and_exit(error);
                 return false;   // Attempt at calling a function with a nil argument, where the function expects a different type
             }
@@ -1525,7 +1525,7 @@ bool rule_return_statement(parser_t *parser){
     }
 
     if (!parser->in_function){
-        error = ERR_SEM_RETURN;
+        error = ERR_SYN;
         print_error_and_exit(error);
         return false;   // Attempt at returning from outside of a function
     }
@@ -1554,7 +1554,14 @@ bool rule_return_statement(parser_t *parser){
 // TODO: poresit return ve void
 bool rule_returned_expression(parser_t *parser){
     if (is_expression(parser)){
-        if(parser->func_is_void){   // PROBLEM: muze se stat, ze budu mit 
+        if(parser->func_is_void){
+            if(parser->token.eol){
+                while(!is_type(parser, TOK_RCURLYBRACKET)){
+                    load_token(parser);
+                }
+                
+                return true;
+            }                       // PROBLEM: muze se stat, ze budu mit 
                                     // return
                                     // x = 5
                                     // toto je validni kod, ale zpusobil by chybu, protoze nemame eol
