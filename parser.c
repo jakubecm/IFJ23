@@ -1072,16 +1072,19 @@ bool rule_variable_statement(parser_t *parser){
 
     data_t *data = stack_lookup_var(parser->stack, parser->token.attribute.string);
     if (data == NULL) {
-        error = ERR_SEM_FUNCTION;
+        error = ERR_SEM_NDEF;
         print_error_and_exit(error);
         return false;   // Attempt at defining a variable that does not exist
     }
 
-    if (data->type != LET){
-        error = ERR_SEM_NDEF;
+    if (data->value.var_id.type != VAL_INTQ && data->value.var_id.type != VAL_DOUBLEQ && data->value.var_id.type != VAL_STRINGQ) {
+        error = ERR_SEM_OTHER;
         print_error_and_exit(error);
-        return false;   // variable not found
+        return false;   // Attempt at defining a variable that is not of type ? (unknown)
     }
+
+    symbol_type_t prev_type = data->type;
+    data->type = LET;
     // je promenna typ_nil?
     //gen_variable_statement(gen, typpromenne)
     load_token(parser);
@@ -1103,6 +1106,7 @@ bool rule_variable_statement(parser_t *parser){
         print_error_and_exit(error);
         return false;
     }
+    data->type = prev_type;
     if (!was_in_if){
         parser->in_if = false;
     }
