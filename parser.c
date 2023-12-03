@@ -900,7 +900,13 @@ bool rule_assignment(parser_t *parser){
         return false;
     }
     load_token(parser);
-    return rule_assignment_type(parser, var);
+    if (!rule_assignment_type(parser, var)){
+        return false;
+    }
+    data_t new_var = *var;
+    new_var.value.var_id.initialized = true;
+    symbol_table_insert(stack_top_table(parser->stack), new_var.name, new_var);
+    return true;
 }
 
 // <assignment_type> -> <function_call> | <expression>
