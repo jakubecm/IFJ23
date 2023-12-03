@@ -35,7 +35,7 @@ void gen_expression(gen_t *gen, token_type_t operator, bool in_function);
 void gen_call_convert(gen_t *gen);
 void gen_call_convert2(gen_t *gen);
 void gen_print(gen_t *gen);
-void gen_pop_value(gen_t* gen, char* name, bool in_function, bool in_if);
+void gen_pop_value(gen_t* gen, char* name, bool in_function, bool in_if, bool was_initialized);
 
 void gen_init(gen_t *gen)
 {
@@ -535,12 +535,12 @@ void gen_call_convert2(gen_t *gen) {
     mergestr(&gen->global, "CALL $int2float2\n");
 }
 
-void gen_pop_value(gen_t* gen, char* name, bool in_function, bool in_if) {
+void gen_pop_value(gen_t* gen, char* name, bool in_function, bool in_if, bool was_initialized) {
     if (in_function) {
         mergestr(&gen->functions, "POPS LF@");
         mergestr(&gen->functions, name);
         mergestr(&gen->functions, "\n");
-    } else if (!in_function && in_if){
+    } else if (!in_function && in_if && !was_initialized){
         mergestr(&gen->global, "POPS LF@");
         mergestr(&gen->global, name);
         mergestr(&gen->global, "\n");
