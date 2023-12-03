@@ -133,6 +133,7 @@ bool rule_more_arguments(parser_t *parser, int argnum, int *argindex, data_t *da
 bool rule_return_statement(parser_t *parser);
 bool rule_returned_expression(parser_t *parser);
 void insert_builtins_to_table(parser_t *parser);
+void check_function_definitions(parser_t *parser);
 //================= FUNCTION DECLARATIONS END HERE ================= //
 
 //================= PARSER FUNCTIONS ================= //
@@ -219,6 +220,16 @@ bool is_expression(parser_t *parser) {
     }
 }
 
+void check_function_definitions(parser_t *parser) {
+    symbol_table_t *table = stack_bottom_table(parser->stack);
+    for (int i = 0; i < table->capacity; i++) {
+        if (table->table[i] != NULL && table->table[i]->data.type == FUNC && !table->table[i]->data.value.func_id.defined) {
+            error = ERR_SEM_FUNCTION;
+            print_error_and_exit(error);
+        }
+    }
+}
+
 //================= PARSER FUNCTIONS END HERE ================= //
 //-------------------------------------------------------------//
 //================= GRAMMAR RULES START HERE ================= //
@@ -227,6 +238,7 @@ bool is_expression(parser_t *parser) {
 
 bool rule_program(parser_t *parser){
     if (is_type(parser, TOK_EOF)){
+        check_function_definitions(parser);
         return true;
     }
     else if (rule_statement(parser)){
