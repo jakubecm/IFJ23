@@ -29,7 +29,7 @@ void gen_push_int(gen_t *gen, int value, bool in_function);
 void gen_push_float(gen_t *gen, double valu, bool in_function);
 void gen_push_string(gen_t *gen, char *value, bool in_function);
 void gen_push_nil(gen_t *gen, bool in_function);
-void gen_push_var(gen_t *gen, char *name, bool local);
+void gen_push_var(gen_t *gen, char *name, bool local, bool in_if, bool in_assignment);
 void gen_argdef_var(gen_t *gen, char *name, bool local);
 void gen_expression(gen_t *gen, token_type_t operator, bool in_function);
 void gen_call_convert(gen_t *gen);
@@ -401,13 +401,16 @@ void gen_push_nil(gen_t *gen, bool in_function)
     }
 }
 
-void gen_push_var(gen_t *gen, char *name, bool local) {
-    if(local) {
+void gen_push_var(gen_t *gen, char *name, bool local, bool in_if, bool in_assignment) {
+    if (local) {
         mergestr(&gen->functions, "PUSHS LF@");
         mergestr(&gen->functions, name);
         mergestr(&gen->functions, "\n");
-    }
-    else {
+    } else if (!local && in_if && !in_assignment) {
+        mergestr(&gen->global, "PUSHS LF@");
+        mergestr(&gen->global, name);
+        mergestr(&gen->global, "\n");
+    }else {
         mergestr(&gen->global, "PUSHS GF@");
         mergestr(&gen->global, name);
         mergestr(&gen->global, "\n");
