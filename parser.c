@@ -247,6 +247,11 @@ bool rule_program(parser_t *parser){
     else if (rule_function_definition(parser)){
         return rule_program(parser);
     }
+    else{
+        error = ERR_SYN;
+        print_error_and_exit(error);
+        return false;
+    }
 
     return false;
 }
@@ -378,7 +383,7 @@ bool rule_function_return_type_and_body(parser_t *parser, data_t *data){
         data->value.func_id.return_type = str_to_type(parser->token);
         parser->return_type = str_to_type(parser->token);
         if (!rule_type(parser)){
-            error = ERR_SEM_OTHER;
+            error = ERR_SYN;
             print_error_and_exit(error);
             return false;
         }
@@ -440,7 +445,9 @@ bool rule_nonvoid_function_body(parser_t *parser){
         return true;
     } else if (rule_statement_list(parser)){
         return true;
-    } 
+    }
+
+    // Set ERR_SYN here?
 
     return false;
 }
