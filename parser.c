@@ -1363,11 +1363,12 @@ bool rule_arg_name(parser_t *parser, int *argindex, data_t *data){
 
 bool rule_arg_value(parser_t *parser, int *argindex, data_t *data, vector_t *call_args){
     variable_type_t param_type = data->value.func_id.parameters->data[*argindex].parameter.type;
+    data_t *arg = NULL;
     if (param_type == VAL_TERM){ // buildin write function only
         switch (parser->token.type) {
             case TOK_IDENTIFIER:
                 // check if var exists
-                data_t *arg = stack_lookup_var(parser->stack, parser->token.attribute.string);
+                arg = stack_lookup_var(parser->stack, parser->token.attribute.string);
                 if (arg == NULL || !arg->value.var_id.initialized){
                     error = ERR_SEM_NDEF;
                     print_error_and_exit(error);
@@ -1403,7 +1404,7 @@ bool rule_arg_value(parser_t *parser, int *argindex, data_t *data, vector_t *cal
         load_token(parser);
         return true;
     }
-    data_t *arg = NULL;
+    arg = NULL;
     switch(parser->token.type){
         case TOK_IDENTIFIER:
             if (!data->value.func_id.arguments_defined) { // on funcion call before definition ve save the function params

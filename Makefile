@@ -20,4 +20,4 @@ clean:
 	rm -f $(OBJECTS) xjakub41.zip main
 
 pack:
-	zip xjakub41.zip *.c *.h Makefile
+	zip xjakub41.zip *.c *.h rozdeleni Makefile
