@@ -817,6 +817,12 @@ bool rule_type_def(parser_t *parser, data_t *data){
 
 bool rule_type_def_follow(parser_t *parser, data_t *data){
     if (!is_type(parser, TOK_ASSIGNMENT)) {
+
+        if(data->value.var_id.type == VAL_INTQ || data->value.var_id.type == VAL_DOUBLEQ || data->value.var_id.type == VAL_STRINGQ){
+            gen_push_nil(parser->gen, parser->in_function);
+            bool is_global = !(parser->in_cycle || parser->in_if || parser->in_else);
+            gen_pop_value(parser->gen, data->name, parser->in_function, is_global);
+        }
         return true;
     }
 
@@ -1114,6 +1120,8 @@ bool rule_variable_statement(parser_t *parser){
         print_error_and_exit(error);
         return false;   // Attempt at defining a variable that is not of type ? (unknown)
     }
+    bool is_global = stack_lookup_var_in_global(parser->stack, data->name);
+    gen_if_let(parser->gen, data->name, parser->in_function, is_global);
 
     symbol_type_t prev_type = data->type;
     data->type = LET;
@@ -1148,6 +1156,8 @@ bool rule_variable_statement(parser_t *parser){
         print_error_and_exit(error);
         return false;
     }
+    gen_else(parser->gen, parser->in_function);
+
     load_token(parser);
     if (!is_type(parser, TOK_LCURLYBRACKET)){
         error = ERR_SYN;
@@ -1170,6 +1180,7 @@ bool rule_variable_statement(parser_t *parser){
     if (!was_in_else){
         parser->in_else = false;
     }
+    gen_endif(parser->gen, parser->in_function);
     load_token(parser);
     return true;
 }
@@ -1306,8 +1317,11 @@ bool rule_function_call(parser_t *parser, data_t *var){
     }
     call_args->size = argindex;
     // gen funkce zde
-    bool is_global = stack_lookup_var_in_global(parser->stack, data->name);
-    gen_arguments(parser->gen, call_args, parser->in_function, parser->in_if);
+    gen_arguments_start(parser->gen, parser->in_function);
+    for(int i = call_args->size - 1; i >= 0; i--){
+        bool is_global = stack_lookup_var_in_global(parser->stack, call_args->data[i].parameter.value.string);
+        gen_arguments(parser->gen, call_args->data[i], parser->in_function, is_global);
+    }
     if(strcmp(data->name, "write") == 0){
         gen_push_int(parser->gen, call_args->size, parser->in_function);
     }

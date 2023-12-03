@@ -48,6 +48,8 @@ void gen_header(gen_t *gen);
 */
 void gen_print(gen_t *gen);
 
+void gen_if_let(gen_t *gen, char *name, bool in_function, bool is_global);
+
 void gen_if(gen_t *gen, bool in_function);
 
 void gen_else(gen_t *gen, bool in_function);
@@ -70,7 +72,9 @@ void gen_parameters(gen_t *gen, vector_t *parameters);
 
 void gen_func_call(gen_t *gen, char *name, bool in_function);
 
-void gen_arguments(gen_t *gen, vector_t *arguments, bool in_function, bool is_global);
+void gen_arguments_start(gen_t *gen, bool in_function);
+
+void gen_arguments(gen_t *gen, htab_func_param_t arg, bool in_function, bool is_global);
 
 void gen_return(gen_t *gen);
 

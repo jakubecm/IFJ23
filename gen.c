@@ -17,8 +17,10 @@ void gen_var_definition(gen_t *gen, token_t* token, bool in_function, bool in_if
 void gen_func(gen_t *gen, token_t *name);
 void gen_func_end(gen_t *gen, bool is_void);
 void gen_func_return_to_var(gen_t *gen, char *name, bool in_function);
-void gen_arguments(gen_t *gen, vector_t *gen_arguments, bool in_function, bool in_if);
+void gen_arguments_start(gen_t *gen, bool in_function);
+void gen_arguments(gen_t *gen, htab_func_param_t arg, bool in_function, bool in_if);
 void gen_func_call(gen_t *gen, char *name, bool in_function);
+void gen_if_let(gen_t *gen, char *name, bool in_function, bool is_global);
 void gen_if(gen_t *gen, bool in_function);
 void gen_else(gen_t *gen, bool in_function);
 void gen_endif(gen_t *gen, bool in_function);
@@ -36,6 +38,7 @@ void gen_call_convert(gen_t *gen);
 void gen_call_convert2(gen_t *gen);
 void gen_print(gen_t *gen);
 void gen_pop_value(gen_t* gen, char* name, bool in_function, bool is_global);
+mystring_t* convertToEscapeSequence(const char *input);
 
 void gen_init(gen_t *gen)
 {
@@ -154,83 +157,85 @@ void gen_parameters(gen_t *gen, vector_t *parameters) {
     }
 }
 
-void gen_arguments(gen_t *gen, vector_t *gen_arguments, bool in_function, bool is_global) {
-
+void gen_arguments_start(gen_t *gen, bool in_function) {
     if(in_function){
         mergestr(&gen->functions, "CREATEFRAME\n");
-        for (int i = gen_arguments->size - 1; i >= 0; i--)
-        {
-            switch (gen_arguments->data[i].parameter.type)
-            {
-            case VAL_INT:
-                mergestr(&gen->functions, "PUSHS int@");
-                mergestr_int(&gen->functions, gen_arguments->data[i].parameter.value.number);
-                mergestr(&gen->functions, "\n");
-                break;
-            case VAL_DOUBLE:
-                mergestr(&gen->functions, "PUSHS float@");
-                mergestr_float(&gen->functions, gen_arguments->data[i].parameter.value.decimal);
-                mergestr(&gen->functions, "\n");
-                break;
-            case VAL_STRING:
-                mergestr(&gen->functions, "PUSHS string@");
-                mergestr(&gen->functions, gen_arguments->data[i].parameter.value.string);
-                mergestr(&gen->functions, "\n");
-                break;
-            case VAL_NIL:
-                mergestr(&gen->functions, "PUSHS nil@nil\n");
-                break;
-            case VAL_ID:
-                if(!is_global){
-                    mergestr(&gen->functions, "PUSHS LF@");
-                }
-                else{
-                    mergestr(&gen->functions, "PUSHS GF@");
-                }
-                mergestr(&gen->functions, gen_arguments->data[i].parameter.value.string);
-                mergestr(&gen->functions, "\n");
-                break;
-            }
-        }
     }
     else{
         mergestr(&gen->global, "CREATEFRAME\n");
-        for (int i = gen_arguments->size - 1; i >= 0; i--)
+    }
+}
+
+void gen_arguments(gen_t *gen, htab_func_param_t arg, bool in_function, bool is_global) {
+
+    if (in_function)
+    {
+        switch (arg.parameter.type)
         {
-            switch (gen_arguments->data[i].parameter.type)
+        case VAL_INT:
+            mergestr(&gen->functions, "PUSHS int@");
+            mergestr_int(&gen->functions, arg.parameter.value.number);
+            mergestr(&gen->functions, "\n");
+            break;
+        case VAL_DOUBLE:
+            mergestr(&gen->functions, "PUSHS float@");
+            mergestr_float(&gen->functions, arg.parameter.value.decimal);
+            mergestr(&gen->functions, "\n");
+            break;
+        case VAL_STRING:
+            gen_push_string(gen, arg.parameter.value.string, in_function);
+            break;
+        case VAL_NIL:
+            mergestr(&gen->functions, "PUSHS nil@nil\n");
+            break;
+        case VAL_ID:
+            if (!is_global)
             {
-            case VAL_INT:
-                mergestr(&gen->global, "PUSHS int@");
-                mergestr_int(&gen->global, gen_arguments->data[i].parameter.value.number);
-                mergestr(&gen->global, "\n");
-                break;
-            case VAL_DOUBLE:
-                mergestr(&gen->global, "PUSHS float@");
-                mergestr_float(&gen->global, gen_arguments->data[i].parameter.value.decimal);
-                mergestr(&gen->global, "\n");
-                break;
-            case VAL_STRING:
-                mergestr(&gen->global, "PUSHS string@");
-                mergestr(&gen->global, gen_arguments->data[i].parameter.value.string);
-                mergestr(&gen->global, "\n");
-                break;
-            case VAL_NIL:
-                mergestr(&gen->global, "PUSHS nil@nil\n");
-                break;
-            case VAL_ID:
-                if(!is_global){
-                    mergestr(&gen->global, "PUSHS LF@");
-                }
-                else{
-                    mergestr(&gen->global, "PUSHS GF@");
-                }
-                mergestr(&gen->global, gen_arguments->data[i].parameter.value.string);
-                mergestr(&gen->global, "\n");
-                break;
+                mergestr(&gen->functions, "PUSHS LF@");
             }
+            else
+            {
+                mergestr(&gen->functions, "PUSHS GF@");
+            }
+            mergestr(&gen->functions, arg.parameter.value.string);
+            mergestr(&gen->functions, "\n");
+            break;
         }
     }
-
+    else
+    {
+        switch (arg.parameter.type)
+        {
+        case VAL_INT:
+            mergestr(&gen->global, "PUSHS int@");
+            mergestr_int(&gen->global, arg.parameter.value.number);
+            mergestr(&gen->global, "\n");
+            break;
+        case VAL_DOUBLE:
+            mergestr(&gen->global, "PUSHS float@");
+            mergestr_float(&gen->global, arg.parameter.value.decimal);
+            mergestr(&gen->global, "\n");
+            break;
+        case VAL_STRING:
+            gen_push_string(gen, arg.parameter.value.string, in_function);
+            break;
+        case VAL_NIL:
+            mergestr(&gen->global, "PUSHS nil@nil\n");
+            break;
+        case VAL_ID:
+            if (!is_global)
+            {
+                mergestr(&gen->global, "PUSHS LF@");
+            }
+            else
+            {
+                mergestr(&gen->global, "PUSHS GF@");
+            }
+            mergestr(&gen->global, arg.parameter.value.string);
+            mergestr(&gen->global, "\n");
+            break;
+        }
+    }
 }
 
 void gen_func_call(gen_t *gen, char *name, bool in_function)
@@ -244,6 +249,42 @@ void gen_func_call(gen_t *gen, char *name, bool in_function)
         mergestr(&gen->global, "CALL $");
         mergestr(&gen->global, name);
         mergestr(&gen->global, "\n");
+    }
+}
+
+void gen_if_let(gen_t *gen, char *name, bool in_function, bool is_global)
+{
+    if(in_function){
+        if(!is_global){
+            mergestr(&gen->functions, "PUSHS LF@");
+            mergestr(&gen->functions, name);
+            mergestr(&gen->functions, "\n");
+        }
+        else{
+            mergestr(&gen->functions, "PUSHS GF@");
+            mergestr(&gen->functions, name);
+            mergestr(&gen->functions, "\n");
+        }
+        mergestr(&gen->functions, "POPS GF@return_exp\n");
+        mergestr(&gen->functions, "JUMPIFEQ $else$");
+        mergestr_int(&gen->functions, gen->label_counter);
+        mergestr(&gen->functions, " GF@return_exp nil@nil\n");
+    }
+    else{
+        if(!is_global){
+            mergestr(&gen->global, "PUSHS LF@");
+            mergestr(&gen->global, name);
+            mergestr(&gen->global, "\n");
+        }
+        else{
+            mergestr(&gen->global, "PUSHS GF@");
+            mergestr(&gen->global, name);
+            mergestr(&gen->global, "\n");
+        }
+        mergestr(&gen->global, "POPS GF@return_exp\n");
+        mergestr(&gen->global, "JUMPIFEQ $else$");
+        mergestr_int(&gen->global, gen->label_counter);
+        mergestr(&gen->global, " GF@return_exp nil@nil\n");
     }
 }
 
@@ -388,12 +429,16 @@ void gen_push_string(gen_t *gen, char *value, bool in_function)
 {
     if(in_function){
         mergestr(&gen->functions, "PUSHS string@");
-        mergestr(&gen->functions, value);
+        mystring_t *escape = convertToEscapeSequence(value);
+        mergestr(&gen->functions, escape->string);
+        destroy(escape);
         mergestr(&gen->functions, "\n");
     }
     else{
         mergestr(&gen->global, "PUSHS string@");
-        mergestr(&gen->global, value);
+        mystring_t *escape = convertToEscapeSequence(value);
+        mergestr(&gen->global, escape->string);
+        destroy(escape);
         mergestr(&gen->global, "\n");
     }
 }
@@ -584,4 +629,25 @@ void gen_print(gen_t *gen) {
     printstr(&gen->global);
     printstr(&gen->footer);
     printstr(&gen->functions);
+}
+
+mystring_t* convertToEscapeSequence(const char *input) {
+    mystring_t *output = malloc(sizeof(mystring_t));
+    initstr(output);
+    int i = 0;
+    char num[3] = {0};
+    for (i = 0; input[i] != '\0'; i++) {
+        unsigned char ch = input[i];
+        if ((ch >= 0 && ch <= 32) || ch == 35 || ch == 92) {
+            sprintf(num, "%02d", ch);
+            makestr(output, '\\');
+            makestr(output, '0');
+            makestr(output, num[0]);
+            makestr(output, num[1]);
+
+        } else {
+            makestr(output, input[i]);
+        }
+    }
+    return output;
 }
