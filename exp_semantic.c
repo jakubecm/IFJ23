@@ -46,7 +46,7 @@ sem_data_type_t tok_type(parser_t* parserData) {
         case TOK_IDENTIFIER:
 
             tmpData = stack_lookup_var(parserData->stack, parserData->token.attribute.string);
-            if (tmpData == NULL || !tmpData->value.var_id.initialized) {
+            if (tmpData == NULL || (!tmpData->value.var_id.initialized && !tmpData->value.var_id.if_initialized)) {
                 return SEM_UNDEF;
             }
             

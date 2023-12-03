@@ -154,7 +154,7 @@ void gen_parameters(gen_t *gen, vector_t *parameters) {
     }
 }
 
-void gen_arguments(gen_t *gen, vector_t *gen_arguments, bool in_function, bool in_if) {
+void gen_arguments(gen_t *gen, vector_t *gen_arguments, bool in_function, bool is_global) {
 
     if(in_function){
         mergestr(&gen->functions, "CREATEFRAME\n");
@@ -181,7 +181,12 @@ void gen_arguments(gen_t *gen, vector_t *gen_arguments, bool in_function, bool i
                 mergestr(&gen->functions, "PUSHS nil@nil\n");
                 break;
             case VAL_ID:
-                mergestr(&gen->functions, "PUSHS LF@");
+                if(!is_global){
+                    mergestr(&gen->functions, "PUSHS LF@");
+                }
+                else{
+                    mergestr(&gen->functions, "PUSHS GF@");
+                }
                 mergestr(&gen->functions, gen_arguments->data[i].parameter.value.string);
                 mergestr(&gen->functions, "\n");
                 break;
@@ -213,7 +218,7 @@ void gen_arguments(gen_t *gen, vector_t *gen_arguments, bool in_function, bool i
                 mergestr(&gen->global, "PUSHS nil@nil\n");
                 break;
             case VAL_ID:
-                if(in_if){
+                if(!is_global){
                     mergestr(&gen->global, "PUSHS LF@");
                 }
                 else{

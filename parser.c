@@ -974,7 +974,7 @@ bool rule_assignment_type(parser_t *parser, data_t *data){
         bool is_global = stack_lookup_var_in_global(parser->stack, data->name);
         gen_pop_value(parser->gen, data->name, parser->in_function, is_global);
 
-        if (data->type == LET && data->value.var_id.initialized){
+        if (data->type == LET && (data->value.var_id.initialized || data->value.var_id.func_init)){
             error = ERR_SEM_OTHER;
             print_error_and_exit(error);
             return false;   // Attempt at assigning to a let variable
@@ -1306,6 +1306,7 @@ bool rule_function_call(parser_t *parser, data_t *var){
     }
     call_args->size = argindex;
     // gen funkce zde
+    bool is_global = stack_lookup_var_in_global(parser->stack, data->name);
     gen_arguments(parser->gen, call_args, parser->in_function, parser->in_if);
     if(strcmp(data->name, "write") == 0){
         gen_push_int(parser->gen, call_args->size, parser->in_function);
@@ -1416,7 +1417,7 @@ bool rule_arg_value(parser_t *parser, int *argindex, data_t *data, vector_t *cal
             case TOK_IDENTIFIER:
                 // check if var exists
                 arg = stack_lookup_var(parser->stack, parser->token.attribute.string);
-                if (arg == NULL || !arg->value.var_id.initialized){
+                if (arg == NULL || (!arg->value.var_id.initialized && !arg->value.var_id.func_init)){
                     error = ERR_SEM_NDEF;
                     print_error_and_exit(error);
                     return false;   // Attempt at calling a function with a non-existing variable

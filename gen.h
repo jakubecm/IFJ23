@@ -70,7 +70,7 @@ void gen_parameters(gen_t *gen, vector_t *parameters);
 
 void gen_func_call(gen_t *gen, char *name, bool in_function);
 
-void gen_arguments(gen_t *gen, vector_t *arguments, bool in_function, bool in_if);
+void gen_arguments(gen_t *gen, vector_t *arguments, bool in_function, bool is_global);
 
 void gen_return(gen_t *gen);
 
