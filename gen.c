@@ -15,7 +15,7 @@ void gen_header(gen_t *gen);
 void gen_main(gen_t *gen);
 void gen_var_definition(gen_t *gen, token_t* token, bool in_function, bool in_if);
 void gen_func(gen_t *gen, token_t *name);
-void gen_func_end(gen_t *gen);
+void gen_func_end(gen_t *gen, bool is_void);
 void gen_func_return_to_var(gen_t *gen, char *name, bool in_function);
 void gen_arguments(gen_t *gen, vector_t *gen_arguments, bool in_function, bool in_if);
 void gen_func_call(gen_t *gen, char *name, bool in_function);
@@ -119,8 +119,10 @@ void gen_func(gen_t *gen, token_t *token){
     mergestr(&gen->functions, "PUSHFRAME\n");
 }
 
-void gen_func_end(gen_t *gen){
-    mergestr(&gen->functions, "POPS GF@return_func\n");
+void gen_func_end(gen_t *gen, bool is_void){
+    if(!is_void){
+        mergestr(&gen->functions, "POPS GF@return_func\n");
+    }
     mergestr(&gen->functions, "POPFRAME\n");
     mergestr(&gen->functions, "RETURN\n");
 }

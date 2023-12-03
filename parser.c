@@ -369,7 +369,9 @@ bool rule_function_definition(parser_t *parser){
         return false;
     }
     stack_pop_table(parser->stack);
-    gen_func_end(parser->gen);
+
+    
+    gen_func_end(parser->gen, parser->func_is_void);
 
     return true;
 }
@@ -940,7 +942,7 @@ bool rule_assignment_type(parser_t *parser, data_t *data){
 
         gen_pop_value(parser->gen, data->name, parser->in_function, parser->in_if);
 
-        if (data->type == LET){
+        if (data->type == LET && data->value.var_id.initialized){
             error = ERR_SEM_OTHER;
             print_error_and_exit(error);
             return false;   // Attempt at assigning to a let variable
@@ -1569,7 +1571,7 @@ bool rule_returned_expression(parser_t *parser){
                 while(!is_type(parser, TOK_RCURLYBRACKET)){
                     load_token(parser);
                 }
-                
+                gen_func_end(parser->gen, parser->in_function);
                 return true;
             }                       // PROBLEM: muze se stat, ze budu mit 
                                     // return
@@ -1588,6 +1590,8 @@ bool rule_returned_expression(parser_t *parser){
         }
         return true;
     }
+
+    gen_func_end(parser->gen, parser->in_function);
 
     if (!parser->func_is_void){
         error = ERR_SEM_RETURN;
