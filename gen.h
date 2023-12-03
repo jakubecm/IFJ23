@@ -82,7 +82,7 @@ void gen_push_string(gen_t *gen, char *value, bool in_function);
 
 void gen_push_nil(gen_t *gen, bool in_function);
 
-void gen_push_var(gen_t *gen, char *name, bool local);
+void gen_push_var(gen_t *gen, char *name, bool local, bool is_global);
 
 void gen_var_definition(gen_t *gen, token_t* token, bool in_function, bool in_if);
 
@@ -96,4 +96,4 @@ void gen_call_convert(gen_t *gen);
 
 void gen_call_convert2(gen_t *gen);
 
-void gen_pop_value(gen_t* gen, char* name, bool in_function, bool in_if);
+void gen_pop_value(gen_t* gen, char* name, bool in_function, bool is_global);

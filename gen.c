@@ -29,13 +29,13 @@ void gen_push_int(gen_t *gen, int value, bool in_function);
 void gen_push_float(gen_t *gen, double valu, bool in_function);
 void gen_push_string(gen_t *gen, char *value, bool in_function);
 void gen_push_nil(gen_t *gen, bool in_function);
-void gen_push_var(gen_t *gen, char *name, bool local);
+void gen_push_var(gen_t *gen, char *name, bool local, bool is_global);
 void gen_argdef_var(gen_t *gen, char *name, bool local);
 void gen_expression(gen_t *gen, token_type_t operator, bool in_function);
 void gen_call_convert(gen_t *gen);
 void gen_call_convert2(gen_t *gen);
 void gen_print(gen_t *gen);
-void gen_pop_value(gen_t* gen, char* name, bool in_function, bool in_if);
+void gen_pop_value(gen_t* gen, char* name, bool in_function, bool is_global);
 
 void gen_init(gen_t *gen)
 {
@@ -403,16 +403,28 @@ void gen_push_nil(gen_t *gen, bool in_function)
     }
 }
 
-void gen_push_var(gen_t *gen, char *name, bool local) {
+void gen_push_var(gen_t *gen, char *name, bool local, bool is_global) {
     if(local) {
-        mergestr(&gen->functions, "PUSHS LF@");
-        mergestr(&gen->functions, name);
-        mergestr(&gen->functions, "\n");
+        if (is_global) {
+            mergestr(&gen->functions, "PUSHS GF@");
+            mergestr(&gen->functions, name);
+            mergestr(&gen->functions, "\n");
+        } else {
+            mergestr(&gen->functions, "PUSHS LF@");
+            mergestr(&gen->functions, name);
+            mergestr(&gen->functions, "\n");
+        }
     }
     else {
-        mergestr(&gen->global, "PUSHS GF@");
-        mergestr(&gen->global, name);
-        mergestr(&gen->global, "\n");
+        if (is_global) {
+            mergestr(&gen->global, "PUSHS GF@");
+            mergestr(&gen->global, name);
+            mergestr(&gen->global, "\n");
+        } else {
+            mergestr(&gen->global, "PUSHS LF@");
+            mergestr(&gen->global, name);
+            mergestr(&gen->global, "\n");
+        }
     }
 }
 
@@ -537,19 +549,28 @@ void gen_call_convert2(gen_t *gen) {
     mergestr(&gen->global, "CALL $int2float2\n");
 }
 
-void gen_pop_value(gen_t* gen, char* name, bool in_function, bool in_if) {
-    if (in_function) {
-        mergestr(&gen->functions, "POPS LF@");
-        mergestr(&gen->functions, name);
-        mergestr(&gen->functions, "\n");
-    } else if (!in_function && in_if){
-        mergestr(&gen->global, "POPS LF@");
-        mergestr(&gen->global, name);
-        mergestr(&gen->global, "\n");
-    }else {
-        mergestr(&gen->global, "POPS GF@");
-        mergestr(&gen->global, name);
-        mergestr(&gen->global, "\n");
+void gen_pop_value(gen_t* gen, char* name, bool in_function, bool is_global) {
+    if(in_function) {
+        if (is_global) {
+            mergestr(&gen->functions, "POPS GF@");
+            mergestr(&gen->functions, name);
+            mergestr(&gen->functions, "\n");
+        } else {
+            mergestr(&gen->functions, "POPS LF@");
+            mergestr(&gen->functions, name);
+            mergestr(&gen->functions, "\n");
+        }
+    }
+    else {
+        if (is_global) {
+            mergestr(&gen->global, "POPS GF@");
+            mergestr(&gen->global, name);
+            mergestr(&gen->global, "\n");
+        } else {
+            mergestr(&gen->global, "POPS LF@");
+            mergestr(&gen->global, name);
+            mergestr(&gen->global, "\n");
+        }
     }
 }
 

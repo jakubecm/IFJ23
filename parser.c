@@ -370,6 +370,14 @@ bool rule_function_definition(parser_t *parser){
     }
     stack_pop_table(parser->stack);
 
+    // loop through all variables in current table and check if they were initialized in the function
+    symbol_table_t *table = stack_top_table(parser->stack);
+    for (int i = 0; i < table->capacity; i++) {
+        if (table->table[i] != NULL && (table->table[i]->data.type == LET || table->table[i]->data.type == VAR) && table->table[i]->data.value.var_id.func_init) {
+            table->table[i]->data.value.var_id.func_init = false;
+            table->table[i]->data.value.var_id.initialized = false;
+        }
+    }
     
     gen_func_end(parser->gen, parser->func_is_void);
 
@@ -834,7 +842,11 @@ bool rule_initialization(parser_t *parser, data_t *data){
 
     variable_type_t type = exp_parsing(parser);
 
-    gen_pop_value(parser->gen, data->name, parser->in_function, parser->in_if);
+    if (parser->in_if || parser->in_else || parser->in_cycle || parser->in_function) {
+        gen_pop_value(parser->gen, data->name, parser->in_function, false);
+    } else {
+        gen_pop_value(parser->gen, data->name, parser->in_function, true);
+    }
 
     switch (type) {
     case VAL_INT:
@@ -924,9 +936,28 @@ bool rule_assignment(parser_t *parser){
     if (!rule_assignment_type(parser, var)){
         return false;
     }
-    data_t new_var = *var;
-    new_var.value.var_id.initialized = true;
-    symbol_table_insert(stack_top_table(parser->stack), new_var.name, new_var);
+
+    bool is_global = stack_lookup_var_in_global(parser->stack, var->name);
+    if (!var->value.var_id.initialized) {
+    // checking var inits for non-void functions:
+        if (parser->in_cycle){
+            // do nothing
+        } else if (!parser->in_if && !parser->in_else) {
+            var->value.var_id.initialized = true;        // Returning form main function body is always valid
+            if (is_global && parser->in_function) {
+                var->value.var_id.func_init = true;
+            }
+        } else if (parser->in_if) {
+            var->value.var_id.if_initialized = true;     // Returning from an if statement is valid, but we need to check if the else branch is also returned from
+        } else if (var->value.var_id.if_initialized && parser->in_else) {
+            var->value.var_id.initialized = true;     // If both branches return, the condition is satysfied
+            var->value.var_id.if_initialized = false;
+            if (is_global && parser->in_function) {
+                var->value.var_id.func_init = true;
+            }
+        }
+    }
+    
     return true;
 }
 
@@ -940,7 +971,8 @@ bool rule_assignment_type(parser_t *parser, data_t *data){
 
         variable_type_t type = exp_parsing(parser);
 
-        gen_pop_value(parser->gen, data->name, parser->in_function, parser->in_if);
+        bool is_global = stack_lookup_var_in_global(parser->stack, data->name);
+        gen_pop_value(parser->gen, data->name, parser->in_function, is_global);
 
         if (data->type == LET && data->value.var_id.initialized){
             error = ERR_SEM_OTHER;

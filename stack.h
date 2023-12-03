@@ -161,4 +161,6 @@ data_t *stack_lookup_func(stack_t* stack, htab_key_t key);
 */
 void stack_destroy_table(stack_t* stack);
 
+bool stack_lookup_var_in_global(stack_t* stack, htab_key_t key);
+
 #endif // STACK_H

@@ -246,3 +246,17 @@ data_t *stack_lookup_func(stack_t* stack, htab_key_t key) {
 
     return NULL;
 }
+
+bool stack_lookup_var_in_global(stack_t* stack, htab_key_t key) {
+    Node* currentNode = stack->top;
+    while (currentNode != NULL) {
+        symbol_table_t* table = (symbol_table_t*)currentNode->data;
+        data_t *symbol = symbol_table_lookup_var(table, key);
+        if (symbol != NULL && table != stack_bottom_table(stack)) {
+            return false;
+        }
+        currentNode = currentNode->right;
+    }
+
+    return true;
+}
