@@ -551,7 +551,7 @@ bool rule_no_name_parameter(parser_t *parser, data_t *data, int *index){
     data_t param; // symtable variable
     param.name = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1));
     strcpy(param.name, parser->token.attribute.string);
-    param.type = VAR;
+    param.type = LET;
     param.value.var_id.type = VAL_UNKNOWN;
 
     if (data->value.func_id.arguments_defined) {
@@ -646,7 +646,7 @@ bool rule_rest_of_identifier_parameter(parser_t *parser, data_t *data, int *inde
         data_t param; // symtable variable
         param.name = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1));
         strcpy(param.name, parser->token.attribute.string);
-        param.type = VAR;
+        param.type = LET;
         param.value.var_id.type = VAL_UNKNOWN;
 
         load_token(parser);
@@ -941,7 +941,7 @@ bool rule_assignment_type(parser_t *parser, data_t *data){
         gen_pop_value(parser->gen, data->name, parser->in_function, parser->in_if);
 
         if (data->type == LET){
-            error = ERR_SEM_FUNCTION;
+            error = ERR_SEM_OTHER;
             print_error_and_exit(error);
             return false;   // Attempt at assigning to a let variable
         }
