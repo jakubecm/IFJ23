@@ -173,7 +173,7 @@ void shift(stack_t* stack, parser_t* parserData, sem_data_type_t input_type) {
                 gen_push_nil(parserData->gen, parserData->in_function);
                 break;
             case TOK_IDENTIFIER:
-                gen_push_var(parserData->gen, parserData->token.attribute.string, parserData->in_function, parserData->in_if, parserData->in_assignment);
+                gen_push_var(parserData->gen, parserData->token.attribute.string, parserData->in_function);
                 break;
             default:
                 break;
