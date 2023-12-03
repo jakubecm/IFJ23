@@ -1289,13 +1289,15 @@ bool rule_arguments(parser_t *parser, int argnum, int *argindex, data_t *data, v
     if (is_type(parser, TOK_RBRACKET)){
         return true;
     }
-    if(!rule_argument(parser, argindex, data, call_args)){
-        return false;
-    }
-    if (data->value.func_id.arguments_defined && *argindex > argnum){
+
+    if (data->value.func_id.arguments_defined && argnum == 0){
         error = ERR_SEM_CALL;
         print_error_and_exit(error);
         return false;  // Attempt at calling a function with too many arguments
+    }
+
+    if(!rule_argument(parser, argindex, data, call_args)){
+        return false;
     }
 
     return rule_more_arguments(parser, argnum, argindex, data, call_args);
@@ -1509,13 +1511,13 @@ bool rule_more_arguments(parser_t *parser, int argnum, int *argindex, data_t *da
         return false;
     }
     load_token(parser);
-    if (!rule_argument(parser, argindex, data, call_args)){
-        return false;
-    }
-    if (*argindex > argnum){
+    if (data->value.func_id.arguments_defined && *argindex >= argnum){
         error = ERR_SEM_CALL;
         print_error_and_exit(error);
         return false;  // Attempt at calling a function with too many arguments
+    }
+    if (!rule_argument(parser, argindex, data, call_args)){
+        return false;
     }
     if (!rule_more_arguments(parser, argnum, argindex, data, call_args)){
         return false;
