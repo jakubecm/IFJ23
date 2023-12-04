@@ -82,13 +82,14 @@ void gen_func_write(gen_t *gen)
 
 void gen_func_Int2Double(gen_t *gen)
 {
-    mergestr(&gen->functions, "LABEL $int2float\n");
+    mergestr(&gen->functions, "LABEL $Int2Double\n");
     mergestr(&gen->functions, "CREATEFRAME\n");
     mergestr(&gen->functions, "PUSHFRAME\n");
     mergestr(&gen->functions, "DEFVAR LF@temp\n");
     mergestr(&gen->functions, "POPS LF@temp\n");
     mergestr(&gen->functions, "INT2FLOAT LF@temp LF@temp\n");
     mergestr(&gen->functions, "PUSHS LF@temp\n");
+    mergestr(&gen->functions, "POPS GF@return_func\n");
     mergestr(&gen->functions, "POPFRAME\n");
     mergestr(&gen->functions, "RETURN\n");
 }
@@ -111,12 +112,13 @@ void gen_func_Int2Double2(gen_t *gen)
 
 void gen_func_Double2Int(gen_t *gen)
 {
-    mergestr(&gen->functions, "LABEL $float2int\n");
+    mergestr(&gen->functions, "LABEL $Double2Int\n");
     mergestr(&gen->functions, "PUSHFRAME\n");
     mergestr(&gen->functions, "DEFVAR LF@temp\n");
     mergestr(&gen->functions, "POPS LF@temp\n");
     mergestr(&gen->functions, "FLOAT2INT LF@temp LF@temp\n");
     mergestr(&gen->functions, "PUSHS LF@temp\n");
+    mergestr(&gen->functions, "POPS GF@return_func\n");
     mergestr(&gen->functions, "POPFRAME\n");
     mergestr(&gen->functions, "RETURN\n");
 }
@@ -136,7 +138,7 @@ void gen_func_length(gen_t *gen)
 
 void gen_func_substr(gen_t *gen)
 {
-    mergestr(&gen->functions, "LABEL $substr\n");
+    mergestr(&gen->functions, "LABEL $substring\n");
     mergestr(&gen->functions, "PUSHFRAME\n");
     mergestr(&gen->functions, "DEFVAR LF@index1\n");
     mergestr(&gen->functions, "DEFVAR LF@index2\n");
@@ -150,6 +152,8 @@ void gen_func_substr(gen_t *gen)
     mergestr(&gen->functions, "STRLEN LF@length LF@string\n");
     mergestr(&gen->functions, "POPS LF@index1\n");
     mergestr(&gen->functions, "POPS LF@index2\n");
+    mergestr(&gen->functions, "EQ GF@tmp LF@index1 LF@index2\n");
+    mergestr(&gen->functions, "JUMPIFEQ $returnNull GF@tmp bool@true\n"); // i == j
     mergestr(&gen->functions, "LT GF@tmp LF@index1 int@0\n");
     mergestr(&gen->functions, "JUMPIFEQ $returnNull GF@tmp bool@true\n"); // i < 0
     mergestr(&gen->functions, "LT GF@tmp LF@index2 int@0\n");
@@ -188,7 +192,7 @@ void gen_func_ord(gen_t *gen)
     mergestr(&gen->functions, "POPS LF@temp\n");
     mergestr(&gen->functions, "TYPE GF@tmp LF@temp\n");
     mergestr(&gen->functions, "JUMPIFNEQ $ERR_SEM_CALL string@string GF@tmp\n"); // nesedi typ
-    mergestr(&gen->functions, "JUMPIFEQ $ord0 string@ LF@tmp\n");
+    mergestr(&gen->functions, "JUMPIFEQ $ord0 string@ GF@tmp\n");
     mergestr(&gen->functions, "STRI2INT LF@temp LF@temp int@0\n");
     mergestr(&gen->functions, "PUSHS LF@temp\n");
     mergestr(&gen->functions, "POPS GF@return_func\n");

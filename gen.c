@@ -623,7 +623,7 @@ void gen_expression(gen_t *gen, token_type_t operator, bool in_function) {
 }
 
 void gen_call_convert(gen_t *gen) {
-    mergestr(&gen->global, "CALL $int2float\n");
+    mergestr(&gen->global, "CALL $Int2Double\n");
 }
 
 void gen_call_convert2(gen_t *gen) {
