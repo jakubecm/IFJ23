@@ -82,7 +82,7 @@ void mergestr_int(mystring_t *str1, int input){
 
 void mergestr_float(mystring_t *str1, float input){
     char str2[35];
-    sprintf(str2, "%f", input);
+    sprintf(str2, "%a", input);
     mergestr(str1, str2);
 }
 

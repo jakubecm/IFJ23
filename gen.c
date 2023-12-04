@@ -514,7 +514,24 @@ void gen_expression(gen_t *gen, token_type_t operator, bool in_function) {
                 mergestr(&gen->global, "PUSHS GF@op1\n");
             }
             break;
-            
+
+        case TOK_IDIV:
+            if(in_function){
+                mergestr(&gen->functions, "POPS GF@op1\n");
+                mergestr(&gen->functions, "POPS GF@op2\n");
+                //JUMP IF op1 IS 0
+                mergestr(&gen->functions, "IDIV GF@op1 GF@op2 GF@op1\n");
+                mergestr(&gen->functions, "PUSHS GF@op1\n");
+            }
+            else{
+                mergestr(&gen->global, "POPS GF@op1\n");
+                mergestr(&gen->global, "POPS GF@op2\n");
+                //JUMP IF op1 IS 0
+                mergestr(&gen->global, "IDIV GF@op1 GF@op2 GF@op1\n");
+                mergestr(&gen->global, "PUSHS GF@op1\n");
+            }
+            break;
+
         case TOK_MUL:
             if(in_function){
                 mergestr(&gen->functions, "MULS\n");
@@ -580,9 +597,23 @@ void gen_expression(gen_t *gen, token_type_t operator, bool in_function) {
         
         case TOK_DQUESTMK:
             if(in_function) {
-                mergestr(&gen->functions, "CALL $nilCheck\n");
+                mergestr(&gen->functions, "CALL $nil_check\n");
             } else {
-                mergestr(&gen->global, "CALL $nilCheck\n");
+                mergestr(&gen->global, "CALL $nil_check\n");
+            }
+            break;
+
+        case TOK_CONCAT:
+            if(in_function) {
+                mergestr(&gen->functions, "POPS GF@op2\n");
+                mergestr(&gen->functions, "POPS GF@op1\n");
+                mergestr(&gen->functions, "CONCAT GF@op2 GF@op1 GF@op2\n");
+                mergestr(&gen->functions, "PUSHS GF@op2\n");
+            } else {
+                mergestr(&gen->global, "POPS GF@op2\n");
+                mergestr(&gen->global, "POPS GF@op1\n");
+                mergestr(&gen->global, "CONCAT GF@op2 GF@op1 GF@op2\n");
+                mergestr(&gen->global, "PUSHS GF@op2\n");
             }
             break;
 

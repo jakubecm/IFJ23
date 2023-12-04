@@ -40,6 +40,7 @@ typedef enum token_type
     TOK_ENDMARKER,     // symbol used for precedence analysis (dont move it from here)
     TOK_COLON,         // :
     TOK_IDIV,          // //
+    TOK_CONCAT,        // (just for gen and exp parser)
     TOK_COMMA,         // ,
     TOK_ARROW,         // ->
     TOK_ASSIGNMENT,    // =

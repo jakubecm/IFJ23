@@ -9,6 +9,7 @@ OBJECTS = $(SOURCES:.c=.o)
 all: main
 
 debug: CFLAGS += $(DEBUG_FLAGS)
+debug: main
 
 main: $(OBJECTS)
 	$(CC) $(CFLAGS) -o $@ $^

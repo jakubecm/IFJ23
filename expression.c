@@ -159,6 +159,7 @@ void shift(stack_t* stack, parser_t* parserData, sem_data_type_t input_type) {
     token_type_t tmpTok = parserData->token.type;
     
     if(is_literal(tmpTok)) {
+        bool is_global;
         switch(tmpTok) {
             case TOK_INT:
                 gen_push_int(parserData->gen, parserData->token.attribute.number, parserData->in_function);
@@ -173,7 +174,7 @@ void shift(stack_t* stack, parser_t* parserData, sem_data_type_t input_type) {
                 gen_push_nil(parserData->gen, parserData->in_function);
                 break;
             case TOK_IDENTIFIER:
-                bool is_global = stack_lookup_var_in_global(parserData->stack, parserData->token.attribute.string);
+                is_global = stack_lookup_var_in_global(parserData->stack, parserData->token.attribute.string);
                 gen_push_var(parserData->gen, parserData->token.attribute.string, parserData->in_function, is_global);
                 break;
             default:
@@ -229,6 +230,11 @@ void reduce(stack_t* stack, int num, analysis_t* analysis, parser_t* parserData)
                 handle_other(stack, analysis->end_type);
                 DEBUG_PRINT("END TYPE: %d\n", analysis->end_type);
 
+                if(analysis->tok1->data = SEM_STRING && analysis->tok3->data == SEM_STRING && analysis->tok2->type == TOK_PLUS) {
+                    gen_expression(parserData->gen, TOK_CONCAT, parserData->in_function);
+                    break;
+                }
+
                 if(analysis->tok1->data == SEM_INT && analysis->tok3->data == SEM_INT && analysis->tok2->type == TOK_DIV) {
                     gen_expression(parserData->gen, TOK_IDIV, parserData->in_function);
                 } else {
@@ -236,12 +242,14 @@ void reduce(stack_t* stack, int num, analysis_t* analysis, parser_t* parserData)
                 }
 
             } else {
+                fprintf(stderr, "else\n");
                 error = ERR_SYN;
                 return;
             }
             break;
 
         default:
+            fprintf(stderr, "default\n");
             error = ERR_SYN;
             return;
     } 
@@ -254,7 +262,7 @@ void reduce(stack_t* stack, int num, analysis_t* analysis, parser_t* parserData)
  * @param tmp - top token of the stack
  * @param analysis - structure with the tokens to reduce
  */
-void prec_analysis(stack_t *stack, parser_t* parserData, stack_terminal_t* tmp, analysis_t* analysis) {
+void prec_analysis(stack_t *stack, parser_t* parserData, stack_terminal_t* tmp, analysis_t* analysis, bool *end2) {
     int prec = precedence(tmp, &parserData->token);
     sem_data_type_t input_type = tok_type(parserData);
     DEBUG_PRINT("prec: %c\n", prec);
@@ -307,6 +315,10 @@ void prec_analysis(stack_t *stack, parser_t* parserData, stack_terminal_t* tmp, 
 
             stack_push_token(stack, input_type, parserData->token.type);
             load_token(parserData);
+            if(!end2) {
+                int num2 = stack_count_after(stack, analysis);
+                reduce(stack, num2, analysis, parserData);
+            }
             break;
                 
         default:
@@ -367,7 +379,7 @@ variable_type_t exp_parsing(parser_t* parserData)  {
             print_error_and_exit(error);
         }
 
-        prec_analysis(&stack, parserData, tmp, analysis);
+        prec_analysis(&stack, parserData, tmp, analysis, &end2);
         if(error != ERR_OK) {
             CLEANUP_RESOURCES(stack, analysis);
             print_error_and_exit(error);

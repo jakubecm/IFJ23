@@ -215,7 +215,7 @@ int get_result_type(stack_terminal_t* operator, stack_terminal_t* left, stack_te
     }
 
     if(operator->type == TOK_EQUAL || operator->type == TOK_NOTEQUAL) {
-        if(is_string(left->data) && !is_string(right->data)) {
+        if(is_string(left->data) && (!is_string(right->data) || !is_nil(right->data))) {
             return SEM_UNDEF;
         }
         
@@ -231,9 +231,9 @@ int get_result_type(stack_terminal_t* operator, stack_terminal_t* left, stack_te
             if(is_int(left->data) && is_int(right->data)) {
                 return SEM_BOOL;
             } else {
-                if(is_int(left->data)) {
+                if(is_int(left->data) && !is_nil(right->data)) {
                      gen_call_convert(parserData->gen);
-                } else if(is_int(right->data)) {
+                } else if(is_int(right->data) && !is_nil(left->data)) {
                     gen_call_convert2(parserData->gen);
                 }
                 return SEM_BOOL;
