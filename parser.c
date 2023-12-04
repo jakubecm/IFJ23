@@ -345,6 +345,7 @@ bool rule_function_definition(parser_t *parser){
         strcpy(func.name, parser->token.attribute.string);
         func.value.func_id.defined = true;
         func.value.func_id.arguments_defined = false;
+        func.value.func_id.return_type = VAL_UNKNOWN;
         func.value.func_id.parameters = vector_init(5);
         symbol_table_insert(stack_top_table(parser->stack), func.name, func);
     }
@@ -570,6 +571,7 @@ bool rule_no_name_parameter(parser_t *parser, data_t *data, int *index){
     strcpy(param.name, parser->token.attribute.string);
     param.type = LET;
     param.value.var_id.type = VAL_UNKNOWN;
+    param.value.var_id.func_init = true;
 
     if (data->value.func_id.arguments_defined) {
         data->value.func_id.parameters->data[*index].def_name = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1)); // identifier
@@ -665,6 +667,7 @@ bool rule_rest_of_identifier_parameter(parser_t *parser, data_t *data, int *inde
         strcpy(param.name, parser->token.attribute.string);
         param.type = LET;
         param.value.var_id.type = VAL_UNKNOWN;
+        param.value.var_id.func_init = true;
 
         load_token(parser);
         if (!is_type(parser, TOK_COLON)){
@@ -742,7 +745,9 @@ bool rule_variable_definition_let(parser_t *parser){
     data.type = LET;
     data.name = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1));
     strcpy(data.name, parser->token.attribute.string);
-    //symbol_table_insert(stack_top_table(parser->stack), data.name, data);
+    data.value.var_id.type = VAL_UNKNOWN;
+    data.value.var_id.initialized = false;
+
     load_token(parser);
     if(rule_definition_types(parser, &data)) {
         symbol_table_insert(stack_top_table(parser->stack), data.name, data);
@@ -780,7 +785,9 @@ bool rule_variable_definition_var(parser_t *parser){
     data.type = VAR;
     data.name = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1));
     strcpy(data.name, parser->token.attribute.string);
-    //symbol_table_insert(stack_top_table(parser->stack), data.name, data);
+    data.value.var_id.type = VAL_UNKNOWN;
+    data.value.var_id.initialized = false;
+
     load_token(parser);
     if(rule_definition_types(parser, &data)) {
         symbol_table_insert(stack_top_table(parser->stack), data.name, data);
