@@ -244,6 +244,7 @@ void check_function_definitions(parser_t *parser) {
 bool rule_program(parser_t *parser){
     if (is_type(parser, TOK_EOF)){
         check_function_definitions(parser);
+        error_t err = error;
         return true;
     }
     else if (rule_statement(parser)){
@@ -834,7 +835,7 @@ bool rule_type_def_follow(parser_t *parser, data_t *data){
 
         if(data->value.var_id.type == VAL_INTQ || data->value.var_id.type == VAL_DOUBLEQ || data->value.var_id.type == VAL_STRINGQ){
             gen_push_nil(parser->gen, parser->in_function);
-            bool is_global = !(parser->in_cycle || parser->in_if || parser->in_else);
+            bool is_global = !(parser->in_cycle || parser->in_if || parser->in_else || parser->in_function);
             gen_pop_value(parser->gen, data->name, parser->in_function, is_global);
         }
         return true;
@@ -857,24 +858,21 @@ bool rule_initialization(parser_t *parser, data_t *data){
 
     if (is_type(parser, TOK_IDENTIFIER) && is_type_next(parser, TOK_LBRACKET)){
         bool ret = rule_function_call(parser, data); // init type in function call
-        gen_func_return_to_var(parser->gen, data->name, parser->in_function);
+        gen_func_return_to_var(parser->gen, data->name, parser->in_function, !(parser->in_if || parser->in_else || parser->in_cycle || parser->in_function));
         data->value.var_id.initialized = true;
         return ret;
     }
 
     variable_type_t type = exp_parsing(parser);
 
-    if (parser->in_if || parser->in_else || parser->in_cycle || parser->in_function) {
-        gen_pop_value(parser->gen, data->name, parser->in_function, false);
-    } else {
-        gen_pop_value(parser->gen, data->name, parser->in_function, true);
-    }
+    gen_pop_value(parser->gen, data->name, parser->in_function, !(parser->in_if || parser->in_else || parser->in_cycle || parser->in_function));
 
     switch (type) {
     case VAL_INT:
         if (type == VAL_INT && (data->value.var_id.type == VAL_DOUBLE || data->value.var_id.type == VAL_DOUBLEQ)) {
-            gen_push_int(parser->gen, parser->token.attribute.number, parser->in_function);
+            gen_push_var(parser->gen, data->name, parser->in_function, !(parser->in_if || parser->in_else || parser->in_cycle || parser->in_function));
             gen_call_convert(parser->gen); // evil int2float hacks
+            gen_func_return_to_var(parser->gen, data->name, parser->in_function, !(parser->in_if || parser->in_else || parser->in_cycle || parser->in_function));
         } else if (data->value.var_id.type != VAL_INT && data->value.var_id.type != VAL_INTQ && data->value.var_id.type != VAL_UNKNOWN){
             error = ERR_SEM_TYPE;
             print_error_and_exit(error);
@@ -989,7 +987,8 @@ bool rule_assignment(parser_t *parser){
 bool rule_assignment_type(parser_t *parser, data_t *data){
     if(is_type(parser, TOK_IDENTIFIER) && is_type_next(parser, TOK_LBRACKET)){
         bool ret = rule_function_call(parser, data); // init type in function call
-        gen_func_return_to_var(parser->gen, data->name, parser->in_function);
+        bool is_global = stack_lookup_var_in_global(parser->stack, data->name);
+        gen_func_return_to_var(parser->gen, data->name, parser->in_function, is_global);
         return ret;
     }
     else{
@@ -1008,6 +1007,14 @@ bool rule_assignment_type(parser_t *parser, data_t *data){
             data->value.var_id.type = type;
         }
         if (type != data->value.var_id.type){
+            if (type == VAL_INT && (data->value.var_id.type == VAL_DOUBLE || data->value.var_id.type == VAL_DOUBLEQ)) {
+                bool is_global = stack_lookup_var_in_global(parser->stack, data->name);
+                gen_push_var(parser->gen, data->name, parser->in_function, is_global);
+                gen_call_convert(parser->gen); // evil int2float hacks
+                gen_func_return_to_var(parser->gen, data->name, parser->in_function, is_global);
+                return true;
+            }
+
             if ((data->value.var_id.type == VAL_DOUBLEQ && type == VAL_DOUBLE) ||
                 (data->value.var_id.type == VAL_INTQ && type == VAL_INT) ||
                 (data->value.var_id.type == VAL_STRINGQ && type == VAL_STRING)){

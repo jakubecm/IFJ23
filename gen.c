@@ -16,7 +16,7 @@ void gen_main(gen_t *gen);
 void gen_var_definition(gen_t *gen, token_t* token, bool in_function, bool in_if);
 void gen_func(gen_t *gen, token_t *name);
 void gen_func_end(gen_t *gen, bool is_void);
-void gen_func_return_to_var(gen_t *gen, char *name, bool in_function);
+void gen_func_return_to_var(gen_t *gen, char *name, bool in_function, bool is_global);
 void gen_arguments_start(gen_t *gen, bool in_function);
 void gen_arguments(gen_t *gen, htab_func_param_t arg, bool in_function, bool in_if);
 void gen_func_call(gen_t *gen, char *name, bool in_function);
@@ -131,18 +131,33 @@ void gen_func_end(gen_t *gen, bool is_void){
     mergestr(&gen->functions, "RETURN\n");
 }
 
-void gen_func_return_to_var(gen_t *gen, char *name, bool in_function){
-    if(in_function){
+void gen_func_return_to_var(gen_t *gen, char *name, bool in_function, bool is_global){
+    if (is_global) {
+        if(in_function){
+        mergestr(&gen->functions, "MOVE GF@");
+        mergestr(&gen->functions, name);
+        mergestr(&gen->functions, " GF@return_func\n");
+
+        }
+        else{
+            mergestr(&gen->global, "MOVE GF@");
+            mergestr(&gen->global, name);
+            mergestr(&gen->global, " GF@return_func\n");
+        }
+    } else {
+        if(in_function){
         mergestr(&gen->functions, "MOVE LF@");
         mergestr(&gen->functions, name);
         mergestr(&gen->functions, " GF@return_func\n");
 
+        }
+        else{
+            mergestr(&gen->global, "MOVE LF@");
+            mergestr(&gen->global, name);
+            mergestr(&gen->global, " GF@return_func\n");
+        }
     }
-    else{
-        mergestr(&gen->global, "MOVE GF@");
-        mergestr(&gen->global, name);
-        mergestr(&gen->global, " GF@return_func\n");
-    }
+    
 }
 
 void gen_parameters(gen_t *gen, vector_t *parameters) {
