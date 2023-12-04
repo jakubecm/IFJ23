@@ -67,7 +67,7 @@ void mergestr_int(mystring_t *str1, int input);
  *   @param str1 structer for dynamic string 
  *   @param float float we want to merge
  */
-void mergestr_float(mystring_t *str1, float input);
+void mergestr_float(mystring_t *str1, double input);
 
 
 /**
