@@ -157,7 +157,8 @@ bool check_operator_compatibility(stack_terminal_t* operator, stack_terminal_t* 
         case TOK_GREATER:
         case TOK_GREATEREQ:
         case TOK_LESSEQ:
-            return is_number(left->data) && is_number(right->data);
+            return (is_number(left->data) && is_number(right->data)) ||
+                   (is_string(left->data) && is_string(right->data));
 
         case TOK_DQUESTMK:
             return ((is_string(left->data) || is_nil(left->data)) && (is_string(right->data) || is_nil(right->data))) ||

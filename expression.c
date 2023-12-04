@@ -81,6 +81,15 @@ void handle_upcoming(parser_t* parserData, stack_t* stack, bool* end, bool* end2
         return;
     }
 
+    if(parserData->token.type == TOK_IDENTIFIER && parserData->next_token.type == TOK_NOT) {
+        data_t* tmpData = stack_lookup_var(parserData->stack, parserData->token.attribute.string);
+
+        if(tmpData->value.var_id.type != VAL_DOUBLEQ && tmpData->value.var_id.type != VAL_INTQ && tmpData->value.var_id.type != VAL_STRINGQ) {
+            error = ERR_SEM_TYPE;
+            return;
+        }
+    }
+
     if (parserData->token.type == TOK_LBRACKET) {
         stack_push_after(stack, SEM_UNDEF, TOK_ENDMARKER);
         stack_push_token(stack, SEM_OPERATOR, parserData->token.type);
