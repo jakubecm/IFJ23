@@ -162,7 +162,6 @@ void shift(stack_t* stack, parser_t* parserData, sem_data_type_t input_type) {
         error = ERR_SEM_NDEF;
         return;
     }
-
     stack_push_token(stack, input_type, parserData->token.type);
 
     token_type_t tmpTok = parserData->token.type;
@@ -235,30 +234,29 @@ void reduce(stack_t* stack, int num, analysis_t* analysis, parser_t* parserData)
                 if(!sem_analysis(analysis, parserData)) {
                     return;
                 }
-        
-                handle_other(stack, analysis->end_type);
-                DEBUG_PRINT("END TYPE: %d\n", analysis->end_type);
-
-                if(analysis->tok1->data = SEM_STRING && analysis->tok3->data == SEM_STRING && analysis->tok2->type == TOK_PLUS) {
-                    gen_expression(parserData->gen, TOK_CONCAT, parserData->in_function);
-                    break;
-                }
 
                 if(analysis->tok1->data == SEM_INT && analysis->tok3->data == SEM_INT && analysis->tok2->type == TOK_DIV) {
+                    handle_other(stack, analysis->end_type);
                     gen_expression(parserData->gen, TOK_IDIV, parserData->in_function);
+                    break;
+
+                } else if(analysis->tok1->data = SEM_STRING && analysis->tok3->data == SEM_STRING && analysis->tok2->type == TOK_PLUS) {
+                    handle_other(stack, analysis->end_type);
+                    gen_expression(parserData->gen, TOK_CONCAT, parserData->in_function);
+                    break;
+
                 } else {
+                    handle_other(stack, analysis->end_type);
                     gen_expression(parserData->gen, analysis->tok2->type, parserData->in_function);
                 }
 
             } else {
-                fprintf(stderr, "else\n");
                 error = ERR_SYN;
                 return;
             }
             break;
 
         default:
-            fprintf(stderr, "default\n");
             error = ERR_SYN;
             return;
     } 
