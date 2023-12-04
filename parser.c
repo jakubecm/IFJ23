@@ -146,7 +146,12 @@ void parser_init(parser_t *parser, gen_t *gen)
     parser->function = NULL;
     parser->in_function = false;
     parser->func_is_void = false;
+    parser->in_if = false;
+    parser->in_cycle = false;
+    parser->in_else = false;
     parser->returned = false;
+    parser->returned_conditional = false;
+    parser->return_type = VAL_UNKNOWN;
 
     stack_push_table(parser->stack);
     insert_builtins_to_table(parser);
