@@ -35,6 +35,7 @@ void gen_push_var(gen_t *gen, char *name, bool local, bool is_global);
 void gen_argdef_var(gen_t *gen, char *name, bool local);
 void gen_expression(gen_t *gen, token_type_t operator, bool in_function);
 void gen_call_convert(gen_t *gen);
+void gen_call_exp_convert(gen_t *gen);
 void gen_call_convert2(gen_t *gen);
 void gen_print(gen_t *gen);
 void gen_pop_value(gen_t* gen, char* name, bool in_function, bool is_global);
@@ -624,6 +625,11 @@ void gen_expression(gen_t *gen, token_type_t operator, bool in_function) {
 
 void gen_call_convert(gen_t *gen) {
     mergestr(&gen->global, "CALL $Int2Double\n");
+}
+
+void gen_call_exp_convert(gen_t *gen) {
+    mergestr(&gen->global, "CALL $Int2Double\n");
+    mergestr(&gen->global, "PUSHS GF@return_func\n");
 }
 
 void gen_call_convert2(gen_t *gen) {

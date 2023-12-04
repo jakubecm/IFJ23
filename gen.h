@@ -98,6 +98,8 @@ void gen_footer(gen_t *gen);
 
 void gen_call_convert(gen_t *gen);
 
+void gen_call_exp_convert(gen_t *gen);
+
 void gen_call_convert2(gen_t *gen);
 
 void gen_pop_value(gen_t* gen, char* name, bool in_function, bool is_global);
