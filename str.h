@@ -76,6 +76,14 @@ void mergestr_float(mystring_t *str1, float input);
  */
 void printstr(mystring_t *str);
 
+
+/**
+ *   @brief Remove char from string
+ *   @param str string from which the char will be removed
+ *   @param index index of the removed character 
+ */
+void removechar(mystring_t *str, int index);
+
 #endif
 
 /* end of file str.h */

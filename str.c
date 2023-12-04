@@ -89,4 +89,13 @@ void mergestr_float(mystring_t *str1, float input){
 void printstr(mystring_t *str){
     printf("%s", str->string);
 }
+
+void removechar(mystring_t *str, int index){
+    for(int i = index; i < str->lenght; i++){
+        str->string[i] = str->string[i + 1]; 
+    }
+
+    str->string[str->lenght - 1] = '\0';
+    str->lenght--;
+}
 /* end of file str.c */

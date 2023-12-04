@@ -54,6 +54,13 @@ void myungetc(int backchar);
 */
 void backslash(mystring_t *str);
 
+/**
+ * @brief Aligns multiline string
+ * 
+ * @param str structur for string
+*/
+void spaceignor(mystring_t *str);
+
 // Missing functions to initialize and destroy the scanner
 
 #endif

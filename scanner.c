@@ -30,6 +30,7 @@ token_t get_next_token(){
     int state = START;
     int inchar;
     int preinchar;
+    int lastchar;
     int whitespace = 0;
     int blockcomm;
     
@@ -507,7 +508,6 @@ token_t get_next_token(){
         case(MSTRING):
             initstr(&mstr);
             inchar = getchar();
-            char newline = '\n';
 
             if(inchar == '\n'){
                 do{
@@ -525,8 +525,9 @@ token_t get_next_token(){
                         continue;
                     }
 
-                    if(inchar == '"' && preinchar == 10){
+                    if(inchar == '"' && (preinchar == 10 || preinchar == 32)){
                         
+                        lastchar = preinchar;
                         preinchar = inchar;
                         inchar = getchar();
                         if(inchar == '"'){
@@ -534,6 +535,8 @@ token_t get_next_token(){
                             preinchar = inchar;
                             inchar = getchar();
                             if(inchar == '"'){
+                                makestr(&mstr, lastchar);
+                                spaceignor(&mstr);
                                 tokinit(&token,mstr.lenght);
                                 token.attribute.string = mstr.string;
                                 token.type = TOK_MLSTRING;
@@ -541,14 +544,14 @@ token_t get_next_token(){
                             }
 
                             else{
-                                makestr(&mstr,newline);
+                                makestr(&mstr,lastchar);
                                 makestr(&mstr,preinchar);
                                 makestr(&mstr,preinchar);
                             }
                         }
 
                         else{
-                            makestr(&mstr,newline);
+                            makestr(&mstr,lastchar);
                             makestr(&mstr,preinchar);
                         }
                     }    
@@ -571,6 +574,9 @@ token_t get_next_token(){
                 print_error_and_exit(error);
             }
 
+            error = ERR_LEX;
+            print_error_and_exit(error);
+
         default:
 
             break;
@@ -579,19 +585,48 @@ token_t get_next_token(){
 }
 
 void backslash(mystring_t *str){
+    mystring_t hexanum;
+    int hexachar;
+
+    initstr(&hexanum);
     int inchar = getchar();
 
     if(inchar == '\\' || inchar == 'n' ||inchar == '"' ||inchar == 't' ||inchar == 'r'){
-        makestr(str,inchar);
+        removechar(str,str->lenght);
+        //makestr(str,inchar);
+        switch(inchar){
+            case('\\'):
+                makestr(str,'\\');
+                break;
+            
+            case('n'):
+                makestr(str,'\n');
+                break;
+
+            case('"'):
+                makestr(str,'\"');
+                break;
+
+            case('t'):
+                makestr(str,'\t');
+                break;
+
+            case('r'):
+                makestr(str,'\r');
+                break;
+        }
+
     }
 
     else if(inchar == 'u'){
-        makestr(str,inchar);
+        removechar(str,str->lenght);
+        //makestr(str,0x30);
         inchar = getchar();
 
         if(inchar == '{'){
             int count = 0;
-            makestr(str,inchar); 
+            makestr(&hexanum,'0');
+            makestr(&hexanum,'x');
             inchar = getchar();
             
             if((inchar >= '0' && inchar <= '9') || (inchar >= 'a' && inchar <= 'z') || (inchar >= 'A' && inchar <= 'Z')){
@@ -599,13 +634,15 @@ void backslash(mystring_t *str){
                     if(count > 8){
                         break;
                     }
-                    makestr(str,inchar); 
+                    makestr(&hexanum,inchar); 
                     inchar = getchar();
                     count++;
                 }while(((inchar >= 'a' && inchar <= 'f') || (inchar >= 'A' && inchar <= 'F') || (inchar >= '0' && inchar <= '9')) && (inchar != EOF));
 
                 if(inchar == '}'){
-                    makestr(str,inchar); 
+                    hexachar = strtol(hexanum.string, NULL, 16);
+
+                    makestr(str,(char)hexachar); 
                 }
 
                 else{
@@ -632,6 +669,50 @@ void backslash(mystring_t *str){
         error = ERR_LEX;
         print_error_and_exit(error);
     }
+}
+
+void spaceignor(mystring_t *str){
+    int lasteol;
+    int space = 0;
+
+    for(int i = 0; i < str->lenght; i++){
+        if(str->string[i]== 10){
+            lasteol = i;
+        }
+    }
+
+    for(int i = lasteol + 1; i < str->lenght;i++){
+        if(str->string[i] == 32){
+            space++; 
+        }
+
+        else{
+            error = ERR_LEX;
+            print_error_and_exit(error);
+        }
+    }
+
+    for(int i = 0; i < str->lenght; i++){
+        if(str->string[i]== 10 && space != 0){
+            for(int j = space; j > 0; j--){
+                if(str->string[i + 1] == 32){
+                    removechar(str,i+1);
+                }
+
+                else if(str->string[i + 1] == 10){
+                    continue;
+                }
+
+                else{
+                    error = ERR_LEX;
+                    print_error_and_exit(error);
+                }
+            }
+            
+        }
+    }
+
+    removechar(str,str->lenght);
 }
 
 /* end of file scanner.c */
