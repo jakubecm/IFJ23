@@ -16,11 +16,12 @@
 
 typedef struct parser
 {
-    stack_t *stack;         // Stack instance
-    htab_value_t *function; // Current function
-    token_t token;          // Current token
-    token_t next_token;     // Next token
-    gen_t *gen;              // Generator instance
+    stack_t *stack;                 // Stack instance
+    htab_value_t *function;         // Current function
+    token_t token;                  // Current token
+    token_t next_token;             // Next token
+    gen_t *gen;                     // Generator instance
+    variable_type_t return_type;    // Return type of current function
     
     // States of parser
     bool in_function;
@@ -30,7 +31,6 @@ typedef struct parser
     bool in_cycle;
     bool in_if;
     bool in_else;
-    variable_type_t return_type;
 } parser_t;
 
 /**
@@ -52,6 +52,9 @@ void run_parser(parser_t *parser);
  */
 void parser_destroy(parser_t *parser);
 
+/**
+ * @brief Loads token from scanner
+ */
 void load_token(parser_t *parser);
 
 #endif // PARSER_H

@@ -1,5 +1,5 @@
 /**
- *  token.h 
+ * @file token.h 
  *
  * @authors Jiri Tesar (xtesar44)
  * @authors Jakub Ráček (xracek12)

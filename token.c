@@ -1,5 +1,5 @@
 /**
- *  token.h and shit
+ *  @file token.c
  *
  *
  * @authors Jiri Tesar (xtesar44)
