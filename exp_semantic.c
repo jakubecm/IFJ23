@@ -182,11 +182,14 @@ bool check_operator_compatibility(stack_terminal_t* operator, stack_terminal_t* 
  * @param parserData - Parser data
  * @return Result type of the operator and operands
  */
-int get_result_type(stack_terminal_t* operator, stack_terminal_t* left, stack_terminal_t* right, parser_t* parserData) {
+int get_result_type(stack_terminal_t* operator, stack_terminal_t* left, stack_terminal_t* right, parser_t* parserData, bool* id_appear) {
     if(operator->type == TOK_PLUS) {
         if(is_number(left->data) && is_number(right->data)) {
             if(is_int(left->data) && is_int(right->data)) {
                 return SEM_INT;
+            } else if(*id_appear && (left->data != right->data)) {
+                error = ERR_SEM_TYPE;
+                return SEM_UNDEF;
             } else {
                 if(is_int(left->data)) {
                      gen_call_exp_convert(parserData->gen);
@@ -204,6 +207,9 @@ int get_result_type(stack_terminal_t* operator, stack_terminal_t* left, stack_te
         if(is_number(left->data) && is_number(right->data)) {
             if(is_int(left->data) && is_int(right->data)) {
                 return SEM_INT;
+            } else if(*id_appear && (left->data != right->data)) {
+                error = ERR_SEM_TYPE;
+                return SEM_UNDEF;
             } else {
                 if(is_int(left->data)) {
                     gen_call_exp_convert(parserData->gen);
@@ -233,8 +239,14 @@ int get_result_type(stack_terminal_t* operator, stack_terminal_t* left, stack_te
                 return SEM_BOOL;
             } else {
                 if(is_int(left->data) && !is_nil(right->data)) {
+                    if(*id_appear) {
+                        return SEM_UNDEF;
+                    }
                     gen_call_exp_convert(parserData->gen);
                 } else if(is_int(right->data) && !is_nil(left->data)) {
+                    if(*id_appear) {
+                        return SEM_UNDEF;
+                    }
                     gen_call_convert2(parserData->gen);
                 }
                 return SEM_BOOL;
@@ -274,13 +286,13 @@ int get_result_type(stack_terminal_t* operator, stack_terminal_t* left, stack_te
     return SEM_UNDEF;
 }
 
-bool sem_analysis(analysis_t* analysis, parser_t* parserData) {
+bool sem_analysis(analysis_t* analysis, parser_t* parserData, bool* id_appear) {
     if (!check_operator_compatibility(analysis->tok2, analysis->tok1, analysis->tok3)) {
         error = ERR_SEM_TYPE;
         return false;
     }
 
-    analysis->end_type = get_result_type(analysis->tok2, analysis->tok1, analysis->tok3, parserData);
+    analysis->end_type = get_result_type(analysis->tok2, analysis->tok1, analysis->tok3, parserData, id_appear);
     if(analysis->end_type == SEM_UNDEF) {
         error = ERR_SEM_TYPE;
         return false;
