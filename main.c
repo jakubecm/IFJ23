@@ -3,7 +3,7 @@
  * 
  *  @author
  *  @author Norman Babiak (xbabia01)
- *  @author
+ *  @author Jakub Ráček (xracek12)
  *  @author
  */
 

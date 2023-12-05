@@ -11,7 +11,7 @@
 #include "error.h"
 #include "stack.h"
 
-error_t err;
+extern error_t error;
 
 // ---------------------------------- Basic functions -----------------------------------
 
@@ -65,7 +65,8 @@ void analysis_free(analysis_t *data) {
 void stack_push_token(stack_t* stack, sem_data_type_t data_type, token_type_t token_type) {
     stack_terminal_t* new_token = (stack_terminal_t*) malloc(sizeof(stack_terminal_t));
     if(new_token == NULL) {
-        err = ERR_INTERNAL;
+        error = ERR_INTERNAL;
+        print_error_and_exit(error);
         return;
     }
 

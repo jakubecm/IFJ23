@@ -45,14 +45,16 @@ typedef struct analysis {
 } analysis_t;
 
 /**
- *  @brief Struct to represent nodes in a tree. Each has a token, type of it,
- *         pointer to children if they exist.
+ *  @brief Struct to represent nodes in a void stack
  */
 typedef struct Node {
     void *data;
     struct Node *right;
 } Node;
 
+/**
+ *  @brief Struct to represent a void stack
+ */
 typedef struct Stack {
     Node *top;
 } stack_t;
@@ -142,8 +144,14 @@ void stack_pop_table(stack_t* stack);
 */
 symbol_table_t* stack_top_table(stack_t* stack);
 
+/**
+ * @brief Returns bottom symtable from the stack (global table)
+*/
 symbol_table_t* stack_bottom_table(stack_t* stack);
 
+/**
+ * @brief Returns true if the top symtable is the global table
+*/
 bool is_table_global(stack_t* stack);
 
 /**
@@ -161,6 +169,10 @@ data_t *stack_lookup_func(stack_t* stack, htab_key_t key);
 */
 void stack_destroy_table(stack_t* stack);
 
+/**
+ * @brief Looks through the symtable stack to find if a variable with the given key
+ *        exists in the global or local scope
+*/
 bool stack_lookup_var_in_global(stack_t* stack, htab_key_t key);
 
 #endif // STACK_H

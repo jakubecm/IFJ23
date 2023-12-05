@@ -35,7 +35,6 @@ typedef struct{
 /**
  * @brief Function get_next_token() reads a token from stdin and returns it to be used by parser
  * 
- * @param stuff not sure jestli je potreba parametr? je to na tobe Jirko!
  * @returns a token from stdin
 */
 token_t get_next_token(void);

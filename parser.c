@@ -1,10 +1,6 @@
 /**
  *  @file parser.c
  *
- *  @todo RUN TESTS
- *  @todo CHECK ERROR CODES
- *  @todo CHECK IN WITH PSYCHIATRIST AND PSYCHOLOGIST
- *
  *  @authors Milan Jakubec (xjakub41)
  *  @authors Jakub Ráček (xracek12)
  */
@@ -244,7 +240,6 @@ void check_function_definitions(parser_t *parser) {
 bool rule_program(parser_t *parser){
     if (is_type(parser, TOK_EOF)){                  // ε
         check_function_definitions(parser);
-        error_t err = error;
         return true;
     }
 
@@ -269,6 +264,13 @@ bool rule_program(parser_t *parser){
 bool rule_statement_list(parser_t *parser){
     if (is_type(parser, TOK_RCURLYBRACKET) && 
     (parser->in_function || parser->in_cycle || parser->in_if || parser->in_else)) {
+        if (parser->in_function && !parser->func_is_void && !parser->returned) {
+            error = ERR_SEM_RETURN;
+            print_error_and_exit(error);
+            return false; // Function does not return a value
+
+        }
+
         return true;                                                      // ε
     }
 
@@ -462,12 +464,13 @@ bool rule_function_return_type_and_body(parser_t *parser, data_t *data){
     return true;
 }
 
-// <nonvoid_function_body> -> <statement_list> | ε
+// <nonvoid_function_body> -> <statement_list>
 
 bool rule_nonvoid_function_body(parser_t *parser){
     parser->in_function = true;
-    if (is_type(parser, TOK_RCURLYBRACKET)){        // ε
-        parser->in_function = false;
+    if (is_type(parser, TOK_RCURLYBRACKET)){
+        error = ERR_SEM_RETURN;
+        print_error_and_exit(error);
         return true;
     } else if (rule_statement_list(parser)){        // <statement_list>
         return true;
