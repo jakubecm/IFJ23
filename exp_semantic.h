@@ -22,7 +22,7 @@ sem_data_type_t tok_term_type(stack_terminal_t* token);
  *  @param parserData - Core parser struct with all the data
  *  @return Data type of the token, true if it was successful, false if not
  */
-bool sem_analysis(analysis_t* analysis, parser_t* parserData);
+bool sem_analysis(analysis_t* analysis, parser_t* parserData, bool* id_appear);
 
 
 #endif // EXP_SEMANTIC_H

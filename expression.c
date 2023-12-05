@@ -152,7 +152,7 @@ int precedence(stack_terminal_t* top, token_t* input) {
  * @param parserData - parser structure given by core parser
  * @param input_type - data type received of the input token
  */
-void shift(stack_t* stack, parser_t* parserData, sem_data_type_t input_type) {
+void shift(stack_t* stack, parser_t* parserData, sem_data_type_t input_type, bool* id_appear) {
     if(!stack_push_after(stack, SEM_UNDEF, TOK_ENDMARKER)) {
         error = ERR_INTERNAL;
         return;
@@ -184,6 +184,8 @@ void shift(stack_t* stack, parser_t* parserData, sem_data_type_t input_type) {
             case TOK_IDENTIFIER:
                 is_global = stack_lookup_var_in_global(parserData->stack, parserData->token.attribute.string);
                 gen_push_var(parserData->gen, parserData->token.attribute.string, parserData->in_function, is_global);
+
+                *id_appear = true;
                 break;
             default:
                 break;
@@ -200,7 +202,7 @@ void shift(stack_t* stack, parser_t* parserData, sem_data_type_t input_type) {
  * @param analysis - structure with the tokens to reduce
  * @param parserData - parser structure given by core parser
  */
-void reduce(stack_t* stack, int num, analysis_t* analysis, parser_t* parserData) {
+void reduce(stack_t* stack, int num, analysis_t* analysis, parser_t* parserData, bool* id_appear) {
     switch(num) {
         case 1:
             if(is_literal(analysis->tok1->type)) { 
@@ -231,7 +233,7 @@ void reduce(stack_t* stack, int num, analysis_t* analysis, parser_t* parserData)
 
             } else if(analysis->tok1->type == TOK_NTERM && analysis->tok3->type == TOK_NTERM) {
                 //Sem check if there are 3 tokens on the top of stack
-                if(!sem_analysis(analysis, parserData)) {
+                if(!sem_analysis(analysis, parserData, id_appear)) {
                     return;
                 }
 
@@ -269,7 +271,7 @@ void reduce(stack_t* stack, int num, analysis_t* analysis, parser_t* parserData)
  * @param tmp - top token of the stack
  * @param analysis - structure with the tokens to reduce
  */
-void prec_analysis(stack_t *stack, parser_t* parserData, stack_terminal_t* tmp, analysis_t* analysis, bool *end2) {
+void prec_analysis(stack_t *stack, parser_t* parserData, stack_terminal_t* tmp, analysis_t* analysis, bool *end2, bool *id_appear) {
     int prec = precedence(tmp, &parserData->token);
     sem_data_type_t input_type = tok_type(parserData);
     DEBUG_PRINT("prec: %c\n", prec);
@@ -277,7 +279,7 @@ void prec_analysis(stack_t *stack, parser_t* parserData, stack_terminal_t* tmp, 
     switch(prec) {
         case '<':
             DEBUG_PRINT("==============SHIFT\n");
-            shift(stack, parserData, input_type);
+            shift(stack, parserData, input_type, id_appear);
             if(error != ERR_OK) {
                 return;
             }
@@ -303,7 +305,7 @@ void prec_analysis(stack_t *stack, parser_t* parserData, stack_terminal_t* tmp, 
                     print_stack_contents(stack);
             #endif
 
-            reduce(stack, num, analysis, parserData);
+            reduce(stack, num, analysis, parserData, id_appear);
             if(error != ERR_OK) {
                 return;
             }
@@ -324,7 +326,7 @@ void prec_analysis(stack_t *stack, parser_t* parserData, stack_terminal_t* tmp, 
             load_token(parserData);
             if(!end2) {
                 int num2 = stack_count_after(stack, analysis);
-                reduce(stack, num2, analysis, parserData);
+                reduce(stack, num2, analysis, parserData, id_appear);
             }
             break;
                 
@@ -368,6 +370,7 @@ variable_type_t exp_parsing(parser_t* parserData)  {
     stack_terminal_t *tmp;
     token_t endToken; 
     bool continue_while = true, end = false, end2 = false;
+    bool id_appear = false;
     sem_data_type_t stack_type;
     variable_type_t return_type;
     DEBUG_PRINT("data token: %d\n", parserData->token.type);
@@ -386,7 +389,7 @@ variable_type_t exp_parsing(parser_t* parserData)  {
             print_error_and_exit(error);
         }
 
-        prec_analysis(&stack, parserData, tmp, analysis, &end2);
+        prec_analysis(&stack, parserData, tmp, analysis, &end2, &id_appear);
         if(error != ERR_OK) {
             CLEANUP_RESOURCES(stack, analysis);
             print_error_and_exit(error);
