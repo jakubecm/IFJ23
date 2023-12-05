@@ -13,7 +13,18 @@
 
 struct analysis;
 
+/**
+ *  @brief Function to get the data type of the token
+ *  @param parserData - Core parser struct with all the data
+ *  @return Semantic data type of the token
+ */
 sem_data_type_t tok_type(parser_t* parserData);
+
+/**
+ *  @brief Function to get the data type of the token
+ *  @param token - Token, but used on the stack already
+ *  @return Semantic data type of the token
+ */
 sem_data_type_t tok_term_type(stack_terminal_t* token);
 
 /**

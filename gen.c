@@ -519,6 +519,7 @@ void gen_expression(gen_t *gen, token_type_t operator, bool in_function) {
                 mergestr(&gen->functions, "POPS GF@op1\n");
                 mergestr(&gen->functions, "POPS GF@op2\n");
                 //JUMP IF op1 IS 0
+                mergestr(&gen->functions, "JUMPIFEQ !ERR_DIV GF@op1 float@0x0p+0\n");
                 mergestr(&gen->functions, "DIV GF@op1 GF@op2 GF@op1\n");
                 mergestr(&gen->functions, "PUSHS GF@op1\n");
             }
@@ -526,6 +527,7 @@ void gen_expression(gen_t *gen, token_type_t operator, bool in_function) {
                 mergestr(&gen->global, "POPS GF@op1\n");
                 mergestr(&gen->global, "POPS GF@op2\n");
                 //JUMP IF op1 IS 0
+                mergestr(&gen->global, "JUMPIFEQ !ERR_DIV GF@op1 float@0x0p+0\n");
                 mergestr(&gen->global, "DIV GF@op1 GF@op2 GF@op1\n");
                 mergestr(&gen->global, "PUSHS GF@op1\n");
             }
@@ -536,6 +538,7 @@ void gen_expression(gen_t *gen, token_type_t operator, bool in_function) {
                 mergestr(&gen->functions, "POPS GF@op1\n");
                 mergestr(&gen->functions, "POPS GF@op2\n");
                 //JUMP IF op1 IS 0
+                mergestr(&gen->functions, "JUMPIFEQ !ERR_DIV GF@op1 int@0\n");
                 mergestr(&gen->functions, "IDIV GF@op1 GF@op2 GF@op1\n");
                 mergestr(&gen->functions, "PUSHS GF@op1\n");
             }
@@ -543,6 +546,7 @@ void gen_expression(gen_t *gen, token_type_t operator, bool in_function) {
                 mergestr(&gen->global, "POPS GF@op1\n");
                 mergestr(&gen->global, "POPS GF@op2\n");
                 //JUMP IF op1 IS 0
+                mergestr(&gen->global, "JUMPIFEQ !ERR_DIV GF@op1 int@0\n");
                 mergestr(&gen->global, "IDIV GF@op1 GF@op2 GF@op1\n");
                 mergestr(&gen->global, "PUSHS GF@op1\n");
             }

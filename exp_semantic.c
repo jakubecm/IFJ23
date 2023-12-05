@@ -45,11 +45,13 @@ sem_data_type_t tok_type(parser_t* parserData) {
             return SEM_NIL;
         case TOK_IDENTIFIER:
 
+            //Check if the variable is initialized
             tmpData = stack_lookup_var(parserData->stack, parserData->token.attribute.string);
             if (tmpData == NULL || (!tmpData->value.var_id.initialized && !tmpData->value.var_id.if_initialized)) {
                 return SEM_UNDEF;
             }
             
+            //According to symtable types, return the correct semantic type
             if(tmpData->type == VAR || tmpData->type == LET) {
                 switch(tmpData->value.var_id.type) {
                     case VAL_INT:
@@ -187,9 +189,12 @@ int get_result_type(stack_terminal_t* operator, stack_terminal_t* left, stack_te
         if(is_number(left->data) && is_number(right->data)) {
             if(is_int(left->data) && is_int(right->data)) {
                 return SEM_INT;
+
             } else if(*id_appear && (left->data != right->data)) {
                 error = ERR_SEM_TYPE;
                 return SEM_UNDEF;
+
+            //If the sem types are not the same, convert the int to float
             } else {
                 if(is_int(left->data)) {
                      gen_call_exp_convert(parserData->gen);
@@ -207,9 +212,12 @@ int get_result_type(stack_terminal_t* operator, stack_terminal_t* left, stack_te
         if(is_number(left->data) && is_number(right->data)) {
             if(is_int(left->data) && is_int(right->data)) {
                 return SEM_INT;
+
             } else if(*id_appear && (left->data != right->data)) {
                 error = ERR_SEM_TYPE;
                 return SEM_UNDEF;
+
+            //If the sem types are not the same, convert the int to float
             } else {
                 if(is_int(left->data)) {
                     gen_call_exp_convert(parserData->gen);
@@ -229,6 +237,7 @@ int get_result_type(stack_terminal_t* operator, stack_terminal_t* left, stack_te
         if(left->type == TOK_IDENTIFIER && right->type == TOK_IDENTIFIER) {
             if(left->data == right->data) {
                 return SEM_BOOL;
+
             } else {
                 return SEM_UNDEF;
             }
@@ -237,6 +246,8 @@ int get_result_type(stack_terminal_t* operator, stack_terminal_t* left, stack_te
         if((is_number(left->data) || is_nil(left->data)) && (is_number(right->data) || is_nil(left->data))) {
             if(is_int(left->data) && is_int(right->data)) {
                 return SEM_BOOL;
+            
+            //If the sem types are not the same, convert the int to float
             } else {
                 if(is_int(left->data) && !is_nil(right->data)) {
                     if(*id_appear) {
@@ -257,6 +268,8 @@ int get_result_type(stack_terminal_t* operator, stack_terminal_t* left, stack_te
 
     if(operator->type == TOK_LESS || operator->type == TOK_GREATER || operator->type == TOK_GREATEREQ || 
        operator->type == TOK_LESSEQ) {
+
+        //If the sem types are not the same, convert the int to float
         if(right->data != left->data) {
             if(is_int(left->data)) {
                 gen_call_exp_convert(parserData->gen);

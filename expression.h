@@ -12,12 +12,14 @@
 #include "parser.h"
 #include "stack.h"
 
+// Macros for debugging
 #ifdef DEBUG
 #define DEBUG_PRINT printf
 #else
 #define DEBUG_PRINT(...)
 #endif
 
+// Macros for cleaning up resources
 #define CLEANUP_RESOURCES(stack, analysis) do { \
             stack_free_token(&(stack));         \
             analysis_free((analysis));          \

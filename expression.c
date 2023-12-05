@@ -76,11 +76,13 @@ void handle_other(stack_t* stack, sem_data_type_t end_type) {
  * @param tmp - temporary variable to get the top token of the stack
  */
 void handle_upcoming(parser_t* parserData, stack_t* stack, bool* end, bool* end2, token_t* endToken, stack_terminal_t* tmp) {
+    //Assignment cannot be in expression
     if (parserData->token.type == TOK_ASSIGNMENT) {
         error = ERR_INTERNAL;
         return;
     }
 
+    //Check if it is safe to force unwrap type?
     if(parserData->token.type == TOK_IDENTIFIER && parserData->next_token.type == TOK_NOT) {
         data_t* tmpData = stack_lookup_var(parserData->stack, parserData->token.attribute.string);
 
@@ -90,19 +92,24 @@ void handle_upcoming(parser_t* parserData, stack_t* stack, bool* end, bool* end2
         }
     }
 
+    //Handle if the next token is left bracket
     if (parserData->token.type == TOK_LBRACKET) {
         stack_push_after(stack, SEM_UNDEF, TOK_ENDMARKER);
         stack_push_token(stack, SEM_OPERATOR, parserData->token.type);
         load_token(parserData);
     }
 
+    //Search if the expression is finished or not
     if ((parserData->token.type == TOK_IDENTIFIER || parserData->token.type == TOK_EOF || parserData->token.type >= 20) &&
         (stack_top_token(stack)->type == TOK_NTERM || is_literal(tmp->type) || tmp->type == TOK_RBRACKET || tmp->type == TOK_NOT)) {
-
+        
+        //End if there is a right bracket
         if(tmp->type == TOK_RBRACKET) {
             *end2 = true;
             *endToken = parserData->token;
             parserData->token.type = TOK_DOLLAR;
+
+        //End if there is not
         } else {
             *endToken = parserData->token;
             *end = true;
@@ -129,6 +136,7 @@ int precedence(stack_terminal_t* top, token_t* input) {
             tmpInput.type = TOK_DOLLAR;
         }
     }
+    //Handle the MLSTRING as STRING
     if(top->type == TOK_MLSTRING) {
         tmpTop.type = TOK_STRING;
         top->type = TOK_STRING;
@@ -139,6 +147,7 @@ int precedence(stack_terminal_t* top, token_t* input) {
         input->type = TOK_STRING;
     }
 
+    //Tokens not possible to be in the expression
     if (tmpTop.type >= 21 || tmpInput.type >= 21) {
         return 'X';
     }
@@ -158,12 +167,14 @@ void shift(stack_t* stack, parser_t* parserData, sem_data_type_t input_type, boo
         return;
     }
 
+    //If undefined input type, set error
     if(input_type == SEM_UNDEF) {
         error = ERR_SEM_NDEF;
         return;
     }
     stack_push_token(stack, input_type, parserData->token.type);
 
+    //tmpTok for checking what to push on generator heap
     token_type_t tmpTok = parserData->token.type;
     
     if(is_literal(tmpTok)) {
@@ -240,16 +251,19 @@ void reduce(stack_t* stack, int num, analysis_t* analysis, parser_t* parserData,
                     return;
                 }
 
+                //Semantic check for IDIV
                 if(analysis->tok1->data == SEM_INT && analysis->tok3->data == SEM_INT && analysis->tok2->type == TOK_DIV) {
                     handle_other(stack, analysis->end_type);
                     gen_expression(parserData->gen, TOK_IDIV, parserData->in_function);
                     break;
 
+                //Semantic check for CONCAT
                 } else if(analysis->tok1->data = SEM_STRING && analysis->tok3->data == SEM_STRING && analysis->tok2->type == TOK_PLUS) {
                     handle_other(stack, analysis->end_type);
                     gen_expression(parserData->gen, TOK_CONCAT, parserData->in_function);
                     break;
 
+                //Normal handling for other tokens
                 } else {
                     handle_other(stack, analysis->end_type);
                     gen_expression(parserData->gen, analysis->tok2->type, parserData->in_function);
@@ -277,46 +291,29 @@ void reduce(stack_t* stack, int num, analysis_t* analysis, parser_t* parserData,
 void prec_analysis(stack_t *stack, parser_t* parserData, stack_terminal_t* tmp, analysis_t* analysis, bool *end2, bool *id_appear) {
     int prec = precedence(tmp, &parserData->token);
     sem_data_type_t input_type = tok_type(parserData);
-    DEBUG_PRINT("prec: %c\n", prec);
-    DEBUG_PRINT("input data: %d\n", input_type);
+
     switch(prec) {
         case '<':
-            DEBUG_PRINT("==============SHIFT\n");
             shift(stack, parserData, input_type, id_appear);
             if(error != ERR_OK) {
                 return;
             }
 
-            #ifdef DEBUG
-                print_stack_contents(stack);
-            #endif
-            DEBUG_PRINT("==============END SHIFT\n");
-
             break;
 
         case '>':
             analysis->end_type = SEM_UNDEF;
-            DEBUG_PRINT("==============REDUCE\n");
             int num = stack_count_after(stack, analysis); //get token amount from stack before endmarker
             if(error != ERR_OK) {
                 return;
             }
 
-            DEBUG_PRINT("num reduce: %d\n", num);
-            DEBUG_PRINT("BEFORE REDUCE\n");
-            #ifdef DEBUG
-                    print_stack_contents(stack);
-            #endif
-
+            //Reduce tokens
             reduce(stack, num, analysis, parserData, id_appear);
             if(error != ERR_OK) {
                 return;
             }
 
-            #ifdef DEBUG
-                print_stack_contents(stack);
-            #endif
-            DEBUG_PRINT("==============END REDUCE\n");
             break;
 
         case '=':
@@ -325,9 +322,11 @@ void prec_analysis(stack_t *stack, parser_t* parserData, stack_terminal_t* tmp, 
                 return;
             }
 
+            //Push token to stack
             stack_push_token(stack, input_type, parserData->token.type);
             load_token(parserData);
             if(!end2) {
+                //Get token amount from stack before endmarker if end2 did not end after )
                 int num2 = stack_count_after(stack, analysis);
                 reduce(stack, num2, analysis, parserData, id_appear);
             }
@@ -376,15 +375,12 @@ variable_type_t exp_parsing(parser_t* parserData)  {
     bool id_appear = false;
     sem_data_type_t stack_type;
     variable_type_t return_type;
-    DEBUG_PRINT("data token: %d\n", parserData->token.type);
 
     /** Exp parser start **/
     stack_push_token(&stack, SEM_UNDEF, TOK_DOLLAR);
 
     while(continue_while) {
         tmp = stack_top_terminal(&stack);
-        DEBUG_PRINT("Tmp: %d\n", tmp->type);
-        DEBUG_PRINT("data token: %d\n", parserData->token.type);
 
         handle_upcoming(parserData, &stack, &end, &end2, &endToken, tmp);
         if(error != ERR_OK) {
@@ -398,6 +394,7 @@ variable_type_t exp_parsing(parser_t* parserData)  {
             print_error_and_exit(error);
         }
 
+        //End of expression if there is dollar on the top of stack and dollar in input
         if(parserData->token.type == TOK_DOLLAR && stack_top_terminal(&stack)->type == TOK_DOLLAR) {
             continue_while = false;
         }
@@ -411,16 +408,11 @@ variable_type_t exp_parsing(parser_t* parserData)  {
         parserData->token = endToken;
     }
 
-    DEBUG_PRINT("Parser next token: %d\n", parserData->token.type);
-    DEBUG_PRINT("Parser next token: %d\n", parserData->next_token.type);
-
 
     //Last token on the top of stack
     stack_type = stack_top_token(&stack)->data;
-    DEBUG_PRINT("end type: %d\n", stack_type);
-
     return_type = convert_type(stack_type);
-    DEBUG_PRINT("Converted: %d\n", return_type);
+
     CLEANUP_RESOURCES(stack, analysis);
     return return_type;
 }
