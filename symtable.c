@@ -9,7 +9,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "symtable.h"
+#include "error.h"
 
+extern error_t error;
 // HASHTABLE WITH OPEN ADDRESSING
 
 size_t htab_hash_function(htab_key_t str) {
@@ -103,16 +105,17 @@ void symbol_table_remove_generic(symbol_table_t *table, htab_key_t key) {
 symbol_table_t *symbol_table_resize(symbol_table_t *table, size_t new_size) {
     symbol **new_table = malloc(new_size * sizeof(symbol *));
     if (new_table == NULL) {
-        // Handle error, possibly return or exit
+        error = ERR_INTERNAL;
+        print_error_and_exit(error);
         return NULL;
     }
 
-    // Initialize new table
+    // initialize new table
     for (size_t i = 0; i < new_size; i++) {
         new_table[i] = NULL;
     }
 
-    // Rehash symbols into the new table
+    // rehash all symbols
     for (size_t i = 0; i < table->capacity; i++) {
         if (table->table[i] != NULL) {
             size_t new_hash = htab_hash_function(table->table[i]->key) % new_size;
@@ -123,7 +126,6 @@ symbol_table_t *symbol_table_resize(symbol_table_t *table, size_t new_size) {
         }
     }
 
-    // Free old table and update structure
     free(table->table);
     table->table = new_table;
     table->capacity = new_size;
