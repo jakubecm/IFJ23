@@ -258,7 +258,7 @@ void reduce(stack_t* stack, int num, analysis_t* analysis, parser_t* parserData,
                     break;
 
                 //Semantic check for CONCAT
-                } else if(analysis->tok1->data = SEM_STRING && analysis->tok3->data == SEM_STRING && analysis->tok2->type == TOK_PLUS) {
+                } else if(analysis->tok1->data == SEM_STRING && analysis->tok3->data == SEM_STRING && analysis->tok2->type == TOK_PLUS) {
                     handle_other(stack, analysis->end_type);
                     gen_expression(parserData->gen, TOK_CONCAT, parserData->in_function);
                     break;
