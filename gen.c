@@ -20,13 +20,13 @@ void gen_func_return_to_var(gen_t *gen, char *name, bool in_function, bool is_gl
 void gen_arguments_start(gen_t *gen, bool in_function);
 void gen_arguments(gen_t *gen, htab_func_param_t arg, bool in_function, bool in_if);
 void gen_func_call(gen_t *gen, char *name, bool in_function);
-void gen_if_let(gen_t *gen, char *name, bool in_function, bool is_global);
-void gen_if(gen_t *gen, bool in_function);
-void gen_else(gen_t *gen, bool in_function);
-void gen_endif(gen_t *gen, bool in_function);
-void gen_while(gen_t *gen, bool in_function);
-void gen_while_exit(gen_t *gen, bool in_function);
-void gen_while_end(gen_t *gen, bool in_function);
+void gen_if_let(gen_t *gen, char *name, bool in_function, bool is_global, int label);
+void gen_if(gen_t *gen, bool in_function, int label);
+void gen_else(gen_t *gen, bool in_function, int label);
+void gen_endif(gen_t *gen, bool in_function, int label);
+void gen_while(gen_t *gen, bool in_function, int label);
+void gen_while_exit(gen_t *gen, bool in_function, int label);
+void gen_while_end(gen_t *gen, bool in_function, int label);
 void gen_push_int(gen_t *gen, int value, bool in_function);
 void gen_push_float(gen_t *gen, double valu, bool in_function);
 void gen_push_string(gen_t *gen, char *value, bool in_function);
@@ -268,7 +268,7 @@ void gen_func_call(gen_t *gen, char *name, bool in_function)
     }
 }
 
-void gen_if_let(gen_t *gen, char *name, bool in_function, bool is_global)
+void gen_if_let(gen_t *gen, char *name, bool in_function, bool is_global, int label)
 {
     if(in_function){
         if(!is_global){
@@ -283,7 +283,7 @@ void gen_if_let(gen_t *gen, char *name, bool in_function, bool is_global)
         }
         mergestr(&gen->functions, "POPS GF@return_exp\n");
         mergestr(&gen->functions, "JUMPIFEQ $else$");
-        mergestr_int(&gen->functions, gen->label_counter);
+        mergestr_int(&gen->functions, label);
         mergestr(&gen->functions, " GF@return_exp nil@nil\n");
     }
     else{
@@ -299,117 +299,116 @@ void gen_if_let(gen_t *gen, char *name, bool in_function, bool is_global)
         }
         mergestr(&gen->global, "POPS GF@return_exp\n");
         mergestr(&gen->global, "JUMPIFEQ $else$");
-        mergestr_int(&gen->global, gen->label_counter);
+        mergestr_int(&gen->global, label);
         mergestr(&gen->global, " GF@return_exp nil@nil\n");
     }
+    gen->label_counter++;
 }
 
-void gen_if(gen_t *gen, bool in_function)
+void gen_if(gen_t *gen, bool in_function, int label)
 {
     // funkce predpoklada ze v globalni promenne GF@return_exp je vysledek vyrazu ktery se ma vyhodnocovat (true nebo false)
     if(in_function){
         mergestr(&gen->functions, "POPS GF@return_exp\n");
         mergestr(&gen->functions, "JUMPIFEQ $else$");
-        mergestr_int(&gen->functions, gen->label_counter);
+        mergestr_int(&gen->functions, label);
         mergestr(&gen->functions, " GF@return_exp bool@false\n");
     }
     else{
         mergestr(&gen->global, "POPS GF@return_exp\n");
         mergestr(&gen->global, "JUMPIFEQ $else$");
-        mergestr_int(&gen->global, gen->label_counter);
+        mergestr_int(&gen->global, label);
         mergestr(&gen->global, " GF@return_exp bool@false\n");
     }
+    gen->label_counter++;
 }
 
-void gen_else(gen_t *gen, bool in_function)
+void gen_else(gen_t *gen, bool in_function, int label)
 {
     if(in_function){
         mergestr(&gen->functions, "JUMP $endif$");
-        mergestr_int(&gen->functions, gen->label_counter);
+        mergestr_int(&gen->functions, label);
         mergestr(&gen->functions, "\n");
 
         mergestr(&gen->functions, "LABEL $else$");
-        mergestr_int(&gen->functions, gen->label_counter);
+        mergestr_int(&gen->functions, label);
         mergestr(&gen->functions, "\n");
     }
     else{
         mergestr(&gen->global, "JUMP $endif$");
-        mergestr_int(&gen->global, gen->label_counter);
+        mergestr_int(&gen->global, label);
         mergestr(&gen->global, "\n");
 
         mergestr(&gen->global, "LABEL $else$");
-        mergestr_int(&gen->global, gen->label_counter);
+        mergestr_int(&gen->global, label);
         mergestr(&gen->global, "\n");
     }
 }
 
-void gen_endif(gen_t *gen, bool in_function)
+void gen_endif(gen_t *gen, bool in_function, int label)
 {
     if(in_function){
         mergestr(&gen->functions, "LABEL $endif$");
-        mergestr_int(&gen->functions, gen->label_counter);
+        mergestr_int(&gen->functions, label);
         mergestr(&gen->functions, "\n");
-        gen->label_counter++;
     }
     else{
         mergestr(&gen->global, "LABEL $endif$");
-        mergestr_int(&gen->global, gen->label_counter);
+        mergestr_int(&gen->global, label);
         mergestr(&gen->global, "\n");
-        gen->label_counter++;
     }
 }
 
-void gen_while(gen_t *gen, bool in_function)
+void gen_while(gen_t *gen, bool in_function, int label)
 {
     if(in_function){
         mergestr(&gen->functions, "LABEL $while$");
-        mergestr_int(&gen->functions, gen->label_counter);
+        mergestr_int(&gen->functions, label);
         mergestr(&gen->functions, "\n");
     }
     else{
         mergestr(&gen->global, "LABEL $while$");
-        mergestr_int(&gen->global, gen->label_counter);
+        mergestr_int(&gen->global, label);
         mergestr(&gen->global, "\n");
     }
+    gen->label_counter++;
 }
 
-void gen_while_exit(gen_t *gen, bool in_function)
+void gen_while_exit(gen_t *gen, bool in_function, int label)
 {
     if(in_function){
         mergestr(&gen->functions, "POPS GF@return_exp\n"); // beru ze zasobniku vysledek vyrazu
         mergestr(&gen->functions, "JUMPIFEQ $whileEnd$");
-        mergestr_int(&gen->functions, gen->label_counter);
+        mergestr_int(&gen->functions, label);
         mergestr(&gen->functions, " GF@return_exp bool@false\n");
     }
     else{
         mergestr(&gen->global, "POPS GF@return_exp\n"); // beru ze zasobniku vysledek vyrazu
         mergestr(&gen->global, "JUMPIFEQ $whileEnd$");
-        mergestr_int(&gen->global, gen->label_counter);
+        mergestr_int(&gen->global, label);
         mergestr(&gen->global, " GF@return_exp bool@false\n");
     }
 }
 
-void gen_while_end(gen_t *gen, bool in_function)
+void gen_while_end(gen_t *gen, bool in_function, int label)
 {
     if(in_function){
         mergestr(&gen->functions, "JUMP $while$");
-        mergestr_int(&gen->functions, gen->label_counter);
+        mergestr_int(&gen->functions, label);
         mergestr(&gen->functions, "\n");
 
         mergestr(&gen->functions, "LABEL $whileEnd$");
-        mergestr_int(&gen->functions, gen->label_counter);
+        mergestr_int(&gen->functions, label);
         mergestr(&gen->functions, "\n");
-        gen->label_counter++;
     }
     else{
         mergestr(&gen->global, "JUMP $while$");
-        mergestr_int(&gen->global, gen->label_counter);
+        mergestr_int(&gen->global, label);
         mergestr(&gen->global, "\n");
 
         mergestr(&gen->global, "LABEL $whileEnd$");
-        mergestr_int(&gen->global, gen->label_counter);
+        mergestr_int(&gen->global, label);
         mergestr(&gen->global, "\n");
-        gen->label_counter++;
     }
 }
 

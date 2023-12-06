@@ -1095,7 +1095,8 @@ bool rule_classical_statement(parser_t *parser){
         return false;   // non-bool expression in if statement
     }
 
-    gen_if(parser->gen, parser->in_function);
+    int label = parser->gen->label_counter;
+    gen_if(parser->gen, parser->in_function, label);
 
     if (!is_type(parser, TOK_LCURLYBRACKET)){       // "{"
         error = ERR_SYN;
@@ -1125,7 +1126,7 @@ bool rule_classical_statement(parser_t *parser){
         return false;
     }
 
-    gen_else(parser->gen, parser->in_function);
+    gen_else(parser->gen, parser->in_function, label);
 
     load_token(parser);
     if (!is_type(parser, TOK_LCURLYBRACKET)){       // "{"
@@ -1149,7 +1150,7 @@ bool rule_classical_statement(parser_t *parser){
     if (!was_in_else){
         parser->in_else = false;
     }
-    gen_endif(parser->gen, parser->in_function);
+    gen_endif(parser->gen, parser->in_function, label);
     load_token(parser);
     return true;
 }
@@ -1182,8 +1183,10 @@ bool rule_variable_statement(parser_t *parser){
         print_error_and_exit(error);
         return false;   // Attempt at defining a variable that is not of type ? (unknown)
     }
+
+    int label = parser->gen->label_counter;
     bool is_global = stack_lookup_var_in_global(parser->stack, data->name);
-    gen_if_let(parser->gen, data->name, parser->in_function, is_global);
+    gen_if_let(parser->gen, data->name, parser->in_function, is_global, label);
 
     symbol_type_t prev_type = data->type;
     data->type = LET;
@@ -1218,7 +1221,7 @@ bool rule_variable_statement(parser_t *parser){
         print_error_and_exit(error);
         return false;
     }
-    gen_else(parser->gen, parser->in_function);
+    gen_else(parser->gen, parser->in_function, label);
 
     load_token(parser);
     if (!is_type(parser, TOK_LCURLYBRACKET)){   // "{"
@@ -1242,7 +1245,7 @@ bool rule_variable_statement(parser_t *parser){
     if (!was_in_else){
         parser->in_else = false;
     }
-    gen_endif(parser->gen, parser->in_function);
+    gen_endif(parser->gen, parser->in_function, label);
     load_token(parser);
     return true;
 }
@@ -1251,7 +1254,8 @@ bool rule_variable_statement(parser_t *parser){
 
 bool rule_loop(parser_t *parser){
 
-    gen_while(parser->gen, parser->in_function);
+    int while_index = parser->gen->label_counter;
+    gen_while(parser->gen, parser->in_function, while_index);
 
     if (!is_type(parser, K_WHILE)){                 // "while"
         error = ERR_SYN;
@@ -1268,7 +1272,7 @@ bool rule_loop(parser_t *parser){
         return false;   // non-bool expression in while loop
     }
 
-    gen_while_exit(parser->gen, parser->in_function);
+    gen_while_exit(parser->gen, parser->in_function, while_index);
 
 
     if (!is_type(parser, TOK_LCURLYBRACKET)){       // "{"
@@ -1293,7 +1297,7 @@ bool rule_loop(parser_t *parser){
         parser->in_cycle = false;
     }
     load_token(parser);
-    gen_while_end(parser->gen, parser->in_function);
+    gen_while_end(parser->gen, parser->in_function, while_index);
     return true;
 }
 
