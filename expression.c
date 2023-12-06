@@ -194,7 +194,10 @@ void shift(stack_t* stack, parser_t* parserData, sem_data_type_t input_type, boo
                 break;
             case TOK_IDENTIFIER:
                 is_global = stack_lookup_var_in_global(parserData->stack, parserData->token.attribute.string);
-                gen_push_var(parserData->gen, parserData->token.attribute.string, parserData->in_function, is_global);
+
+                char *gen_name = mark_nested(parserData, parserData->token.attribute.string, true);
+                gen_push_var(parserData->gen, gen_name, parserData->in_function, is_global);
+                free(gen_name);
 
                 if(input_type == SEM_INT) {
                     *id_appear = true;
