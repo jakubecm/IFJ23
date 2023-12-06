@@ -683,6 +683,12 @@ bool rule_rest_of_identifier_parameter(parser_t *parser, data_t *data, int *inde
     }
     else if (is_type(parser, TOK_IDENTIFIER)){                      // <identifier>
         // ----------------- SEMANTICS START -----------------
+        if (!strcmp(vector_top(data->value.func_id.parameters)->call_name, parser->token.attribute.string)) {
+            error = ERR_SEM_OTHER;
+            print_error_and_exit(error);
+            return false; // def name and call name match
+        }
+
         vector_top(data->value.func_id.parameters)->def_name = malloc(sizeof(char) * (strlen(parser->token.attribute.string) + 1)); // identifier
         strcpy(vector_top(data->value.func_id.parameters)->def_name, parser->token.attribute.string);
 
