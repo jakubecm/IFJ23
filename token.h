@@ -112,14 +112,24 @@ void tokinit(token_t *token, int lenght);
 void tokdestroy(token_t *token);
 
 /**
- *   @brief Check if token in keyword.
+ *   @brief Check if token is a keyword.
  * 
  *   @param token structer for token
  */ 
 bool iskeyw(token_t *token);
 
+/**
+ *   @brief Check if token is a literal.
+ * 
+ *   @param token structer for token
+ */
 bool is_literal(token_type_t token);
 
+/**
+ *   @brief Check if token is in brackets.
+ * 
+ *   @param token structer for token
+ */
 bool is_bracket(token_type_t left, token_type_t middle, token_type_t right);
 
 #endif

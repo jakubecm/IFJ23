@@ -58,14 +58,14 @@ void mergestr(mystring_t *str1, char *str2);
 /**
  *   @brief merge string with int
  *   @param str1 structer for dynamic string 
- *   @param int int we want to merge
+ *   @param input int we want to merge
  */
 void mergestr_int(mystring_t *str1, int input);
 
 /**
  *   @brief merge string with float
  *   @param str1 structer for dynamic string 
- *   @param float float we want to merge
+ *   @param input float we want to merge
  */
 void mergestr_float(mystring_t *str1, double input);
 

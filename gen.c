@@ -686,6 +686,11 @@ void gen_print(gen_t *gen) {
     printstr(&gen->functions);
 }
 
+/**
+ * @brief converts strings to assembler compliant format
+ * @param input string to be converted
+ * @return converted string
+*/
 mystring_t* convertToEscapeSequence(const char *input) {
     mystring_t *output = malloc(sizeof(mystring_t));
     initstr(output);

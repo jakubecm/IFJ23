@@ -12,7 +12,8 @@
 #include "error.h"
 
 extern error_t error;
-// HASHTABLE WITH OPEN ADDRESSING
+
+//-----------------------HASHTABLE WITH OPEN ADDRESSING-----------------------
 
 size_t htab_hash_function(htab_key_t str) {
     size_t h = 0; // musí mít 32 bitů

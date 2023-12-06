@@ -282,7 +282,7 @@ int stack_get_nested_level_of_var(stack_t* stack, htab_key_t key) {
         if (symbol != NULL) {
             return level;
         }
-        level++;
+        level--;
         currentNode = currentNode->right;
     }
 

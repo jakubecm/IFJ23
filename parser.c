@@ -24,7 +24,7 @@ error_t error; // Global error variable
 
 <function_return_type_and_body> -> "{" <void_function_body> "}" | "->" <type> "{" <nonvoid_function_body> "}"
 
-<nonvoid_function_body> -> <statement_list> | ε
+<nonvoid_function_body> -> <statement_list>
 
 <void_function_body> -> <statement_list> | ε
 
@@ -237,12 +237,18 @@ char *mark_nested(parser_t *parser, char *string, bool exists) {
         nest_level = stack_get_nested_level(parser->stack);
     } else {
         nest_level = stack_get_nested_level_of_var(parser->stack, string);
-        nest_level = nest_level + 2;
-        nest_level -= stack_height(parser->stack);
+        nest_level += stack_height(parser->stack);
     }
 
-    if (nest_level == -1) {
-        printf("Variable %s not found\n", string);
+    bool is_global;
+    if (exists) {
+        is_global = stack_lookup_var_in_global(parser->stack, string);
+    } else {
+        is_global = false;
+    }
+    
+    if (parser->in_function && !is_global) {
+        nest_level--;
     }
 
     char *gen_name = malloc(sizeof(char) * (strlen(string) + 1 + nest_level));
@@ -1075,7 +1081,7 @@ bool rule_assignment_type(parser_t *parser, data_t *data){
 
         // ----------------- SEMANTICS START -----------------
         bool is_global = stack_lookup_var_in_global(parser->stack, data->name);
-        gen_pop_value(parser->gen, data->name, parser->in_function, is_global);
+        gen_pop_value(parser->gen, gen_name, parser->in_function, is_global);
 
         if (data->type == LET && (data->value.var_id.initialized || data->value.var_id.func_init || 
         (data->value.var_id.if_initialized && parser->in_if) || 
@@ -1106,7 +1112,7 @@ bool rule_assignment_type(parser_t *parser, data_t *data){
             return false;
         }
         // ----------------- SEMANTICS END -----------------
-
+        free(gen_name);
         return true;
     }
 }
@@ -1235,7 +1241,9 @@ bool rule_variable_statement(parser_t *parser){
 
     int label = parser->gen->label_counter;
     bool is_global = stack_lookup_var_in_global(parser->stack, data->name);
-    gen_if_let(parser->gen, data->name, parser->in_function, is_global, label);
+    char *gen_name = mark_nested(parser, data->name, true);
+    gen_if_let(parser->gen, gen_name, parser->in_function, is_global, label);
+    free(gen_name);
 
     symbol_type_t prev_type = data->type;
     data->type = LET;
@@ -1529,7 +1537,7 @@ bool rule_arg_name(parser_t *parser, int *argindex, data_t *data){
             // argument is named
             if (strcmp(data->value.func_id.parameters->data[*argindex].call_name, "_")) {
                 if (strcmp(parser->token.attribute.string, data->value.func_id.parameters->data[*argindex].call_name)) {
-                    error = ERR_SEM_CALL;
+                    error = ERR_SEM_OTHER;
                     print_error_and_exit(error);
                     return false; // argument should be named but doesnt match
                 }
@@ -1543,6 +1551,11 @@ bool rule_arg_name(parser_t *parser, int *argindex, data_t *data){
                 return true;
             } else {
                 // is not named -> pass over to arg_value
+                if (is_type_next(parser, TOK_COLON)) {
+                    error = ERR_SEM_OTHER;
+                    print_error_and_exit(error);
+                    return false;
+                }
                 return true;
             }
             break;
@@ -1551,7 +1564,7 @@ bool rule_arg_name(parser_t *parser, int *argindex, data_t *data){
             // ------------ SEMANTICS START ------------
             // argument is named
             if (strcmp(data->value.func_id.parameters->data[*argindex].call_name, "_")) {
-                error = ERR_SEM_CALL;
+                error = ERR_SEM_OTHER;
                 print_error_and_exit(error);
                 return false; // argument should be named but isnt
             }

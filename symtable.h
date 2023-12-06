@@ -138,36 +138,45 @@ data_t *symbol_table_lookup_var(symbol_table_t *table, htab_key_t key);
  * @brief Inserts new symbol into the table
  * @param table Pointer to the symbol table
  * @param key key of the symbol
- * @param value Value of the symbol
+ * @param data instance of the symbol
 */
 void symbol_table_insert(symbol_table_t *table, htab_key_t key, data_t data);
 
 /**
  * @brief Removes symbol from the table
+ * @param table Pointer to the symbol table
+ * @param key key of the symbol
 */
 void symbol_table_remove(symbol_table_t *table, htab_key_t key);
 
 /**
  * @brief Resizes the symbol table
+ * @param table Pointer to the symbol table
+ * @param new_size New size of the table
 */
 symbol_table_t *symbol_table_resize(symbol_table_t *table, size_t new_size);
 
 /**
  * @brief Creates new parameter vector
+ * @param capacity Capacity of the vector
 */
 vector_t *vector_init(int capacity);
 
 /**
  * @brief Pushes new parameter to the vector
+ * @param arr Pointer to the vector
+ * @param value Parameter to be pushed
 */
 void vector_push(vector_t *arr, htab_func_param_t value);
 
 /**
  * @brief Returns top parameter from the vector
+ * @param arr Pointer to the vector
 */
 htab_func_param_t *vector_top(vector_t *arr);
 
 /**
  * @brief Destroys the vector
+ * @param arr Pointer to the vector
 */
 void vector_destroy(vector_t *arr);

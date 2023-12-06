@@ -43,22 +43,29 @@ typedef struct parser
 void parser_init(parser_t *parser, gen_t *gen);
 
 /**
- * @brief Runs parser
+ * @brief Starts the parsing process (calls the first rule)
+ * @param parser pointer to parser
  */
 void run_parser(parser_t *parser);
 
 /**
  * @brief Destroys parser
+ * @param parser pointer to parser
  */
 void parser_destroy(parser_t *parser);
 
 /**
  * @brief Loads token from scanner
+ * @param parser pointer to parser
  */
 void load_token(parser_t *parser);
 
 /**
- * @brief Loads next token from scanner
+ * @brief Function to calculate new name of variable for generation
+ * @param parser pointer to parser
+ * @param string name of the variable
+ * @param exists true if variable was defined previously
+ * @return new name of the variable
  */
 char *mark_nested(parser_t *parser, char *string, bool exists);
 

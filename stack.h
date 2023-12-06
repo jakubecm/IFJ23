@@ -131,57 +131,78 @@ void print_stack_contents(stack_t *stack);
 
 /**
  * @brief Pushes symtable to the stack
+ * @param stack - stack_t to be pushed on
 */
 void stack_push_table(stack_t* stack);
 
 /**
  * @brief Pops symtable from the stack
+ * @param stack - stack_t to be popped from
 */
 void stack_pop_table(stack_t* stack);
 
 /**
  * @brief Returns top symtable from the stack
+ * @param stack - stack_t to be returned from
 */
 symbol_table_t* stack_top_table(stack_t* stack);
 
 /**
  * @brief Returns bottom symtable from the stack (global table)
+ * @param stack - stack_t to be returned from
 */
 symbol_table_t* stack_bottom_table(stack_t* stack);
 
 /**
  * @brief Returns true if the top symtable is the global table
+ * @param stack - stack_t to be returned from
 */
 bool is_table_global(stack_t* stack);
 
 /**
  * @brief Looks through the symtable stack to find a variable with the given key
+ * @param stack - stack_t to be returned from
+ * @param key - key to be searched for
 */
 data_t *stack_lookup_var(stack_t* stack, htab_key_t key);
 
 /**
  * @brief Looks through the symtable stack to find a function with the given key
+ * @param stack - stack_t to be returned from
+ * @param key - key to be searched for
 */
 data_t *stack_lookup_func(stack_t* stack, htab_key_t key);
 
 /**
  * @brief Destroy the symtable stack
+ * @param stack - stack_t to be destroyed
 */
 void stack_destroy_table(stack_t* stack);
 
 /**
  * @brief Looks through the symtable stack to find if a variable with the given key
  *        exists in the global or local scope
+ * @param stack - stack_t to be returned from
+ * @param key - key to be searched for
 */
 bool stack_lookup_var_in_global(stack_t* stack, htab_key_t key);
 
 /**
  * @brief Returns the current nested level of the stack
+ * @param stack - stack_t to be returned from
 */
 int stack_get_nested_level(stack_t* stack);
 
+/**
+ * @brief Returns the current nested level of the stack for a given variable
+ * @param stack - stack_t to be returned from
+*/
 int stack_get_nested_level_of_var(stack_t* stack, htab_key_t key);
 
+/**
+ * @brief Returns the current nested level of the stack for a given function
+ * @param stack - stack_t to be returned from
+*/
 int stack_height(stack_t* stack);
 
 #endif // STACK_H
