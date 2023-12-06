@@ -24,7 +24,7 @@ error_t error; // Global error variable
 
 <function_return_type_and_body> -> "{" <void_function_body> "}" | "->" <type> "{" <nonvoid_function_body> "}"
 
-<nonvoid_function_body> -> <statement_list>
+<nonvoid_function_body> -> <statement_list> | ε
 
 <void_function_body> -> <statement_list> | ε
 
@@ -229,6 +229,28 @@ void check_function_definitions(parser_t *parser) {
             print_error_and_exit(error);
         }
     }
+}
+
+char *mark_nested(parser_t *parser, char *string, bool exists) {
+    int nest_level;
+    if (!exists) {
+        nest_level = stack_get_nested_level(parser->stack);
+    } else {
+        nest_level = stack_get_nested_level_of_var(parser->stack, string);
+        nest_level = nest_level + 2;
+        nest_level -= stack_height(parser->stack);
+    }
+
+    if (nest_level == -1) {
+        printf("Variable %s not found\n", string);
+    }
+
+    char *gen_name = malloc(sizeof(char) * (strlen(string) + 1 + nest_level));
+    for (int i = 1; i < nest_level; i++) {
+        gen_name[i-1] = '%';
+    }
+    strcpy(gen_name + (nest_level-1), string);
+    return gen_name;
 }
 
 //================= PARSER FUNCTIONS END HERE ================= //
@@ -763,7 +785,9 @@ bool rule_variable_definition_let(parser_t *parser){
         return false;
     }
 
-    gen_var_definition(parser->gen, &parser->token, parser->in_function, (parser->in_cycle || parser->in_if || parser->in_else));
+    char *gen_name = mark_nested(parser, parser->token.attribute.string, false);
+    gen_var_definition(parser->gen, gen_name, parser->in_function, (parser->in_cycle || parser->in_if || parser->in_else));
+    free(gen_name);
 
     // ----------------- SEMANTICS START -----------------
     data_t *var = symbol_table_lookup_generic(stack_top_table(parser->stack), parser->token.attribute.string);
@@ -782,6 +806,7 @@ bool rule_variable_definition_let(parser_t *parser){
     data.value.var_id.if_initialized = false;
     data.value.var_id.func_init = false;
     data.value.var_id.else_initialized = false;
+
     // ----------------- SEMANTICS END -----------------
 
     load_token(parser);
@@ -808,7 +833,9 @@ bool rule_variable_definition_var(parser_t *parser){
         return false;
     }
 
-    gen_var_definition(parser->gen, &parser->token, parser->in_function, (parser->in_cycle || parser->in_if || parser->in_else));
+    char *gen_name = mark_nested(parser, parser->token.attribute.string, false);
+    gen_var_definition(parser->gen, gen_name, parser->in_function, (parser->in_cycle || parser->in_if || parser->in_else));
+    free(gen_name);
 
     // ----------------- SEMANTICS START -----------------
     data_t *var = symbol_table_lookup_generic(stack_top_table(parser->stack), parser->token.attribute.string);
@@ -827,7 +854,6 @@ bool rule_variable_definition_var(parser_t *parser){
     data.value.var_id.if_initialized = false;
     data.value.var_id.func_init = false;
     data.value.var_id.else_initialized = false;
-
     // ----------------- SEMANTICS END -----------------
 
     load_token(parser);
@@ -875,7 +901,9 @@ bool rule_type_def_follow(parser_t *parser, data_t *data){
         if(data->value.var_id.type == VAL_INTQ || data->value.var_id.type == VAL_DOUBLEQ || data->value.var_id.type == VAL_STRINGQ){
             gen_push_nil(parser->gen, parser->in_function);
             bool is_global = !(parser->in_cycle || parser->in_if || parser->in_else || parser->in_function);
-            gen_pop_value(parser->gen, data->name, parser->in_function, is_global);
+            char *gen_name = mark_nested(parser, data->name, false);
+            gen_pop_value(parser->gen, gen_name, parser->in_function, is_global);
+            free(gen_name);
         }
         return true;
     }
@@ -886,6 +914,7 @@ bool rule_type_def_follow(parser_t *parser, data_t *data){
 // <initialization> -> "=" <expression> | "=" <function_call>
 
 bool rule_initialization(parser_t *parser, data_t *data){
+    char *gen_name = mark_nested(parser, data->name, false);
 
     if (!is_type(parser, TOK_ASSIGNMENT)){                                           // "="
         error = ERR_SYN;
@@ -897,22 +926,23 @@ bool rule_initialization(parser_t *parser, data_t *data){
 
     if (is_type(parser, TOK_IDENTIFIER) && is_type_next(parser, TOK_LBRACKET)){     // <function_call>
         bool ret = rule_function_call(parser, data); // init type in function call
-        gen_func_return_to_var(parser->gen, data->name, parser->in_function, !(parser->in_if || parser->in_else || parser->in_cycle || parser->in_function));
+        gen_func_return_to_var(parser->gen, gen_name, parser->in_function, !(parser->in_if || parser->in_else || parser->in_cycle || parser->in_function));
+        free(gen_name);
         data->value.var_id.initialized = true;
         return ret;
     }
 
     variable_type_t type = exp_parsing(parser);                                     // <expression>
 
-    gen_pop_value(parser->gen, data->name, parser->in_function, !(parser->in_if || parser->in_else || parser->in_cycle || parser->in_function));
+    gen_pop_value(parser->gen, gen_name, parser->in_function, !(parser->in_if || parser->in_else || parser->in_cycle || parser->in_function));
 
     // ----------------- SEMANTICS START -----------------
     switch (type) { // check if the expr result matches the type of the variable
     case VAL_INT:
         if (type == VAL_INT && (data->value.var_id.type == VAL_DOUBLE || data->value.var_id.type == VAL_DOUBLEQ)) {
-            gen_push_var(parser->gen, data->name, parser->in_function, !(parser->in_if || parser->in_else || parser->in_cycle || parser->in_function));
+            gen_push_var(parser->gen, gen_name, parser->in_function, !(parser->in_if || parser->in_else || parser->in_cycle || parser->in_function));
             gen_call_convert(parser->gen); // evil int2float hacks
-            gen_func_return_to_var(parser->gen, data->name, parser->in_function, !(parser->in_if || parser->in_else || parser->in_cycle || parser->in_function));
+            gen_func_return_to_var(parser->gen, gen_name, parser->in_function, !(parser->in_if || parser->in_else || parser->in_cycle || parser->in_function));
         } else if (data->value.var_id.type != VAL_INT && data->value.var_id.type != VAL_INTQ && data->value.var_id.type != VAL_UNKNOWN){
             error = ERR_SEM_TYPE;
             print_error_and_exit(error);
@@ -968,7 +998,7 @@ bool rule_initialization(parser_t *parser, data_t *data){
     }
     data->value.var_id.initialized = true; 
     // ----------------- SEMANTICS END -----------------
-
+    free(gen_name);
     return true;
 }
 
@@ -1032,10 +1062,11 @@ bool rule_assignment(parser_t *parser){
 // <assignment_type> -> <function_call> | <expression>
 
 bool rule_assignment_type(parser_t *parser, data_t *data){
+    char *gen_name = mark_nested(parser, data->name, true);
     if(is_type(parser, TOK_IDENTIFIER) && is_type_next(parser, TOK_LBRACKET)){      // <function_call>
         bool ret = rule_function_call(parser, data); // init type in function call
         bool is_global = stack_lookup_var_in_global(parser->stack, data->name);
-        gen_func_return_to_var(parser->gen, data->name, parser->in_function, is_global);
+        gen_func_return_to_var(parser->gen, gen_name, parser->in_function, is_global);
         return ret;
     }
     else{
@@ -1059,9 +1090,9 @@ bool rule_assignment_type(parser_t *parser, data_t *data){
         if (type != data->value.var_id.type){
             if (type == VAL_INT && (data->value.var_id.type == VAL_DOUBLE || data->value.var_id.type == VAL_DOUBLEQ)) {
                 bool is_global = stack_lookup_var_in_global(parser->stack, data->name);
-                gen_push_var(parser->gen, data->name, parser->in_function, is_global);
+                gen_push_var(parser->gen, gen_name, parser->in_function, is_global);
                 gen_call_convert(parser->gen); // evil int2float hacks
-                gen_func_return_to_var(parser->gen, data->name, parser->in_function, is_global);
+                gen_func_return_to_var(parser->gen, gen_name, parser->in_function, is_global);
                 return true;
             }
 
@@ -1412,10 +1443,14 @@ bool rule_function_call(parser_t *parser, data_t *var){
     call_args->size = argindex;
     // gen funkce zde
     gen_arguments_start(parser->gen, parser->in_function);
+    char *gen_name;
     bool is_global = false;
     for(int i = call_args->size - 1; i >= 0; i--){
         if (call_args->data[i].parameter.type == VAL_ID) {
+            gen_name = mark_nested(parser, call_args->data[i].parameter.value.string, true);
             is_global = stack_lookup_var_in_global(parser->stack, call_args->data[i].parameter.value.string);
+            strcpy(call_args->data[i].parameter.value.string, gen_name);
+            free(gen_name);
         }
         gen_arguments(parser->gen, call_args->data[i], parser->in_function, is_global);
     }

@@ -13,7 +13,7 @@ void gen_init(gen_t *gen);
 void gen_free(gen_t *gen);
 void gen_header(gen_t *gen);
 void gen_main(gen_t *gen);
-void gen_var_definition(gen_t *gen, token_t* token, bool in_function, bool in_if);
+void gen_var_definition(gen_t *gen, char* name, bool in_function, bool in_if);
 void gen_func(gen_t *gen, token_t *name);
 void gen_func_end(gen_t *gen, bool is_void);
 void gen_func_return_to_var(gen_t *gen, char *name, bool in_function, bool is_global);
@@ -99,19 +99,19 @@ void gen_footer(gen_t *gen)
 
 
 
-void gen_var_definition(gen_t *gen, token_t* token, bool in_function, bool in_if)
+void gen_var_definition(gen_t *gen, char* name, bool in_function, bool in_if)
 {
     if (in_function) {
         mergestr(&gen->functions, "DEFVAR LF@");
-        mergestr(&gen->functions, token->attribute.string);
+        mergestr(&gen->functions, name);
         mergestr(&gen->functions, "\n");
     } else if (!in_function && in_if){
         mergestr(&gen->global, "DEFVAR LF@");
-        mergestr(&gen->global, token->attribute.string);
+        mergestr(&gen->global, name);
         mergestr(&gen->global, "\n");
     } else {
         mergestr(&gen->global, "DEFVAR GF@");
-        mergestr(&gen->global, token->attribute.string);
+        mergestr(&gen->global, name);
         mergestr(&gen->global, "\n");
     }
 }

@@ -261,3 +261,41 @@ bool stack_lookup_var_in_global(stack_t* stack, htab_key_t key) {
 
     return true;
 }
+
+int stack_get_nested_level(stack_t* stack) {
+    int level = 0;
+    Node* currentNode = stack->top;
+    while (currentNode != NULL) {
+        level++;
+        currentNode = currentNode->right;
+    }
+
+    return level;
+}
+
+int stack_get_nested_level_of_var(stack_t* stack, htab_key_t key) {
+    int level = 0;
+    Node* currentNode = stack->top;
+    while (currentNode != NULL) {
+        symbol_table_t* table = (symbol_table_t*)currentNode->data;
+        data_t *symbol = symbol_table_lookup_var(table, key);
+        if (symbol != NULL) {
+            return level;
+        }
+        level++;
+        currentNode = currentNode->right;
+    }
+
+    return -1;
+}
+
+int stack_height(stack_t* stack) {
+    int height = 0;
+    Node* currentNode = stack->top;
+    while (currentNode != NULL) {
+        height++;
+        currentNode = currentNode->right;
+    }
+
+    return height;
+}

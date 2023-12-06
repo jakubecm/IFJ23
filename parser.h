@@ -57,4 +57,9 @@ void parser_destroy(parser_t *parser);
  */
 void load_token(parser_t *parser);
 
+/**
+ * @brief Loads next token from scanner
+ */
+char *mark_nested(parser_t *parser, char *string, bool exists);
+
 #endif // PARSER_H

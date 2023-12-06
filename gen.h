@@ -211,11 +211,11 @@ void gen_push_var(gen_t *gen, char *name, bool local, bool is_global);
 /**
  * @brief Funcition for variable definition
  * @param gen pointer to struct
- * @param token name of the variable
+ * @param name name of the variable
  * @param in_function true if in function
  * @param is_if true if in if statement
 */
-void gen_var_definition(gen_t *gen, token_t* token, bool in_function, bool in_if);
+void gen_var_definition(gen_t *gen, char* name, bool in_function, bool in_if);
 
 /**
  * @brief Funcition for expression generation

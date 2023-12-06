@@ -175,4 +175,13 @@ void stack_destroy_table(stack_t* stack);
 */
 bool stack_lookup_var_in_global(stack_t* stack, htab_key_t key);
 
+/**
+ * @brief Returns the current nested level of the stack
+*/
+int stack_get_nested_level(stack_t* stack);
+
+int stack_get_nested_level_of_var(stack_t* stack, htab_key_t key);
+
+int stack_height(stack_t* stack);
+
 #endif // STACK_H
