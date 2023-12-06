@@ -24,7 +24,7 @@ error_t error; // Global error variable
 
 <function_return_type_and_body> -> "{" <void_function_body> "}" | "->" <type> "{" <nonvoid_function_body> "}"
 
-<nonvoid_function_body> -> <statement_list> | ε
+<nonvoid_function_body> -> <statement_list>
 
 <void_function_body> -> <statement_list> | ε
 
