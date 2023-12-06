@@ -123,3 +123,4 @@ bool is_literal(token_type_t token);
 bool is_bracket(token_type_t left, token_type_t middle, token_type_t right);
 
 #endif
+

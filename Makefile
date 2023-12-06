@@ -1,3 +1,8 @@
+# Implementace překladače imperativního jazyka IFJ23
+# Milan Jakubec (xjakub41)
+# Jakub Ráček (xracek12)
+# Norman Babiak (xbabia03)
+
 CC = gcc
 CFLAGS =
 DEBUG_FLAGS = -DDEBUG -g
