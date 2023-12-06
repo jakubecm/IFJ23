@@ -1001,18 +1001,20 @@ bool rule_assignment(parser_t *parser){
         if (parser->in_cycle){
             // do nothing
         } else if (!parser->in_if && !parser->in_else) {
-            var->value.var_id.initialized = true;        // Returning form main function body is always valid
+            var->value.var_id.initialized = true;       
             if (is_global && parser->in_function) {
                 var->value.var_id.func_init = true;
             }
         } else if (parser->in_if) {
-            var->value.var_id.if_initialized = true;     // Returning from an if statement is valid, but we need to check if the else branch is also returned from
+            var->value.var_id.if_initialized = true;  
         } else if (var->value.var_id.if_initialized && parser->in_else) {
-            var->value.var_id.initialized = true;     // If both branches return, the condition is satysfied
+            var->value.var_id.initialized = true;    
             var->value.var_id.if_initialized = false;
             if (is_global && parser->in_function) {
                 var->value.var_id.func_init = true;
             }
+        } else if (parser->in_else) {
+            var->value.var_id.else_initialized = true; 
         }
     }
     // ----------------- SEMANTICS END -----------------
@@ -1037,7 +1039,9 @@ bool rule_assignment_type(parser_t *parser, data_t *data){
         bool is_global = stack_lookup_var_in_global(parser->stack, data->name);
         gen_pop_value(parser->gen, data->name, parser->in_function, is_global);
 
-        if (data->type == LET && (data->value.var_id.initialized || data->value.var_id.func_init)){
+        if (data->type == LET && (data->value.var_id.initialized || data->value.var_id.func_init || 
+        (data->value.var_id.if_initialized && parser->in_if) || 
+        (data->value.var_id.else_initialized && parser->in_else))){
             error = ERR_SEM_OTHER;
             print_error_and_exit(error);
             return false;   // Attempt at assigning to a let variable
@@ -1153,6 +1157,7 @@ bool rule_classical_statement(parser_t *parser){
         print_error_and_exit(error);
         return false;
     }
+
     if (!was_in_else){
         parser->in_else = false;
     }
@@ -1526,7 +1531,8 @@ bool rule_arg_value(parser_t *parser, int *argindex, data_t *data, vector_t *cal
             case TOK_IDENTIFIER:           // <identifier>
                 // check if var exists
                 arg = stack_lookup_var(parser->stack, parser->token.attribute.string);
-                if (arg == NULL || (!arg->value.var_id.initialized && !arg->value.var_id.func_init)){
+                if (arg == NULL || (!arg->value.var_id.initialized && !arg->value.var_id.func_init &&
+                 (!arg->value.var_id.if_initialized && parser->in_if ) || (!arg->value.var_id.else_initialized && parser->in_else))){
                     error = ERR_SEM_NDEF;
                     print_error_and_exit(error);
                     return false;   // Attempt at calling a function with a non-existing variable

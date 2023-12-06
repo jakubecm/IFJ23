@@ -41,6 +41,7 @@ typedef struct htab_var {
     variable_type_t         type;
     bool                    initialized;
     bool                    if_initialized;
+    bool                    else_initialized;
     bool                    func_init;
 } htab_var_t;
 
