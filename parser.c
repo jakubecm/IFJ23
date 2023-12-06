@@ -1574,7 +1574,7 @@ bool rule_arg_value(parser_t *parser, int *argindex, data_t *data, vector_t *cal
                 // check if var exists
                 arg = stack_lookup_var(parser->stack, parser->token.attribute.string);
                 if (arg == NULL || (!arg->value.var_id.initialized && !arg->value.var_id.func_init &&
-                 (!arg->value.var_id.if_initialized && parser->in_if ) || (!arg->value.var_id.else_initialized && parser->in_else))){
+                 !(arg->value.var_id.if_initialized && parser->in_if ) && !(arg->value.var_id.else_initialized && parser->in_else))){
                     error = ERR_SEM_NDEF;
                     print_error_and_exit(error);
                     return false;   // Attempt at calling a function with a non-existing variable
