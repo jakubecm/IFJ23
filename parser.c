@@ -264,7 +264,7 @@ bool rule_program(parser_t *parser){
 bool rule_statement_list(parser_t *parser){
     if (is_type(parser, TOK_RCURLYBRACKET) && 
     (parser->in_function || parser->in_cycle || parser->in_if || parser->in_else)) {
-        if (parser->in_function && !parser->func_is_void && !parser->returned) {
+        if (parser->in_function && !(parser->in_cycle || parser->in_if || parser->in_else) && !parser->func_is_void && !parser->returned) {
             error = ERR_SEM_RETURN;
             print_error_and_exit(error);
             return false; // Function does not return a value
