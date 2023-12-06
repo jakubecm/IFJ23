@@ -37,6 +37,7 @@ token_t get_next_token(){
     token.attribute.string = NULL;
     token.eol = false;
 
+    // Main loop for reading characters and determining tokens
     while(true){
         if(state == COMMENT || state == START){
             inchar = getchar();
@@ -44,15 +45,18 @@ token_t get_next_token(){
 
         whitespace--;         
         
+        // Check the end of input
         if(inchar == EOF){
             token.type = TOK_EOF;
             return token;
         }
 
+        // Check if token is on the new line
         if(inchar == '\n'){
             token.eol = true;
         }
 
+        // Switch for recognizing tokens
         switch(state){
 
         case(START):
@@ -256,6 +260,7 @@ token_t get_next_token(){
                 state = STRING;
             }
             
+            // If no matching case is found, it's an error
             else{
                 error = ERR_LEX;
                 print_error_and_exit(error);
@@ -263,6 +268,7 @@ token_t get_next_token(){
             break;
 
 
+        // State for singleline comment
         case(COMMENT):
             {
                 while((inchar != '\n') && (inchar != EOF)){
@@ -274,6 +280,7 @@ token_t get_next_token(){
             }
 
 
+        // State for multiline comment
         case(MCOMMENT):
             blockcomm = 1;
 
@@ -319,6 +326,7 @@ token_t get_next_token(){
             }      
 
 
+        // State for number
         case(NUM):
             initstr(&number);
             
@@ -360,7 +368,8 @@ token_t get_next_token(){
             }
             break;
 
-            
+
+        // State for decimal number 
         case(DNUM):
             do{
                 makestr(&number,inchar);
@@ -390,6 +399,7 @@ token_t get_next_token(){
             break;
 
         
+        // State for number with exponent
         case(ENUM):
             if((inchar == '+') || (inchar == '-')){
                 makestr(&number,inchar);
@@ -431,6 +441,7 @@ token_t get_next_token(){
             }
 
 
+        // State for identifier
         case(ID):
             initstr(&id);
 
@@ -453,6 +464,7 @@ token_t get_next_token(){
             return token;
 
 
+        // State for singleline string
         case(STRING):
             initstr(&str);
 
@@ -505,6 +517,7 @@ token_t get_next_token(){
             }
 
 
+        // State for multiline string
         case(MSTRING):
             initstr(&mstr);
             inchar = getchar();
@@ -584,6 +597,7 @@ token_t get_next_token(){
     }
 }
 
+
 void backslash(mystring_t *str){
     mystring_t hexanum;
     int hexachar;
@@ -593,7 +607,6 @@ void backslash(mystring_t *str){
 
     if(inchar == '\\' || inchar == 'n' ||inchar == '"' ||inchar == 't' ||inchar == 'r'){
         removechar(str,str->lenght);
-        //makestr(str,inchar);
         switch(inchar){
             case('\\'):
                 makestr(str,'\\');
@@ -620,7 +633,6 @@ void backslash(mystring_t *str){
 
     else if(inchar == 'u'){
         removechar(str,str->lenght);
-        //makestr(str,0x30);
         inchar = getchar();
 
         if(inchar == '{'){
@@ -629,6 +641,7 @@ void backslash(mystring_t *str){
             makestr(&hexanum,'x');
             inchar = getchar();
             
+            // Read and validate hexadecimal characters
             if((inchar >= '0' && inchar <= '9') || (inchar >= 'a' && inchar <= 'z') || (inchar >= 'A' && inchar <= 'Z')){
                 do{
                     if(count > 8){
@@ -675,12 +688,14 @@ void spaceignor(mystring_t *str){
     int lasteol;
     int space = 0;
 
+    // Find the last end-of-line character in the string
     for(int i = 0; i < str->lenght; i++){
         if(str->string[i]== 10){
             lasteol = i;
         }
     }
 
+    // Count spaces after the last end-of-line character
     for(int i = lasteol + 1; i < str->lenght;i++){
         if(str->string[i] == 32){
             space++; 
@@ -692,6 +707,7 @@ void spaceignor(mystring_t *str){
         }
     }
 
+    // Remove space after end of line character
     for(int i = 0; i < str->lenght; i++){
         if(str->string[i]== 10 && space != 0){
             for(int j = space; j > 0; j--){
