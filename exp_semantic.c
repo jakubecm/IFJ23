@@ -47,7 +47,8 @@ sem_data_type_t tok_type(parser_t* parserData) {
 
             //Check if the variable is initialized
             tmpData = stack_lookup_var(parserData->stack, parserData->token.attribute.string);
-            if (tmpData == NULL || (!tmpData->value.var_id.initialized && !tmpData->value.var_id.if_initialized)) {
+            if (tmpData == NULL || (!tmpData->value.var_id.initialized && !tmpData->value.var_id.func_init && 
+            (!parserData->in_else || !tmpData->value.var_id.else_initialized) && (!parserData->in_if || !tmpData->value.var_id.if_initialized))) {
                 return SEM_UNDEF;
             }
             
