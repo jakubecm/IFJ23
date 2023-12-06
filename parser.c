@@ -779,6 +779,9 @@ bool rule_variable_definition_let(parser_t *parser){
     strcpy(data.name, parser->token.attribute.string);
     data.value.var_id.type = VAL_UNKNOWN;
     data.value.var_id.initialized = false;
+    data.value.var_id.if_initialized = false;
+    data.value.var_id.func_init = false;
+    data.value.var_id.else_initialized = false;
     // ----------------- SEMANTICS END -----------------
 
     load_token(parser);
@@ -821,6 +824,10 @@ bool rule_variable_definition_var(parser_t *parser){
     strcpy(data.name, parser->token.attribute.string);
     data.value.var_id.type = VAL_UNKNOWN;
     data.value.var_id.initialized = false;
+    data.value.var_id.if_initialized = false;
+    data.value.var_id.func_init = false;
+    data.value.var_id.else_initialized = false;
+
     // ----------------- SEMANTICS END -----------------
 
     load_token(parser);
